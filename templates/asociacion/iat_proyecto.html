@@ -1,0 +1,143 @@
+{% extends "asociacion/base_asociacion.html" %}
+{% block asociacion %}
+<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+  <div>
+    <h1 style="margin-bottom:4px">{{ solicitud.titulo }}</h1>
+    <p class="sub" style="margin:0">Radicado <b>{{ solicitud.radicado }}</b> · {{ solicitud.fecha_radicado[:10] }}</p>
+  </div>
+  <div>
+    {% if solicitud.estado == 'Aprobado' %}
+      <span class="badge favor">Aprobado</span>
+    {% elif solicitud.estado == 'Negado' %}
+      <span class="badge vencida">Negado</span>
+    {% elif solicitud.estado == 'En evaluación' %}
+      <span class="badge estudio">En evaluación</span>
+    {% else %}
+      <span class="badge tramite">Radicado</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="table-wrap" style="max-width:760px;margin-top:18px">
+  <table>
+    <tbody>
+      <tr><th style="text-align:left">Tipo</th><td>{{ solicitud.tipo }}</td></tr>
+      <tr><th style="text-align:left">Municipio / distrito</th><td>{{ solicitud.municipio or '—' }}</td></tr>
+      <tr><th style="text-align:left">Toneladas por mes</th><td>{{ solicitud.toneladas or 0 }}</td></tr>
+      <tr><th style="text-align:left">Censo de recicladores</th><td>{{ datos.get('censo') or '—' }}</td></tr>
+      <tr><th style="text-align:left">Cobertura del censo</th><td>{{ (datos.get('asociados_pct') or 0)|int }}%</td></tr>
+      <tr><th style="text-align:left">Formalización</th><td>
+        {% if datos.get('formalizacion') == 'formalizada' %}Prestador formalizado
+        {% elif datos.get('formalizacion') == 'otra' %}Solo constituida
+        {% elif datos.get('formalizacion') == 'en_formalizacion' %}En proceso de formalización
+        {% else %}—{% endif %}</td></tr>
+      <tr><th style="text-align:left">Meta de reducción a relleno</th><td>
+        {% if datos.get('meta_reduccion') == 'superior' %}Mayor al 10%
+        {% elif datos.get('meta_reduccion') == 'entre' %}Entre 5% y 10%
+        {% elif datos.get('meta_reduccion') == 'menor' %}Menor al 5%
+        {% else %}—{% endif %}</td></tr>
+      <tr><th style="text-align:left">Documento cargado</th><td>{{ datos.get('documento') or '—' }}</td></tr>
+      <tr><th style="text-align:left">Evaluación del agente</th><td>
+        {% if datos.get('evaluacion_puntaje') %}
+          <b>{{ datos.get('evaluacion_puntaje') }} / 100</b>
+        {% else %}Aún sin evaluar{% endif %}</td></tr>
+      <tr><th style="text-align:left">Estado</th><td>{{ solicitud.estado }}</td></tr>
+      <tr><th style="text-align:left">Fecha de radicación</th><td>{{ solicitud.fecha_radicado }}</td></tr>
+      {% if solicitud.modificado_el %}<tr><th style="text-align:left">Última actualización</th><td>{{ solicitud.modificado_el }}</td></tr>{% endif %}
+      {% if datos.get('acuerdos') %}
+      <tr><th style="text-align:left">Acuerdos con operador / esquema</th><td style="white-space:pre-line">{{ datos.get('acuerdos') }}</td></tr>
+      {% endif %}
+      <tr>
+        <th style="text-align:left">Descripción</th>
+        <td style="white-space:pre-line">{{ solicitud.descripcion }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+{% if solicitud.observaciones %}
+<div class="notas" style="max-width:760px;margin-top:20px"><b>Observaciones del equipo:</b> {{ solicitud.observaciones }}</div>
+{% endif %}
+
+{% if solicitud.estado in ['Radicado', 'En evaluación'] %}
+<details class="panel-form" style="max-width:760px;margin-top:26px">
+  <summary class="btn btn-navy" style="display:inline-block;cursor:pointer">Editar proyecto</summary>
+  <form method="post" action="{{ url_for('asociacion_iat_editar', sid=solicitud.id) }}" style="margin-top:16px">
+    <div class="form-row">
+      <div class="campo" style="flex:2">
+        <label>Título del proyecto *</label>
+        <input name="titulo" required maxlength="200" value="{{ solicitud.titulo }}">
+      </div>
+      <div class="campo" style="flex:1">
+        <label>Tipo</label>
+        <select name="tipo">
+          {% for t in tipos %}
+          <option value="{{ t }}" {{ 'selected' if t == solicitud.tipo }}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Municipio / distrito</label>
+        <input name="municipio" maxlength="120" value="{{ solicitud.municipio }}">
+      </div>
+      <div class="campo" style="flex:0 0 220px">
+        <label>Toneladas por mes</label>
+        <input type="number" name="toneladas" min="0" step="0.01" value="{{ solicitud.toneladas or 0 }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Censo de recicladores</label>
+        <input type="number" name="censo" min="0" step="1" value="{{ datos.get('censo') or 0 }}">
+      </div>
+      <div class="campo" style="flex:1">
+        <label>% del censo que agrupa la organización</label>
+        <input type="number" name="asociados_pct" min="0" max="100" step="1" value="{{ (datos.get('asociados_pct') or 0)|int }}">
+      </div>
+      <div class="campo" style="flex:1">
+        <label>Estado de formalización</label>
+        <select name="formalizacion">
+          <option value="en_formalizacion" {{ 'selected' if datos.get('formalizacion') == 'en_formalizacion' }}>En proceso de formalización</option>
+          <option value="formalizada" {{ 'selected' if datos.get('formalizacion') == 'formalizada' }}>Prestador formalizado</option>
+          <option value="otra" {{ 'selected' if datos.get('formalizacion') == 'otra' }}>Solo constituida</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Meta de reducción a relleno</label>
+        <select name="meta_reduccion">
+          <option value="superior" {{ 'selected' if datos.get('meta_reduccion') == 'superior' }}>Mayor al 10% (máx. puntaje)</option>
+          <option value="entre" {{ 'selected' if datos.get('meta_reduccion') == 'entre' }}>Entre 5% y 10%</option>
+          <option value="menor" {{ 'selected' if datos.get('meta_reduccion') == 'menor' }}>Menor al 5%</option>
+        </select>
+      </div>
+      <div class="campo" style="flex:1">
+        <label>Acuerdos con operador / esquema (rutas, personal)</label>
+        <input name="acuerdos" maxlength="800" value="{{ datos.get('acuerdos') or '' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Descripción *</label>
+        <textarea name="descripcion" rows="5" required minlength="10" maxlength="4000">{{ solicitud.descripcion }}</textarea>
+      </div>
+    </div>
+    <input type="hidden" name="documento_archivo" value="{{ datos.get('documento') or '' }}">
+    <input type="hidden" name="checklist" value="1">
+    <button class="btn btn-navy" type="submit">Guardar cambios</button>
+  </form>
+</details>
+{% endif %}
+
+{% if solicitud.estado == 'Radicado' %}
+<form method="post" action="{{ url_for('asociacion_iat_eliminar', sid=solicitud.id) }}" style="margin-top:26px">
+  <button class="btn" style="background:#fff;color:#c0392b;border-color:#f3c4c4" type="submit"
+          onclick="return confirm('¿Retirar este proyecto? Solo los proyectos aún no evaluados pueden retirarse.')">Retirar proyecto</button>
+</form>
+{% endif %}
+
+<p style="margin-top:26px"><a href="{{ url_for('asociacion_iat') }}">« Volver a Mis solicitudes</a></p>
+{% endblock %}

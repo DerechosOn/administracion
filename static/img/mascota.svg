@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Dr. Juaco, abogado de Derechos On">
+  <defs>
+    <linearGradient id="piel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffdbb6"/>
+      <stop offset="1" stop-color="#eda76c"/>
+    </linearGradient>
+    <linearGradient id="traje" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a4a7f"/>
+      <stop offset="1" stop-color="#14294b"/>
+    </linearGradient>
+    <linearGradient id="corbata" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#58cc02"/>
+      <stop offset="1" stop-color="#33a505"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sombra en el suelo -->
+  <ellipse cx="60" cy="114.5" rx="24" ry="4" fill="#0a3250" opacity=".10"/>
+
+  <!-- Piernas y zapatos (articuladas en la cadera) -->
+  <g class="pierna-der">
+    <animateTransform attributeName="transform" type="rotate"
+      values="0 51 99;2.6 51 99;0 51 99;-2 51 99;0 51 99"
+      keyTimes="0;.25;.5;.75;1" dur="4s" repeatCount="indefinite"/>
+    <rect x="46.5" y="98" width="10" height="15" rx="5" fill="#1f3054"/>
+    <ellipse cx="51" cy="113.5" rx="7.6" ry="3.6" fill="#0f1829"/>
+  </g>
+  <g class="pierna-izq">
+    <animateTransform attributeName="transform" type="rotate"
+      values="0 69 99;-2 69 99;0 69 99;2.6 69 99;0 69 99"
+      keyTimes="0;.25;.5;.75;1" dur="4s" repeatCount="indefinite"/>
+    <rect x="63.5" y="98" width="10" height="15" rx="5" fill="#1f3054"/>
+    <ellipse cx="69" cy="113.5" rx="7.6" ry="3.6" fill="#0f1829"/>
+  </g>
+
+  <!-- Cuerpo redondeado (pera) -->
+  <path class="respira" d="M44 98 C40 84 46 72 58 68 C59 67.6 61 67.6 62 68 C74 72 80 84 77 98 C77 102 70 105 60 105 C50 105 44 102 44 98 Z" fill="url(#traje)"/>
+  <path d="M47 98 C45.5 86 50 76 58 71.5 L60 74 C55 80 52 90 52 98 Z" fill="#1f3a66" opacity=".45"/>
+  <path d="M44 98 C40 84 46 72 58 68 Q48 78 46 90 Q45 96 45 100 Z" fill="#ffffff" opacity=".09"/>
+
+  <!-- Brazo derecho en saludo (animado) -->
+  <g class="brazo-saludo">
+    <path d="M76 76 Q86 72 89 59" stroke="url(#traje)" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <circle cx="90" cy="57" r="5.6" fill="url(#piel)"/>
+    <circle cx="93.4" cy="54" r="1.7" fill="url(#piel)"/>
+    <circle cx="95" cy="57.4" r="1.7" fill="url(#piel)"/>
+    <circle cx="93.6" cy="60.8" r="1.7" fill="url(#piel)"/>
+    <path d="M74 82 L80 80.4" stroke="#1f3054" stroke-width="5" stroke-linecap="round" opacity=".6"/>
+  </g>
+
+  <!-- Brazo izquierdo (articulado en el hombro) -->
+  <g class="brazo-izq">
+    <animateTransform attributeName="transform" type="rotate"
+      values="-2 44 78;5 44 78;-2 44 78"
+      keyTimes="0;.5;1" dur="3.6s" repeatCount="indefinite"/>
+    <path d="M44 76 Q35 83 40 95" stroke="url(#traje)" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <circle cx="41" cy="97" r="5.2" fill="url(#piel)"/>
+  </g>
+
+  <!-- Solapas de la chaqueta -->
+  <path d="M44.9 71.9 L51.3 70.3 L54.1 78.5 L48.3 80.3 Q44.6 80.5 44.9 71.9 Z" fill="#274b85"/>
+  <path d="M75.1 71.9 L68.7 70.3 L65.9 78.5 L71.7 80.3 Q75.4 80.5 75.1 71.9 Z" fill="#274b85"/>
+  <path d="M43.6 72 Q45.4 69.5 50.8 69.9" stroke="#3f6cb3" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".5"/>
+  <path d="M76.4 72 Q74.6 69.5 69.2 69.9" stroke="#3f6cb3" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".5"/>
+
+  <!-- Camisa, corbata y corbata -->
+  <path d="M60 67.5 L51 77 L60 88 L69 77 Z" fill="#ffffff"/>
+  <path d="M51 77 L44 71.5 L52.5 73.5 Z" fill="#ffffff"/>
+  <path d="M69 77 L76 71.5 L67.5 73.5 Z" fill="#ffffff"/>
+  <path d="M60 69.5 L55 75.5 L56.5 86.5 L60 90.5 L63.5 86.5 L65 75.5 Z" fill="url(#corbata)"/>
+  <rect x="55.8" y="68" width="8.4" height="5.6" rx="2.8" fill="#2a8405"/>
+  <circle cx="55.2" cy="84" r="1.3" fill="#ffffff" opacity=".85"/>
+  <circle cx="64.8" cy="83" r="1.2" fill="#ffffff" opacity=".7"/>
+  <path d="M60 64 L57.2 66.3 L60 67.3 L62.8 66.3 Z" fill="#067a4a" opacity=".5"/>
+
+  <!-- Insignia dorada de la balanza -->
+  <g transform="translate(70 74)">
+    <rect x="4.5" y="6" width="3" height="5" rx="1.2" fill="#e8b93c"/>
+    <path d="M6 6 L2.8 3.2 M6 6 L9.2 3.2" stroke="#e8b93c" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="2.7" cy="2.8" r="1.3" fill="#d9a441"/>
+    <circle cx="9.3" cy="2.8" r="1.3" fill="#d9a441"/>
+  </g>
+
+  <!-- Cuello -->
+  <rect x="54" y="64" width="12" height="14" rx="6" fill="url(#piel)"/>
+
+  <!-- Cabeza con respiración -->
+  <g>
+    <animateTransform attributeName="transform" type="translate"
+      values="0 0;0 -1.1;0 0" keyTimes="0;.5;1" dur="3.4s"
+      repeatCount="indefinite"/>
+
+  <!-- Orejas -->
+  <circle cx="24" cy="44" r="6.5" fill="#eda76c"/>
+  <circle cx="96" cy="44" r="6.5" fill="#eda76c"/>
+
+  <!-- Cabeza -->
+  <circle cx="60" cy="44" r="33" fill="url(#piel)"/>
+
+  <!-- Pelo liso en casco con destello -->
+  <path d="M25 46 Q21 20 46 9 Q64 3 84 9 Q106 20 102 46 Q96 31 82 27 Q63 18 46 27 Q32 33 31 46 Q25 50 25 46 Z" fill="#54341d"/>
+  <path d="M42 14 Q58 5 77 12 Q83 16 78 18 Q58 11 42 18 Z" fill="#7a5230" opacity=".6"/>
+  <path d="M90 23 Q100 29 100 42 Q97 30 90 25 Z" fill="#3f2613" opacity=".8"/>
+
+  <!-- Mejillas base -->
+  <circle cx="36" cy="59" r="4.4" fill="#f5a07d" opacity=".40"/>
+  <circle cx="84" cy="59" r="4.4" fill="#f5a07d" opacity=".40"/>
+
+  <!-- ===== Expresión NEUTRA ===== -->
+  <g class="exp exp-normal">
+    <path class="ceja-i" d="M40 33 Q46 29.5 52 32.5" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="ceja-d" d="M68 32.5 Q74 29.5 80 33" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="46.5" cy="47" r="10" fill="#ffffff"/>
+    <circle cx="73.5" cy="47" r="10" fill="#ffffff"/>
+    <g class="iris">
+      <circle cx="46.5" cy="47" r="6" fill="#3a2b20"/>
+      <circle cx="48.9" cy="44.6" r="1.9" fill="#ffffff"/>
+      <circle cx="45.4" cy="49.6" r=".9" fill="#ffffff" opacity=".85"/>
+    </g>
+    <g class="iris">
+      <circle cx="73.5" cy="47" r="6" fill="#3a2b20"/>
+      <circle cx="75.9" cy="44.6" r="1.9" fill="#ffffff"/>
+      <circle cx="72.4" cy="49.6" r=".9" fill="#ffffff" opacity=".85"/>
+    </g>
+    <g class="fmu">
+      <path d="M50 69.8 Q54 66 60 67.4 Q66 66 70 69.8 Q60 71.8 50 69.8 Z" fill="#a4542e"/>
+      <path d="M50 69.8 Q60 71.8 70 69.8 Q60 75 50 69.8 Z" fill="#be6a3c"/>
+      <path d="M50 69.8 Q60 71.8 70 69.8" stroke="#6e341d" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ===== Expresión ESCUCHANDO (atento) ===== -->
+  <g class="exp exp-escucha">
+    <path class="ceja-i" d="M40 30 Q46 26.5 52 30" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="ceja-d" d="M68 30 Q74 26.5 80 30" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="46.5" cy="47" r="11" fill="#ffffff"/>
+    <circle cx="73.5" cy="47" r="11" fill="#ffffff"/>
+    <g class="iris">
+      <circle cx="46.5" cy="47" r="6.6" fill="#3a2b20"/>
+      <circle cx="49" cy="44.2" r="2.2" fill="#ffffff"/>
+    </g>
+    <g class="iris">
+      <circle cx="73.5" cy="47" r="6.6" fill="#3a2b20"/>
+      <circle cx="76" cy="44.2" r="2.2" fill="#ffffff"/>
+    </g>
+    <g class="fmu">
+      <path d="M51 67.8 Q55 65.8 60 66.8 Q65 65.8 69 67.8 Q60 69.6 51 67.8 Z" fill="#a4542e"/>
+      <path d="M52 69.6 Q60 71.8 68 69.6 Q60 71 52 69.6 Z" fill="#3a1613"/>
+      <path d="M52 70.4 Q60 72.8 68 70.4 Q60 71.6 52 70.4 Z" fill="#be6a3c" opacity=".95"/>
+      <path d="M51 68.6 Q60 70.4 69 68.6" stroke="#6e341d" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ===== Expresión FELIZ ===== -->
+  <g class="exp exp-feliz">
+    <path class="ceja-i" d="M39 29 Q46 25 53 29" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="ceja-d" d="M67 29 Q74 25 81 29" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M38 46 Q46.5 54 55 46" stroke="#3a2b20" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    <path d="M65 46 Q73.5 54 82 46" stroke="#3a2b20" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    <g class="fmu">
+      <path d="M46.5 64.4 Q60 62.8 73.5 64.4 Q60 67.2 46.5 64.4 Z" fill="#a4542e"/>
+      <path d="M48.5 65.4 Q60 77.6 71.5 65.4 Q60 70.4 48.5 65.4 Z" fill="#6b2f1c"/>
+      <path d="M54 70.8 Q60 75.2 66 70.8 Q60 73 54 70.8 Z" fill="#f07c95"/>
+      <path d="M47 76.4 Q60 78.4 73 76.4" stroke="#a4563a" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/>
+    </g>
+    <circle cx="35" cy="60" r="5.4" fill="#f5a07d" opacity=".55"/>
+    <circle cx="85" cy="60" r="5.4" fill="#f5a07d" opacity=".55"/>
+    <path d="M95 14 l1.1 2.6 2.8 .2 -2.15 1.85 .65 2.75 -2.4 -1.45 -2.4 1.45 .65 -2.75 -2.15 -1.85 2.8 -.2 Z" fill="#ecc74b"/>
+    <g transform="translate(16 22) scale(.62)">
+      <path d="M14 8 l1 2.1 2.3 .2 -1.8 1.5 .55 2.3 -2 -1.2 -2 1.2 .55 -2.3 -1.8 -1.5 2.3 -.2 Z" fill="#ecc74b"/>
+    </g>
+  </g>
+
+  <!-- ===== Expresión CONCENTRADA (escribiendo/tecleando) ===== -->
+  <g class="exp exp-trabaja">
+    <path class="ceja-i" d="M40 34 Q46 31.5 52 34" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="ceja-d" d="M68 34 Q74 31.5 80 34" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="46.5" cy="47" r="10" fill="#ffffff"/>
+    <circle cx="73.5" cy="47" r="10" fill="#ffffff"/>
+    <g class="iris">
+      <circle cx="46.5" cy="49.5" r="5.6" fill="#3a2b20"/>
+      <circle cx="48.5" cy="47.4" r="1.7" fill="#ffffff"/>
+    </g>
+    <g class="iris">
+      <circle cx="73.5" cy="49.5" r="5.6" fill="#3a2b20"/>
+      <circle cx="75.5" cy="47.4" r="1.7" fill="#ffffff"/>
+    </g>
+    <path d="M38.5 40.5 Q46.5 46 54.5 40.5" stroke="#54341d" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <path d="M65.5 40.5 Q73.5 46 81.5 40.5" stroke="#54341d" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <g class="fmu">
+      <path d="M53.5 69.6 Q56.5 67.4 60 68.2 Q63.5 67.4 66.5 69.6 Q60 71.2 53.5 69.6 Z" fill="#a4542e"/>
+      <path d="M53.5 69.6 Q60 71.2 66.5 69.6 Q60 73.4 53.5 69.6 Z" fill="#be6a3c"/>
+      <path d="M53.5 69.6 Q60 71.2 66.5 69.6" stroke="#6e341d" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ===== Expresión PENSANDO ===== -->
+  <g class="exp exp-piensa">
+    <path class="ceja-i" d="M40 32 Q46 29 52 32" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="ceja-d" d="M67 29.5 Q74 26.5 80 30" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="46.5" cy="46" r="10" fill="#ffffff"/>
+    <circle cx="73.5" cy="45" r="10" fill="#ffffff"/>
+    <g class="iris">
+      <circle cx="47.6" cy="45.2" r="5.8" fill="#3a2b20"/>
+      <circle cx="49.5" cy="43" r="1.8" fill="#ffffff"/>
+    </g>
+    <g class="iris">
+      <circle cx="74.8" cy="44.5" r="5.8" fill="#3a2b20"/>
+      <circle cx="76.7" cy="42.3" r="1.8" fill="#ffffff"/>
+    </g>
+    <g class="fmu">
+      <path d="M54 68.6 Q57 66.6 60 67.6 Q63 66.6 66 68.6 Q60 70.2 54 68.6 Z" fill="#a4542e"/>
+      <path d="M54 68.6 Q60 70.2 66 68.6 Q60 72.6 54 68.6 Z" fill="#be6a3c"/>
+      <path d="M54 68.6 Q60 70.2 66 68.6" stroke="#6e341d" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ===== Expresión APOYO (preocupado/empático) ===== -->
+  <g class="exp exp-apoyo">
+    <path class="ceja-i" d="M38 33.5 Q44 30.5 50 34" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path class="ceja-d" d="M70 34 Q76 30.5 82 33.5" stroke="#54341d" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="46.5" cy="47" r="10" fill="#ffffff"/>
+    <circle cx="73.5" cy="47" r="10" fill="#ffffff"/>
+    <g class="iris">
+      <circle cx="46.5" cy="47" r="6.2" fill="#3a2b20"/>
+      <circle cx="48.9" cy="44.6" r="1.9" fill="#ffffff"/>
+    </g>
+    <g class="iris">
+      <circle cx="73.5" cy="47" r="6.2" fill="#3a2b20"/>
+      <circle cx="75.9" cy="44.6" r="1.9" fill="#ffffff"/>
+    </g>
+    <g class="fmu">
+      <path d="M48.5 67 Q54 64.8 60 65.8 Q66 64.8 71.5 67 Q60 69.4 48.5 67 Z" fill="#a4542e"/>
+      <path d="M50 66.6 Q60 73.8 70 66.6 Q60 70.4 50 66.6 Z" fill="#6b2f1c"/>
+      <path d="M53.5 69.4 Q60 72.6 66.5 69.4 Q60 71 53.5 69.4 Z" fill="#f07c95"/>
+      <path d="M49.5 73.2 Q60 75 70.5 73.2" stroke="#a4563a" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".8"/>
+    </g>
+  </g>
+
+  <!-- ===== BOCA PARLANTE (labios sincronizados con el texto) ===== -->
+  <g class="boca-habla" transform="translate(60 66)">
+    <g class="boca-bloc">
+      <path d="M-4.7 1.4 L4.7 1.4 Q4.7 8.8 0 8.8 Q-4.7 8.8 -4.7 1.4 Z" fill="#2b1210"/>
+      <path d="M-3.7 4.2 Q0 8.7 3.7 4.2 L2.6 3.1 Q1.3 4.3 0 3.3 Q-1.3 4.3 -2.6 3.1 Z" fill="#ef7f9a"/>
+      <path d="M-4.9 8.4 Q0 10.3 4.9 8.4" stroke="#a4563a" stroke-width="2" fill="none" stroke-linecap="round" opacity=".85"/>
+    </g>
+    <path d="M-5.8 0 Q0 -2.7 5.8 0" stroke="#7a3d22" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Párpados animados (parpadeo) -->
+  <g class="parp">
+    <circle cx="46.5" cy="47" r="10.8" fill="url(#piel)">
+      <animate attributeName="opacity"
+        values="0;0;0;0;0;1;0" keyTimes="0;.82;.9;.94;.97;.985;1"
+        dur="3.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="73.5" cy="47" r="10.8" fill="url(#piel)">
+      <animate attributeName="opacity"
+        values="0;0;0;0;0;1;0" keyTimes="0;.82;.9;.94;.97;.985;1"
+        dur="3.8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Lentes redondas -->
+  <g stroke="#143b66" stroke-width="2.4" fill="none">
+    <circle cx="46.5" cy="47" r="11.4"/>
+    <circle cx="73.5" cy="47" r="11.4"/>
+    <path d="M57.9 47 Q60 44.5 62.1 47"/>
+    <path d="M35.1 47 L24 45.4"/>
+    <path d="M84.9 47 L96 45.4"/>
+  </g>
+
+  <!-- Nariz -->
+  <path d="M57.5 61 Q60 63.2 62.5 61" stroke="#c97b4d" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

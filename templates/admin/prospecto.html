@@ -1,0 +1,119 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}{{ 'Nuevo prospecto' if not p else p.nombre }} — Administración Derechos On{% endblock %}
+{% block contenido %}
+<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+  <div>
+    <h1>{% if p %}{{ p.nombre }}{% else %}Nuevo prospecto{% endif %}</h1>
+    {% if p %}<p class="sub">Clasificación automática: {{ 'Persona jurídica' if p.tipo == 'juridica' else 'Persona natural' }} · {{ p.naturaleza }} · prioridad {{ p.score }}/100. Fuente: {{ p.fuente }}.</p>{% endif %}
+  </div>
+  {% if p %}<a class="btn btn-outline" href="{{ url_for('admin_agente') }}">← Volver a prospectos</a>{% endif %}
+</div>
+
+<form method="post" class="panel-form">
+  <div class="reporte-grid" style="grid-template-columns:1fr 240px">
+    <div>
+      <div class="campo">
+        <label>Razón social / Nombre</label>
+        <input name="nombre" value="{{ p.nombre if p else '' }}" required>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Tipo</label>
+          <select name="tipo">
+            <option value="" {{ 'selected' if not p }}>Auto (detectar)</option>
+            <option value="juridica" {{ 'selected' if p and p.tipo == 'juridica' }}>Persona jurídica</option>
+            <option value="natural" {{ 'selected' if p and p.tipo == 'natural' }}>Persona natural</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Documento / NIT</label>
+          <input name="documento" value="{{ p.documento if p else '' }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Sector / actividad económica</label>
+          <input name="sector" value="{{ p.sector if p else '' }}" placeholder="Ej.: Construcción">
+        </div>
+        <div class="campo">
+          <label>Naturaleza detectada</label>
+          <input name="naturaleza" value="{{ p.naturaleza if p else '' }}" placeholder="Se completa sola">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Correo</label>
+          <input name="correo" value="{{ p.correo if p else '' }}">
+        </div>
+        <div class="campo">
+          <label>Teléfono</label>
+          <input name="telefono" value="{{ p.telefono if p else '' }}">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Sitio web</label>
+        <input name="sitio_web" value="{{ p.sitio_web if p else '' }}" placeholder="https://…">
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Representante legal</label>
+          <input name="representante_legal" value="{{ p.representante_legal if p else '' }}" placeholder="Nombre del representante legal">
+        </div>
+        <div class="campo">
+          <label>Domicilio principal</label>
+          <input name="domicilio" value="{{ p.domicilio if p else '' }}" placeholder="Ej.: Bogotá D.C.">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Dirección</label>
+        <input name="direccion" value="{{ p.direccion if p else '' }}" placeholder="Ej.: Calle 100 # 11-67, oficina 502">
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Fuente</label>
+          <select name="fuente">
+            {% for f in fuentes %}<option value="{{ f }}" {{ 'selected' if p and p.fuente == f }}>{{ f }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Consulta de origen</label>
+          <input name="consulta_origen" value="{{ p.consulta_origen if p else '' }}" placeholder="Ej.: constructoras Bogotá">
+        </div>
+        {% if p %}
+        <div class="campo">
+          <label>Estado</label>
+          <select name="estado">
+            {% for e in estados %}<option value="{{ e }}" {{ 'selected' if p.estado == e }}>{{ e }}</option>{% endfor %}
+          </select>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="panel" style="margin:0">
+      <h3>Acciones automáticas</h3>
+      {% if p %}
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-outline" name="accion" value="reclasificar" type="submit">Reclasificar naturaleza</button>
+        <button class="btn btn-navy" name="accion" value="proponer" type="submit">Generar propuesta de servicios</button>
+        {% if p.propuesta %}
+        <a class="btn btn-outline" href="{{ url_for('admin_agente_propuesta', pid=p.id) }}" target="_blank">Vista previa de la propuesta</a>
+        {% endif %}
+        <button class="btn btn-outline" name="accion" value="enviar" type="submit" {% if not p.correo %}title="La empresa no tiene correo registrado"{% endif %}>Enviar propuesta por correo</button>
+      </div>
+      {% else %}
+      <label class="chk"><input type="checkbox" name="generar_propuesta" value="1" checked> Generar propuesta al crear</label>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="campo" style="margin-top:18px">
+    <label>Propuesta de servicios sugerida (HTML con el logo de la página; se usa también para el envío por correo)</label>
+    <textarea name="propuesta" rows="16" style="font-family:monospace;white-space:pre-line;font-size:.82rem">{{ p.propuesta if p else '' }}</textarea>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:12px">
+    <button class="btn btn-navy" type="submit">{{ 'Guardar cambios' if p else 'Crear prospecto' }}</button>
+    <a class="btn btn-outline" href="{{ url_for('admin_agente') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

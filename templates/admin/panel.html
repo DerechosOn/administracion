@@ -1,0 +1,391 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Panel de análisis — Administración Derechos On{% endblock %}
+{% block contenido %}
+{% set total_v = total_cartera if total_cartera else 1 %}
+{% set g = ((donut[0].valor / total_v) * 360) | round(1) %}
+{% set a = (g + ((donut[1].valor / total_v) * 360)) | round(1) %}
+{% set ptmax = por_tipo[0].n if por_tipo else 1 %}
+{% set etiq = {'linkedin': 'LinkedIn', 'x': 'X', 'instagram': 'Instagram'} %}
+{% macro num(v) %}{{ "{:,.0f}".format(v|float).replace(",", ".") }}{% endmacro %}
+{% macro dinero(v) %}${{ num(v) }}{% endmacro %}
+
+<div class="bi-dash">
+
+  <header class="bi-head">
+    <div>
+      <h1>Panel de análisis</h1>
+      <p>Visitas e interacciones · pagos recibidos · estado de cartera · alcance en redes</p>
+    </div>
+    <div class="bi-head-acciones">
+      <span class="bi-chip ok" style="font-size:.72rem"><i class="bi-dot-verde"></i>Vista en vivo</span>
+      <a class="bi-btn principal" href="{{ url_for('admin_panel_informe', **request.args.to_dict()) }}" title="Informe profesional en PDF con logo y fecha">Descargar PDF</a>
+    </div>
+  </header>
+
+  <form class="bi-rango" method="get" action="{{ url_for('admin_panel') }}">
+    <div class="bi-rango-fila">
+      <span class="bi-rango-tit">Período</span>
+      <div class="bi-rango-presets">
+        {% for k, t in rango_presets %}
+        <a class="bi-chip-r{{ ' on' if k == rango and not periodo.personalizado else '' }}"
+           href="{{ url_for('admin_panel', r=k) }}">{{ t }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="bi-rango-fila">
+      <span class="bi-rango-tit">Personalizado</span>
+      <label class="bi-rango-lab">Desde
+        <input type="date" name="desde" value="{{ periodo.desde.isoformat() }}">
+      </label>
+      <label class="bi-rango-lab">Hasta
+        <input type="date" name="hasta" value="{{ periodo.hasta.isoformat() }}">
+      </label>
+      <label class="bi-rango-lab">Agrupar
+        <select name="g">
+          <option value="auto"{{ ' selected' if gran_sel == 'auto' else '' }}>Automático</option>
+          <option value="dia"{{ ' selected' if gran_sel == 'dia' else '' }}>Por día</option>
+          <option value="mes"{{ ' selected' if gran_sel == 'mes' else '' }}>Por mes</option>
+          <option value="ano"{{ ' selected' if gran_sel == 'ano' else '' }}>Por año</option>
+        </select>
+      </label>
+      <button class="bi-btn" type="submit">Aplicar</button>
+      <a class="bi-btn" href="{{ url_for('admin_panel') }}">Restablecer</a>
+    </div>
+    <p class="bi-rango-info">
+      Mostrando <b>{{ periodo_texto }}</b> · {{ num(dias_periodo) }} días · agrupado por {{ gran_nombre }}
+      <span class="bi-rango-nota">Cartera y redes: valores actuales, no del período</span>
+    </p>
+  </form>
+
+  <div class="bi-kpis">
+    <div class="bi-kpi azul">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+      <div><b>{{ num(visitas_periodo) }}</b><span>Visitas · {{ etiqueta_periodo }}</span></div>
+    </div>
+    <div class="bi-kpi teal">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <div><b>{{ num(visitas_hoy) }}</b><span>Visitas hoy</span></div>
+    </div>
+    <div class="bi-kpi amber">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></span>
+      <div><b>{{ num(unicas_periodo) }}</b><span>Visitantes únicos · {{ etiqueta_periodo }}</span></div>
+    </div>
+    <div class="bi-kpi purp">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9-4-18-3 9H2"/></svg></span>
+      <div><b>{{ num(inter_periodo) }}</b><span>Interacciones · {{ etiqueta_periodo }}</span></div>
+    </div>
+    <div class="bi-kpi green">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
+      <div><b>{{ num(vuelta_periodo) }}</b><span>Reincidencia · {{ etiqueta_periodo }}</span></div>
+    </div>
+  </div>
+
+  <section class="bi-sec">
+    <div class="bi-sec-head">
+      <span class="bi-dot azul"></span>
+      <div>
+        <h2>Visitantes e interacciones</h2>
+        <p>Registro automático de cada página visitada y de las acciones de los visitantes.</p>
+      </div>
+    </div>
+    <div class="bi-cols">
+      <div>
+        <div class="bi-chart-tit">Visitas · {{ periodo_texto }} <span class="bi-chart-sub">por {{ gran_nombre }}</span></div>
+        <div class="bi-bars">
+          {% for v in serie_visitas %}
+          <div class="bi-bar" title="{{ v.sub }} · {{ v.n }} visitas">
+            <span class="bi-bar-v">{{ v.n }}</span>
+            <div class="bi-bar-f{{ ' hoy' if v.es_hoy }}" style="height:{{ (v.n / max_serie * 100) | round(1) }}%"></div>
+            <span class="bi-bar-d">{{ v.etq }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div>
+        <div class="bi-chart-tit">Interacciones por tipo <span class="bi-chart-sub">{{ etiqueta_periodo }}</span></div>
+        {% for t in por_tipo %}
+        <div class="bi-hbar">
+          <span class="bi-hlabel">{{ t.tipo }}</span>
+          <span class="bi-hb purp"><i style="width:{{ (t.n / ptmax * 100) | round(1) }}%"></i></span>
+          <span class="bi-hv">{{ num(t.n) }}</span>
+        </div>
+        {% else %}
+        <p class="bi-vacio">Aún no hay interacciones registradas. Las acciones del chat, los formularios y las citas se contabilizan aquí.</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="bi-chart-tit" style="margin-top:20px">Páginas más visitadas <span class="bi-chart-sub">{{ etiqueta_periodo }}</span></div>
+    <div class="bi-scroll">
+      <table class="bi-tabla">
+        <thead><tr><th>Página</th><th class="num">Visitas</th></tr></thead>
+        <tbody>
+          {% for p in top_paginas %}
+          <tr><td>{{ p.pagina }}</td><td class="num">{{ num(p.n) }}</td></tr>
+          {% else %}
+          <tr><td colspan="2" class="bi-vacio">Sin visitas registradas.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="bi-sec">
+    <div class="bi-sec-head">
+      <span class="bi-dot green"></span>
+      <div>
+        <h2>Pagos recibidos</h2>
+        <p>Comprobantes que los clientes cargan desde su portal y su validación administrativa.</p>
+      </div>
+    </div>
+    <div class="bi-kpis">
+      <div class="bi-kpi green">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>
+        <div><b>{{ dinero(total_pagado) }}</b><span>Cobrado en cartera</span></div>
+      </div>
+      <div class="bi-kpi azul">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+        <div><b>{{ num(comp_validados.n) }} · {{ dinero(comp_validados.tot) }}</b><span>Validados</span></div>
+      </div>
+      <div class="bi-kpi amber">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        <div><b>{{ num(comp_pendientes.n) }} · {{ dinero(comp_pendientes.tot) }}</b><span>Por validar</span></div>
+      </div>
+      <div class="bi-kpi red">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
+        <div><b>{{ num(comp_rechazados.n) }} · {{ dinero(comp_rechazados.tot) }}</b><span>Rechazados</span></div>
+      </div>
+    </div>
+    <div class="bi-cols">
+      <div>
+        <div class="bi-chart-tit">Cobros validados <span class="bi-chart-sub">por {{ gran_nombre }} · {{ periodo_texto }}</span></div>
+        {% for m in serie_cobro %}
+        <div class="bi-hbar" title="{{ m.sub }} · {{ dinero(m.tot) }}">
+          <span class="bi-hlabel">{{ m.etq }}</span>
+          <span class="bi-hb green"><i style="width:{{ (m.tot / max_cobro * 100) | round(1) if max_cobro else 0 }}%"></i></span>
+          <span class="bi-hv">{{ dinero(m.tot) }}</span>
+        </div>
+        {% else %}
+        <p class="bi-vacio">Aún no hay comprobantes validados en el período.</p>
+        {% endfor %}
+      </div>
+      <div>
+        <div class="bi-chart-tit">Últimos comprobantes validados</div>
+        <div class="bi-scroll">
+          <table class="bi-tabla">
+            <thead><tr><th>Cliente</th><th>Servicio</th><th class="num">Importe</th><th>Fecha</th></tr></thead>
+            <tbody>
+              {% for cp in ultimos_comprobantes %}
+              <tr>
+                <td>{{ cp.cliente }}</td>
+                <td>{{ cp.servicio_cartera or '—' }}</td>
+                <td class="num">{{ dinero(cp.importe) }}</td>
+                <td>{{ cp.validado_el[:10] }}</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" class="bi-vacio">Sin comprobantes validados.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bi-sec">
+    <div class="bi-sec-head">
+      <span class="bi-dot amber"></span>
+      <div>
+        <h2>Estado de la cartera</h2>
+        <p>Situación general de cobranza y detalle por servicio.</p>
+      </div>
+    </div>
+    <div class="bi-kpis">
+      <div class="bi-kpi azul">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+        <div><b>{{ dinero(total_cartera) }}</b><span>Valor total</span></div>
+      </div>
+      <div class="bi-kpi green">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+        <div><b>{{ dinero(total_pagado) }}</b><span>Recibido</span></div>
+      </div>
+      <div class="bi-kpi red">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+        <div><b>{{ dinero(total_saldo) }}</b><span>Saldo pendiente</span></div>
+      </div>
+      <div class="bi-kpi teal">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+        <div><b>{{ tasa_cobro | round | int }}%</b><span>Tasa de cobro</span></div>
+      </div>
+      <div class="bi-kpi red">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <div><b>{{ num(en_mora) }} · {{ dinero(en_mora_saldo) }}</b><span>En mora</span></div>
+      </div>
+      <div class="bi-kpi amber">
+        <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        <div><b>{{ num(por_vencer) }} · {{ dinero(por_vencer_saldo) }}</b><span>Por vencer (30 días)</span></div>
+      </div>
+    </div>
+    <div class="bi-cols bi-cols-2">
+      <div class="bi-donut-blk">
+        <div class="bi-donut" {% if total_cartera %}style="background:conic-gradient(#1AAB40 0deg, #1AAB40 {{ g }}deg, #F2B705 {{ g }}deg, #F2B705 {{ a }}deg, #D64550 {{ a }}deg, #D64550 360deg)"{% else %}style="background:#252B33"{% endif %}>
+          <b>{{ tasa_cobro | round | int }}%</b>
+          <span>tasa de cobro</span>
+        </div>
+        <div class="bi-donut-ley">
+          {% for f in donut %}
+          <div class="bi-ley">
+            <span class="bi-ley-punto {{ f.clase }}"></span>
+            <span class="bi-ley-info">
+              <b>{{ f.label }}</b>
+              <span>{{ f.detalle }}</span>
+            </span>
+            <span class="bi-ley-val">
+              <b>{{ (f.valor / total_v * 100) | round(1) }}%</b>
+              <span>{{ dinero(f.valor) }}</span>
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div>
+        <div class="bi-chart-tit">Detalle de la cartera</div>
+        <div class="bi-scroll" style="max-height:340px;overflow-y:auto">
+          <table class="bi-tabla">
+            <thead><tr><th>Cliente</th><th>Servicio</th><th class="num">Valor</th><th class="num">Saldo</th><th>Vencimiento</th><th>Estado</th></tr></thead>
+            <tbody>
+              {% for r in registros[:25] %}
+              <tr>
+                <td>{{ r.cliente }}</td>
+                <td>{{ r.servicio }}</td>
+                <td class="num">{{ dinero(r.valor_total) }}</td>
+                <td class="num">{{ dinero(r.saldo) }}</td>
+                <td>{{ r.vencimiento or '—' }}</td>
+                <td>
+                  {% if r.estado == 'Vencida' %}<span class="bi-chip err">Vencida</span>
+                  {% elif r.estado == 'Por pagar' %}<span class="bi-chip amber">Por pagar</span>
+                  {% else %}<span class="bi-chip ok">{{ r.estado }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="6" class="bi-vacio">La cartera está vacía.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if registros|length > 25 %}<p class="bi-vacio">Mostrando los primeros 25 servicios de {{ registros|length }}.</p>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="bi-sec">
+    <div class="bi-sec-head">
+      <span class="bi-dot purp"></span>
+      <div>
+        <h2>Redes sociales · alcance de publicaciones</h2>
+        <p>Métricas de alcance por red, historial de publicaciones y actualización automática de datos.</p>
+      </div>
+    </div>    <div class="bi-sync">
+      {% if redes_conectadas %}
+        <span class="bi-chip ok">Registro automático activo</span>
+        <span class="bi-sync-txt">
+          Las métricas se actualizan solas {{ redes_auto_texto }} en {{ redes_conectadas|join(', ') }}.
+          {%- if sync_ultimo %} Última lectura: {{ sync_ultimo.ejecutado_el }}{% if sync_horas is not none %} (hace {{ '%.1f'|format(sync_horas) }} h){% endif %}.{% else %} Aún sin lecturas registradas.{% endif %}
+        </span>
+      {% else %}
+        <span class="bi-chip off">Registro automático en espera</span>
+        <span class="bi-sync-txt">No hay ninguna red conectada todavía. En cuanto actives y
+          configures LinkedIn, X o Instagram{% if redes_auto_activo %}, las métricas se empezarán a
+          registrar solas {{ redes_auto_texto }}{% else %}, el registro automático está desactivado
+          en el servidor{% endif %}.</span>
+      {% endif %}
+    </div>
+    <div class="bi-red-grid">
+      {% for p in plataformas %}
+      <div class="bi-red">
+        <div class="bi-red-head">
+          <span class="bi-red-ico {{ 'li' if p.clave == 'linkedin' else 'ig' if p.clave == 'instagram' else 'x' }}">{{ p.nombre[0] }}</span>
+          <b>{{ p.nombre }}</b>
+          {% if p.activa %}<span class="bi-chip ok">Activa</span>{% else %}<span class="bi-chip off">Inactiva</span>{% endif %}
+        </div>
+        {% if p.metrica %}
+        <div class="bi-red-total">{{ num(p.metrica.seguidores) }}</div>
+        <div class="bi-red-total-lbl">seguidores · lectura {{ p.metrica.fecha }}</div>
+        <div class="bi-red-chips">
+          <span class="bi-chip">{{ num(p.metrica.alcance) }} alcance</span>
+          <span class="bi-chip">{{ num(p.metrica.impresiones) }} impresiones</span>
+          <span class="bi-chip">{{ num(p.metrica.interacciones) }} interacciones</span>
+        </div>
+        {% else %}
+        <p class="bi-vacio">
+          {% if p.clave == 'x' %}
+            X no expone métricas por API con permisos de publicación: aquí solo se cuenta la publicación de artículos.
+          {% else %}
+            Sin métricas registradas. Se llenarán solas al conectar la red.
+          {% endif %}
+        </p>
+        {% endif %}
+        <div class="bi-red-pub">{{ num(p.publicaciones) }} publicaciones con éxito</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div>
+      <div class="bi-chart-tit">Historial de métricas (automático)</div>
+      <div class="bi-scroll" style="max-height:280px;overflow-y:auto">
+        <table class="bi-tabla">
+          <thead><tr><th>Fecha</th><th>Red</th><th class="num">Seguidores</th><th class="num">Alcance</th><th class="num">Impres.</th><th class="num">Interac.</th></tr></thead>
+          <tbody>
+            {% for h in historial_metricas %}
+            <tr>
+              <td>{{ h.fecha }}</td>
+              <td>{{ etiq.get(h.plataforma, h.plataforma) }}</td>
+              <td class="num">{{ num(h.seguidores) }}</td>
+              <td class="num">{{ num(h.alcance) }}</td>
+              <td class="num">{{ num(h.impresiones) }}</td>
+              <td class="num">{{ num(h.interacciones) }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="bi-vacio">Sin lecturas automáticas todavía.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <form method="post" action="{{ url_for('admin_panel_metricas') }}" style="margin-top:12px">
+        <input type="hidden" name="vuelve" value="{{ request.query_string.decode() }}">
+        <input type="hidden" name="accion" value="auto">
+        <button class="bi-btn" type="submit" {% if not redes_conectadas %}disabled title="Conecta una red primero"{% endif %}>Actualizar métricas ahora</button>
+      </form>
+      <p class="bi-vacio" style="margin-top:10px">
+        {% if redes_conectadas %}
+          El registro automático ya se encarga solo; este botón solo fuerza una lectura inmediata.
+        {% else %}
+          Conecta una red en <b>Redes</b> para activar el registro automático.
+        {% endif %}
+      </p>
+    </div>
+    <div class="bi-chart-tit" style="margin-top:20px">Últimas publicaciones</div>
+    <div class="bi-scroll">
+      <table class="bi-tabla">
+        <thead><tr><th>Red</th><th>Artículo</th><th>Fecha</th><th>Resultado</th></tr></thead>
+        <tbody>
+          {% for pu in publicaciones %}
+          <tr>
+            <td>{{ etiq.get(pu.plataforma, pu.plataforma) }}</td>
+            <td>{{ pu.titulo or ('Artículo #' ~ pu.articulo_id) }}</td>
+            <td>{{ pu.creado_el[:10] }}</td>
+            <td>
+              {% if pu.estado == 'ok' %}<span class="bi-chip ok">Publicada</span>
+              {% else %}<span class="bi-chip err" title="{{ pu.detalle }}">Error</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="bi-vacio">Aún no se han publicado artículos en las redes.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

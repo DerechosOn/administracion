@@ -1,0 +1,166 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Procesos — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Gestión de procesos</h1>
+<p class="sub">Crea, actualiza y consulta el estado de los casos jurídicos de tus clientes.</p>
+
+<div class="panel-form">
+  <h3>Nuevo proceso</h3>
+  <form method="post" action="{{ url_for('admin_procesos_crear') }}">
+<div class="form-row">
+        <div class="campo">
+          <label>Cliente *</label>
+          <select name="cliente_id" required>
+            <option value="">— Seleccione cliente —</option>
+            {% for c in clientes %}
+            <option value="{{ c.id }}">{{ c.nombre }} ({{ c.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Abogado asignado</label>
+          <select name="abogado_id">
+            <option value="">— Sin asignar —</option>
+            {% for a in abogados %}
+            <option value="{{ a.id }}">{{ a.nombre }} · {{ a.especialidad }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Título del proceso *</label>
+          <input name="titulo" required placeholder="Ej. Divorcio por mutuo acuerdo">
+        </div>
+        <div class="campo">
+          <label>Área / Tipo</label>
+          <input name="tipo" placeholder="Ej. Familia, Laboral, Civil">
+        </div>
+        <div class="campo">
+          <label>Despacho (juzgado / oficina)</label>
+          <input name="despacho" placeholder="Ej. Juzgado 12 de Familia de Bogotá">
+        </div>
+        <div class="campo">
+          <label>Estado</label>
+          <select name="estado">
+            {% for e in estados %}<option value="{{ e }}">{{ e }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Fecha de apertura</label>
+          <input type="date" name="fecha_apertura">
+        </div>
+      </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Descripción</label>
+        <textarea name="descripcion" placeholder="Descripción breve del caso"></textarea>
+      </div>
+      <div class="campo">
+        <label>Notas para el cliente</label>
+        <textarea name="notas" placeholder="Ej. Audiencia programada para la primera semana de octubre."></textarea>
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Guardar proceso</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Cliente</th><th>Asunto / Título</th><th>Despacho</th><th>Área</th><th>Abogado</th><th>Estado</th><th>Apertura</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for p in procesos %}
+      <tr>
+        <td><b>{{ p.cliente }}</b><br><small style="color:var(--muted)">{{ p.correo_cliente }}</small></td>
+        <td>{{ p.titulo }}<br><small style="color:var(--muted)">UPD: {{ p.fecha_actualizacion[:10] }}</small></td>
+        <td>{{ p.despacho or '—' }}</td>
+        <td>{{ p.tipo }}</td>
+        <td>{{ p.abogado_nombre or '—' }}</td>
+        <td><span class="badge {{ p.estado|estado_clase }}">{{ p.estado }}</span></td>
+        <td>{{ p.fecha_apertura }}</td>
+        <td>
+          <div class="acciones">
+            <button class="btn btn-sm btn-outline" data-abre-modal="modal-editar-{{ p.id }}">Editar</button>
+            <form method="post" action="{{ url_for('admin_procesos_eliminar', pid=p.id) }}" data-confirmar="¿Eliminar este proceso?">
+              <button class="btn btn-sm btn-danger" type="submit">Borrar</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="color:var(--muted)">No hay procesos registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% for p in procesos %}
+<div class="modal" id="modal-editar-{{ p.id }}">
+  <div class="modal-box">
+    <button class="cerrar-modal" type="button">×</button>
+    <h3>Editar proceso · {{ p.titulo }}</h3>
+    <form method="post" action="{{ url_for('admin_procesos_editar', pid=p.id) }}">
+      <div class="form-row">
+        <div class="campo">
+          <label>Cliente *</label>
+          <select name="cliente_id" required>
+            {% for c in clientes %}
+            <option value="{{ c.id }}" {{ 'selected' if c.id == p.cliente_id }}>{{ c.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Abogado asignado</label>
+          <select name="abogado_id">
+            <option value="">— Sin asignar —</option>
+            {% for a in abogados %}
+            <option value="{{ a.id }}" {{ 'selected' if a.id == p.abogado_id }}>{{ a.nombre }} · {{ a.especialidad }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Título *</label>
+          <input name="titulo" value="{{ p.titulo }}" required>
+        </div>
+        <div class="campo">
+          <label>Área / Tipo</label>
+          <input name="tipo" value="{{ p.tipo }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Estado</label>
+          <select name="estado">
+            {% for e in estados %}
+            <option value="{{ e }}" {{ 'selected' if e == p.estado }}>{{ e }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Fecha de apertura</label>
+          <input type="date" name="fecha_apertura" value="{{ p.fecha_apertura }}">
+        </div>
+        <div class="campo">
+          <label>Despacho (juzgado / oficina)</label>
+          <input name="despacho" value="{{ p.despacho }}" placeholder="Ej. Juzgado 12 de Familia de Bogotá">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Descripción</label>
+        <textarea name="descripcion">{{ p.descripcion }}</textarea>
+      </div>
+      <div class="campo">
+        <label>Notas para el cliente</label>
+        <textarea name="notas">{{ p.notas }}</textarea>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" class="btn btn-outline" data-cierra-modal="1">Cancelar</button>
+        <button class="btn btn-navy" type="submit">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

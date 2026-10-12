@@ -1,0 +1,155 @@
+{% set p = rol_crm %}
+<h1>CRM jurídico</h1>
+<p class="sub">Organiza tus tareas, controla vencimientos y programa recordatorios. Todo lo que necesitas para no perder un solo plazo.</p>
+
+<div class="stat-cards">
+  <div class="stat-card"><b>{{ resumen.pendiente }}</b><span>Pendientes</span></div>
+  <div class="stat-card"><b>{{ resumen.en_proceso }}</b><span>En proceso</span></div>
+  <div class="stat-card"><b>{{ resumen.vencidas }}</b><span>Vencidas</span></div>
+  <div class="stat-card"><b>{{ resumen.completada }}</b><span>Completadas</span></div>
+  <div class="stat-card"><b>{{ resumen.total }}</b><span>Total</span></div>
+</div>
+
+<div class="panel-form">
+  <h3>Nueva tarea</h3>
+  <form method="post" action="{{ url_for(p ~ '_crm_tarea_crear') }}">
+    <div class="form-row">
+      <div class="campo" style="flex:2">
+        <label>Título *</label>
+        <input name="titulo" required maxlength="140" placeholder="Ej. Radicar demanda laboral">
+      </div>
+      <div class="campo" style="flex:0 0 150px">
+        <label>Prioridad</label>
+        <select name="prioridad">
+          {% for pr in prioridades %}
+          <option value="{{ pr }}" {{ 'selected' if pr == 'media' }}>{{ prioridad_txt[pr] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo" style="flex:0 0 180px">
+        <label>Vence</label>
+        <input type="date" name="fecha_vencimiento">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Descripción</label>
+        <textarea name="descripcion" rows="2" placeholder="Detalle de la tarea, actuaciones a seguir, etc."></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Asignar a {{ 'cliente' if otro_tipo == 'cliente' else 'abogado' }} (opcional)</label>
+        <select name="asignado_id">
+          <option value="">— Sin asignar —</option>
+          {% for persona in otras_personas %}
+          <option value="{{ persona.id }}">{{ persona.nombre }}</option>
+          {% endfor %}
+        </select>
+        <input type="hidden" name="asignado_tipo" value="{{ otro_tipo }}">
+      </div>
+      <div class="campo" style="flex:1">
+        <label>Fecha de recordatorio (opcional)</label>
+        <input type="datetime-local" name="recordatorio_fecha">
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Crear tarea</button>
+  </form>
+</div>
+
+<div class="panel-form">
+  <h3>Mis tareas</h3>
+  {% if tareas %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Tarea</th><th>Prioridad</th><th>Vence</th><th>Estado</th><th>Asignada a</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for t in tareas %}
+        {% set venc = (t.fecha_vencimiento or '')[:10] %}
+        <tr>
+          <td>
+            <a href="{{ url_for(p ~ '_crm_tarea', tid=t.id) }}" style="color:var(--blue-700)"><b>{{ t.titulo }}</b></a>
+            {% if t.descripcion %}<div style="color:var(--muted);font-size:.82rem">{{ t.descripcion[:90] }}{{ '…' if t.descripcion|length > 90 }}</div>{% endif %}
+          </td>
+          <td><span class="badge {{ 'vencida' if t.prioridad in ['urgente','alta'] else ('tramite' if t.prioridad == 'media' else 'estudio') }}">{{ prioridad_txt[t.prioridad] }}</span></td>
+          <td>
+            {{ venc or '—' }}
+            {% if venc and venc < hoy and t.estado in ['pendiente','en_proceso'] %}<span class="tag" style="background:#ffe9e6;color:#c0392b;margin-left:6px">Vencida</span>{% endif %}
+          </td>
+          <td><span class="badge {{ {'completada':'favor','cancelada':'vencida','en_proceso':'tramite'}.get(t.estado,'estudio') }}">{{ estado_txt[t.estado] }}</span></td>
+          <td>
+            {% if t.asignado_a_tipo %}{{ t.asignado_a_tipo }}{{ ' #' ~ t.asignado_a_id if t.asignado_a_id }}{% else %}—{% endif %}
+          </td>
+          <td>
+            {% if t.estado not in ['completada','cancelada'] %}
+            <form method="post" action="{{ url_for(p ~ '_crm_tarea_estado', tid=t.id) }}" style="display:inline">
+              <input type="hidden" name="estado" value="completada">
+              <input type="hidden" name="volver" value="{{ url_for(p ~ '_crm') }}">
+              <button class="btn btn-outline btn-sm" type="submit">Completar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--muted)">Aún no tienes tareas registradas. Crea la primera con el formulario de arriba.</p>
+  {% endif %}
+</div>
+
+<div class="panel-form">
+  <h3>Recordatorios</h3>
+  <form method="post" action="{{ url_for(p ~ '_crm_recordatorio_crear') }}" style="margin-bottom:18px">
+    <div class="form-row">
+      <div class="campo" style="flex:2">
+        <label>Título *</label>
+        <input name="titulo" required maxlength="140" placeholder="Ej. Audiencia preliminar">
+      </div>
+      <div class="campo" style="flex:0 0 210px">
+        <label>Fecha y hora *</label>
+        <input type="datetime-local" name="fecha_programada" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Nota (opcional)</label>
+        <input name="mensaje" placeholder="Detalle del recordatorio">
+      </div>
+    </div>
+    <button class="btn btn-outline" type="submit">Programar recordatorio</button>
+  </form>
+
+  {% if recordatorios %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Recordatorio</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        {% for r in recordatorios %}
+        <tr>
+          <td><b>{{ r.titulo }}</b>{% if r.mensaje %}<div style="color:var(--muted);font-size:.82rem">{{ r.mensaje }}</div>{% endif %}</td>
+          <td>{{ r.fecha_programada }}</td>
+          <td>
+            {% if r.enviado %}<span class="badge favor">Atendido</span>
+            {% elif r.fecha_programada[:10] <= hoy %}<span class="badge vencida">Hoy / vencido</span>
+            {% else %}<span class="badge tramite">Programado</span>{% endif %}
+          </td>
+          <td>
+            {% if not r.enviado %}
+            <form method="post" action="{{ url_for(p ~ '_crm_recordatorio_hecho', rid=r.id) }}" style="display:inline">
+              <button class="btn btn-outline btn-sm" type="submit">Marcar atendido</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--muted)">No tienes recordatorios programados.</p>
+  {% endif %}
+</div>

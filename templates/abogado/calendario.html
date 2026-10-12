@@ -1,0 +1,222 @@
+{% extends "abogado/base_abogado.html" %}
+{% block abogado %}
+<div class="gc">
+  <header class="gc-bar">
+    <div class="gc-izq">
+      <button type="button" class="btn btn-primary btn-nuevo" id="gcNuevo">+ Registrar</button>
+      <div class="gc-nav">
+        <a class="gc-btn" href="{{ prev_url }}" aria-label="Anterior">‹</a>
+        <a class="gc-btn gc-hoy" href="{{ hoy_url }}">Hoy</a>
+        <a class="gc-btn" href="{{ next_url }}" aria-label="Siguiente">›</a>
+        <h2 class="gc-titulo">{{ titulo_periodo }}</h2>
+      </div>
+    </div>
+    <div class="gc-vistas">
+      <a class="gc-v {{ 'activo' if vista == 'dia' }}" href="{{ url_for('abogado_calendario', vista='dia', fecha=hoy_iso) }}">Día</a>
+      <a class="gc-v {{ 'activo' if vista == 'semana' }}" href="{{ url_for('abogado_calendario', vista='semana', fecha=hoy_iso) }}">Semana</a>
+      <a class="gc-v {{ 'activo' if vista == 'mes' }}" href="{{ url_for('abogado_calendario', vista='mes') }}">Mes</a>
+      <a class="gc-v {{ 'activo' if vista == 'agenda' }}" href="{{ url_for('abogado_calendario', vista='agenda', fecha=hoy_iso) }}">Agenda</a>
+    </div>
+  </header>
+
+  {% if vista == 'mes' and semanas %}
+  <div class="gc-mes">
+    <div class="gc-mes-cab">
+      {% for nombre in ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] %}<div class="gc-cab-slot">{{ nombre }}</div>{% endfor %}
+    </div>
+    {% for semana in semanas %}
+      {% for dia in semana %}
+        {% if dia == 0 %}
+        <div class="gc-mes-dia vacio"></div>
+        {% else %}
+        {% set clave = "%04d-%02d-%02d" % (anio, mes, dia) %}
+        {% set evs = por_dia.get(clave, []) %}
+        <div class="gc-mes-dia {{ 'hoy' if hoy_iso == clave }}" data-fecha="{{ clave }}">
+          <span class="gc-num {{ 'gc-num-hoy' if hoy_iso == clave }}">{{ dia }}</span>
+          {% for e in evs[:2] %}
+          <div class="gc-chip" style="background:{{ e.claro }};color:{{ e.color }};border-left:4px solid {{ e.color }}" title="{{ e.titulo }} · {{ e.detalle }}" onclick="event.stopPropagation()">
+            {% if not e.todo_dia %}<span class="gc-chip-hora">{{ e.inicio.strftime('%H:%M') }}</span>{% else %}<span class="gc-dot" style="background:{{ e.color }}"></span>{% endif %}
+            <span class="gc-chip-txt">{{ e.titulo }}</span>
+          </div>
+          {% endfor %}
+          {% if evs|length > 2 %}<div class="gc-mas">+{{ evs|length - 2 }} más</div>{% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if vista in ('semana', 'dia') and dias %}
+  <div class="gc-tiempo">
+    <div class="gc-gutter">
+      {% for h in range(hora_min, hora_max) %}
+      <div class="gc-hora-et">{{ "%02d:00" % h }}</div>
+      {% endfor %}
+    </div>
+    <div class="gc-columnas">
+      {% for d in dias %}
+      <div class="gc-col {{ 'hoy' if d.hoy }}" data-fecha="{{ d.clave }}">
+        <div class="gc-cab-dia">
+          <span class="gc-dia-nom">{{ d.nombre[:1] }}</span>
+          <span class="gc-dia-num {{ 'hoy' if d.hoy }}">{{ d.num }}</span>
+        </div>
+        {% if d.todo_dia %}
+        <div class="gc-tododia">
+          {% for e in d.todo_dia %}
+          <div class="gc-chip" style="background:{{ e.claro }};color:{{ e.color }};border-left:4px solid {{ e.color }}" title="{{ e.titulo }} · {{ e.detalle }}" onclick="event.stopPropagation()">
+            <span class="gc-chip-txt">{{ e.titulo }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="gc-timeline">
+          {% for e in d.eventos %}
+          <div class="gc-evento" style="top:{{ '%.2f' % e._top }}%;height:{{ '%.2f' % e._alto }}%;left:{{ '%.2f' % e._left }}%;width:{{ '%.2f' % e._width }}%;background:{{ e.claro }}">
+            <b style="color:{{ e.color }}">{{ e.inicio.strftime('%H:%M') }}</b>
+            <span class="gc-ev-txt">{{ e.titulo }}</span>
+            {% if e.id.startswith('actividad') %}
+            <form method="post" action="{{ url_for('abogado_actividad_eliminar', aid=e.id[10:]) }}" onsubmit="return confirm('¿Eliminar esta actividad? Se liberará la franja en la agenda pública.')" class="gc-del-form" onclick="event.stopPropagation()">
+              <button type="submit" class="gc-x" aria-label="Eliminar">×</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% if d.now_top is defined %}
+          <div class="gc-ahora" style="top:{{ '%.2f' % d.now_top }}%"></div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if vista == 'agenda' and dias %}
+  <div class="gc-agenda">
+    {% for d in dias %}
+      {% if d.todo_dia or d.eventos %}
+      <div class="gc-ag-dia">
+        <div class="gc-ag-cab">
+          <span class="gc-ag-nom">{{ d.nombre }}, {{ d.num }}</span>
+          <span class="gc-ag-mes">{{ d.mes_corto }} de {{ d.anio }}</span>
+          {% if d.hoy %}<span class="gc-ag-hoy">Hoy</span>{% endif %}
+        </div>
+        {% for e in d.todo_dia %}
+        <div class="gc-ag-item">
+          <span class="gc-ag-punto" style="background:{{ e.color }}"></span>
+          <span class="gc-ag-hora">Todo el día</span>
+          <span class="gc-ag-texto"><b>{{ e.titulo }}</b> <small>{{ e.detalle }}</small></span>
+          {% if e.id.startswith('actividad') %}
+          <form method="post" action="{{ url_for('abogado_actividad_eliminar', aid=e.id[10:]) }}" onsubmit="return confirm('¿Eliminar esta actividad?')">
+            <button type="submit" class="gc-x" aria-label="Eliminar">×</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% for e in d.eventos %}
+        <div class="gc-ag-item">
+          <span class="gc-ag-punto" style="background:{{ e.color }}"></span>
+          <span class="gc-ag-hora">{{ e.inicio.strftime('%H:%M') }}{% if e.fin.strftime('%H:%M') != e.inicio.strftime('%H:%M') %} – {{ e.fin.strftime('%H:%M') }}{% endif %}</span>
+          <span class="gc-ag-texto"><b>{{ e.titulo }}</b> <small>{{ e.detalle }}</small></span>
+          {% if e.id.startswith('actividad') %}
+          <form method="post" action="{{ url_for('abogado_actividad_eliminar', aid=e.id[10:]) }}" onsubmit="return confirm('¿Eliminar esta actividad?')">
+            <button type="submit" class="gc-x" aria-label="Eliminar">×</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endfor %}
+    {% if not (dias|selectattr('todo_dia')|list or dias|selectattr('eventos')) %}
+    <p style="color:var(--muted);padding:30px;text-align:center">No hay eventos en este periodo.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="gc-leyenda">
+    <span><i style="background:#33b679"></i>Audiencia</span>
+    <span><i style="background:#039be5"></i>Actuación</span>
+    <span><i style="background:#f4511e"></i>Vencimiento</span>
+    <span><i style="background:#0b8043"></i>Cita</span>
+    <span><i style="background:#8e24aa"></i>Reunión</span>
+    <span><i style="background:#7986cb"></i>Actividad</span>
+    <span><i style="background:#616161"></i>Bloqueo</span>
+  </div>
+
+  <div class="gc-modal" id="gcModal" hidden>
+    <div class="gc-modal-box">
+      <div class="gc-modal-head">
+        <h3>Registrar actividad, audiencia u otro asunto</h3>
+        <button type="button" class="gc-cerrar" id="gcCerrar" aria-label="Cerrar">×</button>
+      </div>
+      <form method="post" action="{{ url_for('abogado_actividad_nueva') }}" class="form-grid">
+        <div class="form-field" style="grid-column:1 / -1">
+          <label for="titulo">Título *</label>
+          <input type="text" id="titulo" name="titulo" required placeholder="Ej. Audiencia de conciliación">
+        </div>
+        <div class="form-field">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo">
+            <option value="Audiencia">Audiencia</option>
+            <option value="Actividad">Actividad</option>
+            <option value="Reunión">Reunión</option>
+            <option value="Diligencia">Diligencia</option>
+            <option value="Bloqueo">Bloqueo / No disponible</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="fecha">Fecha *</label>
+          <input type="date" id="fecha" name="fecha" min="{{ hoy_iso }}" required>
+        </div>
+        <div class="form-field">
+          <label for="hora">Hora (hora:minuto) *</label>
+          <input type="time" id="hora" name="hora" step="60" required>
+        </div>
+        <div class="form-field">
+          <label for="duracion">Duración</label>
+          <select id="duracion" name="duracion">
+            <option value="30">30 minutos</option>
+            <option value="60" selected>1 hora</option>
+            <option value="90">1 hora 30 min</option>
+            <option value="120">2 horas</option>
+            <option value="180">3 horas</option>
+          </select>
+        </div>
+        <div class="form-field" style="grid-column:1 / -1">
+          <label for="descripcion">Descripción</label>
+          <textarea id="descripcion" name="descripcion" rows="2" placeholder="Detalles opcionales"></textarea>
+        </div>
+        <div class="form-field" style="grid-column:1 / -1">
+          <button type="submit" class="btn btn-primary">Registrar y bloquear en agenda</button>
+        </div>
+      </form>
+      <p class="gc-aviso">La franja ocupada dejará de ofrecerse en el agendamiento público y en el chat.</p>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var modal = document.getElementById("gcModal");
+  var fechaInp = document.getElementById("fecha");
+  function abrir() { modal.hidden = false; fechaInp.focus(); }
+  function cerrar() { modal.hidden = true; }
+  document.getElementById("gcNuevo").addEventListener("click", function () {
+    fechaInp.value = (fechaInp.getAttribute("data-ultimo") || "{{ hoy_iso }}");
+    abrir();
+  });
+  document.getElementById("gcCerrar").addEventListener("click", cerrar);
+  modal.addEventListener("click", function (ev) { if (ev.target === modal) cerrar(); });
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") cerrar(); });
+  document.querySelectorAll(".gc-mes-dia, .gc-col").forEach(function (celda) {
+    celda.addEventListener("click", function () {
+      var f = celda.getAttribute("data-fecha");
+      if (f) { fechaInp.value = f; fechaInp.setAttribute("data-ultimo", f); }
+      abrir();
+    });
+  });
+})();
+</script>
+{% endblock %}

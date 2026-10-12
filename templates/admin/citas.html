@@ -1,0 +1,50 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Citas — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Citas agendadas</h1>
+<p class="sub">Solicitudes de cita recibidas desde la página pública. Confirma o cancela cada una.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Fecha</th><th>Hora</th><th>Solicitante</th><th>Abogado</th><th>Motivo</th><th>Estado</th><th>Creado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for c in citas %}
+      <tr>
+        <td>{{ c.fecha }}</td>
+        <td>{{ c.hora }}</td>
+        <td><b>{{ c.nombre }}</b><br><small style="color:var(--muted)">{{ c.correo }}{% if c.telefono %} · {{ c.telefono }}{% endif %}</small></td>
+        <td>{{ c.abogado_nombre or 'Sin preferencia' }}</td>
+        <td>{{ c.motivo or '—' }}</td>
+        <td>
+          {% if c.estado == 'Confirmada' %}
+            <span class="badge favor">Confirmada</span>
+          {% elif c.estado == 'Cancelada' %}
+            <span class="badge contra">Cancelada</span>
+          {% else %}
+            <span class="badge estudio">Pendiente</span>
+          {% endif %}
+        </td>
+        <td>{{ c.creado_el }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_citas_estado', cid=c.id) }}" style="display:inline-flex;gap:6px">
+            <select name="estado" style="padding:4px 6px;font-size:.8rem">
+              <option value="Pendiente" {{ 'selected' if c.estado == 'Pendiente' }}>Pendiente</option>
+              <option value="Confirmada" {{ 'selected' if c.estado == 'Confirmada' }}>Confirmada</option>
+              <option value="Cancelada" {{ 'selected' if c.estado == 'Cancelada' }}>Cancelada</option>
+            </select>
+            <button class="btn btn-sm btn-navy" type="submit">Guardar</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_citas_eliminar', cid=c.id) }}" data-confirmar="¿Eliminar la cita de {{ c.nombre }}?" style="display:inline">
+            <button class="btn btn-sm btn-danger" type="submit">Borrar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="color:var(--muted)">Aún no hay solicitudes de cita.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

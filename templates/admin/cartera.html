@@ -1,0 +1,667 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Cartera — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Cartera de clientes</h1>
+<p class="sub">Estado de cartera por cliente y servicio. El saldo y el estado se calculan automáticamente.</p>
+
+{% set JS_TARIFAS = [] %}
+{% for t in tarifario %}
+  {% set _ = JS_TARIFAS.append({
+      "clave": t.clave,
+      "valor": t.valor,
+      "nota": t.nota,
+      "area": t.area,
+      "numero": t.numero,
+      "autocompleta": t.autocompleta,
+      "extra": t.extra if t.extra is defined else false
+  }) %}
+{% endfor %}
+
+<div class="panel-form">
+  <h3>Nuevo registro de cartera</h3>
+  <form method="post" action="{{ url_for('admin_cartera_crear') }}" id="formCartera">
+    <div class="form-row">
+      <div class="campo">
+        <label>Cliente *</label>
+        <select name="cliente_id" required>
+          <option value="">Seleccionar cliente…</option>
+          {% for c in clientes %}
+          <option value="{{ c.id }}">{{ c.nombre }} · {{ c.email }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo" style="flex:2">
+        <label>Servicio *</label>
+        <input name="servicio" id="svcNuevo" required list="servicios_cartera"
+               placeholder="Ej. 1 Consulta verbal" autocomplete="off">
+        <datalist id="servicios_cartera">
+          {% for t in tarifario %}<option value="{{ t.clave }}">{{ t.area }}</option>{% endfor %}
+        </datalist>
+        <div class="ref-nota" id="hintNuevo" style="min-height:auto">
+          {{ tarifario|length }} tarifas de CONALBOS en {{ areas_numericas|length }} areas numeradas.
+          Escribe el numero (p.ej. "12.4") o parte del nombre.
+        </div>
+        <div class="ref-nota" id="avisoNuevo" style="min-height:auto;display:none;color:#8a5b00">
+          Ese servicio no esta en el tarifario de CONALBOS.
+          <a href="#panelAltaManual">Crear una Tarifa {{ marca }}</a> con el valor que quieras cobrar.
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="campo">
+        <label class="chk-label" title="Desmarca para escribir el valor manualmente">
+          <input type="checkbox" id="usarConalbosNuevo" checked>
+          Aplicar tarifa CONALBOS
+        </label>
+        <div class="ref-nota" id="notaConalbosNuevo">&nbsp;</div>
+      </div>
+      <div class="campo">
+        <label>Valor total (COP)</label>
+        <input type="number" name="valor_total" id="valorNuevo" min="0" step="1" value="0" placeholder="0">
+        <div class="ref-preview" id="previewNuevo">&nbsp;</div>
+      </div>
+      <div class="campo">
+        <label>Pagado (COP)</label>
+        <input type="number" name="pagado" min="0" step="1" value="0" placeholder="0">
+      </div>
+      <div class="campo">
+        <label>Saldo (COP)</label>
+        <input type="text" id="saldoNuevo" readonly value="$0" class="readonly-calc">
+      </div>
+      <div class="campo">
+        <label>Fecha límite de pago</label>
+        <input type="date" name="vencimiento">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Descripción / nota</label>
+        <input name="descripcion" placeholder="Detalle del servicio o del plan de pagos">
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Agregar registro de cartera</button>
+  </form>
+</div>
+
+<details class="panel-form" id="panelAltaManual" style="margin-bottom:22px">
+  <summary style="cursor:pointer;font-weight:700;color:var(--blue-900)">
+    &#128221; Crear una Tarifa {{ marca }} (servicio que no esta en el tarifario de CONALBOS)
+  </summary>
+  <p class="sub" style="margin-top:10px">
+    Para un servicio propio del despacho que no aparece en la Resolucion 02/2002.
+    El sistema propone el <b>siguiente numero libre del area</b>; no rellena los huecos
+    que dejo CONALBOS, para que un numero libre no parezca un item oficial.
+    La tarifa queda marcada como <b>{{ marca }}</b> y se puede usar igual que cualquier otra.
+  </p>
+  <form method="post" action="{{ url_for('admin_tarifario_agregar') }}" class="estudio-form">
+    <div class="estudio-form-row">
+      <div class="campo" style="flex:2">
+        <label>Nombre del servicio *</label>
+        <input type="text" name="servicio" id="altaServicio" required maxlength="200"
+               placeholder="Ej. Revision integral de contrato de arrendamiento comercial">
+      </div>
+      <div class="campo">
+        <label>Area del derecho *</label>
+        <select name="area_numero" id="altaArea" required>
+          {% for a in opciones_alta %}
+          <option value="{{ a.numero }}" data-siguiente="{{ a.siguiente }}"
+                  data-huecos="{{ a.huecos|join(',') }}"
+                  data-propia="{{ '1' if a.propia else '0' }}">
+            {{ a.numero }} - {{ a.area }} ({{ a.items }} items){{ ' [area propia]' if a.propia }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="estudio-form-row">
+      <div class="campo">
+        <label>Numero *</label>
+        <input type="text" name="numero" id="altaNumero" placeholder="se llena solo">
+        <div class="ref-nota" id="altaNumeroNota"></div>
+      </div>
+      <div class="campo">
+        <label>Valor (COP) *</label>
+        <input type="number" name="valor" id="altaValor" min="1" step="1" required>
+      </div>
+      <div class="campo">
+        <label>Equivale a</label>
+        <input type="text" name="smmlv" id="altaSmmlv" placeholder="1.5">
+        <div class="ref-nota" id="altaSmmlvNota">&nbsp;</div>
+      </div>
+    </div>
+    <div class="estudio-form-row">
+      <div class="campo" style="flex:2">
+        <label>Nota del servicio</label>
+        <input type="text" name="nota" maxlength="300"
+               placeholder="Ej. Tarifa {{ marca }} acordada con el cliente">
+      </div>
+      <div class="campo" style="flex:2">
+        <label>Fuente del valor</label>
+        <input type="text" name="fuente" maxlength="200"
+               placeholder="Ej. acuerdo con el cliente, carta de honorarios">
+      </div>
+    </div>
+    <div class="estudio-acciones">
+      <button type="submit" class="btn btn-primary">Crear Tarifa {{ marca }}</button>
+    </div>
+  </form>
+</details>
+
+<details class="panel-form" id="panelAreas" style="margin-bottom:22px">
+  <summary style="cursor:pointer;font-weight:700;color:var(--blue-900)">
+    &#127970; Administrar areas del derecho
+    {% if areas_propias %} ({{ areas_propias|length }} propia{{ 's' if areas_propias|length != 1 }}){% endif %}
+  </summary>
+  <p class="sub" style="margin-top:10px">
+    Crea un area cuando el trabajo del despacho no cabe en ninguna de las areas de
+    CONALBOS (por ejemplo <i>Derecho de Datos</i> o <i>Compliance</i>).
+    A cada area nueva se le asigna la <b>siguiente raiz numerica libre</b>, despues de
+    la 23, para que sus tarifas no se confundan con los items oficiales de la
+    Resolucion 02/2002: un area con raiz 24 produce <b>24.1, 24.2, ...</b>
+  </p>
+  <form method="post" action="{{ url_for('admin_area_agregar') }}" class="estudio-form">
+    <div class="estudio-form-row">
+      <div class="campo" style="flex:3">
+        <label>Nombre del area *</label>
+        <input type="text" name="nombre" required maxlength="80"
+               placeholder="Ej. Derecho de Datos Personales">
+      </div>
+      <div class="campo" style="flex:1">
+        <label>Color (opcional)</label>
+        <input type="text" name="color" maxlength="20" placeholder="#0f5c46">
+      </div>
+    </div>
+    <div class="estudio-acciones">
+      <button type="submit" class="btn btn-primary">Crear area</button>
+    </div>
+  </form>
+
+  {% if areas_propias %}
+  <div class="extras-lista">
+    <h4 class="estudio-h4">Areas propias ({{ areas_propias|length }})</h4>
+    {% for a in areas_propias %}
+    {% set usados = extras|selectattr('area_numero', 'equalto', a.numero)|list %}
+    <div class="extra-fila">
+      <div>
+        <b>{{ a.nombre }}</b>
+        <span class="estudio-chip propia">raiz {{ a.numero }}</span>
+        <span class="estudio-mult">{{ usados|length }} tarifa(s)</span>
+        <div style="font-size:.76rem;color:var(--muted)">
+          Sus tarifas se numeran desde <b>{{ a.numero }}.1</b>.
+          Creada el {{ a.creado_el[:10] }}
+        </div>
+      </div>
+      <form method="post" action="{{ url_for('admin_area_eliminar', aid=a.id) }}"
+            onsubmit="return confirm('&#191;Eliminar el area &quot;{{ a.nombre }}&quot;?')">
+        <button type="submit" class="btn btn-ghost btn-xs" {% if usados %}disabled{% endif %}
+                title="{{ 'No se puede eliminar: tiene tarifas asignadas' if usados else 'Eliminar area' }}">
+          Eliminar
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="sub" style="margin-top:12px">
+    Todavia no has creado areas propias. Las {{ areas_numericas|length }} areas
+    numeradas del tarifario de CONALBOS estan todas disponibles.
+  </p>
+  {% endif %}
+</details>
+
+<details class="panel-form" id="panelTarifario" style="margin-bottom:22px">
+  <summary style="cursor:pointer;font-weight:700;color:var(--blue-900)">
+    Ver tarifario de referencia CONALBOS — {{ tarifario|length }} items
+    (SMMLV 2026 = {{ smmlv|cop }})
+  </summary>
+  <p class="sub" style="margin-top:10px">
+    Fuente: <b>{{ fuente_tarifario }}</b>. Estas tarifas son <b>referencia, no obligatorias</b>:
+    la Comision Nacional de Disciplina Judicial ha reiterado que son una fuente supletiva de
+    verificacion y se mantiene la libertad tarifaria entre abogado y cliente.
+    Todos los valores se calculan como multiplos del salario minimo legal vigente.
+    Los items marcados <b>a calcular</b> dependen de la cuantia del caso.
+  </p>
+  <div class="tarifario-buscador">
+    <input type="search" id="buscarTarifa" placeholder="Buscar por numero o nombre (p.ej. 12.4, divorcio, tutela)...">
+  </div>
+  <div class="table-wrap" id="tablaTarifario" style="max-height:460px;overflow:auto">
+    <table class="tabla-contablo">
+      <thead>
+        <tr><th style="width:70px">Item</th><th>Servicio</th><th>Referencia / componente variable</th><th class="num">Valor base</th></tr>
+      </thead>
+      <tbody>
+        {% for area in areas_tarifario %}
+        <tr class="fila-area"><td colspan="4">{{ area }}</td></tr>
+        {% for t in tarifario if t.area == area %}
+        <tr class="fila-tarifa{% if t.extra is defined and t.extra %} fila-propia{% endif %}"
+            data-busca="{{ (t.numero ~ ' ' ~ t.clave ~ ' ' ~ t.servicio)|lower }}">
+          <td class="num" style="color:var(--muted)">{{ t.numero }}</td>
+          <td>{{ t.servicio }}
+            {% if t.extra is defined and t.extra %}
+            <span class="badge propio" title="Tarifa {{ marca }}: fijada por el despacho para un servicio propio. No proviene de la Resolucion 02/2002 de CONALBOS.">{{ marca }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.78rem;color:var(--muted)">{{ t.nota }}</td>
+          <td class="num">
+            {% if t.autocompleta %}<b>{{ t.valor|cop }}</b>
+            {% else %}<span class="badge estudio" title="{{ t.nota }}">a calcular</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+
+        {# tarifas Derechos On cuya etiqueta de area no esta en la lista oficial #}
+        {% set huerfanos = [] %}
+        {% for t in tarifario if t.area not in areas_tarifario %}
+        {% set _ = huerfanos.append(t) %}
+        {% endfor %}
+        {% if huerfanos %}
+        <tr class="fila-area"><td colspan="4">Tarifas {{ marca }}</td></tr>
+        {% for t in huerfanos %}
+        <tr class="fila-tarifa fila-propia" data-busca="{{ (t.numero ~ ' ' ~ t.clave ~ ' ' ~ t.servicio)|lower }}">
+          <td class="num" style="color:var(--muted)">{{ t.numero }}</td>
+          <td>{{ t.servicio }} <span class="badge propio">{{ marca }}</span></td>
+          <td style="font-size:.78rem;color:var(--muted)">{{ t.nota }}</td>
+          <td class="num"><b>{{ t.valor|cop }}</b></td>
+        </tr>
+        {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <p class="sub" id="sinResultado" style="display:none">Ningun servicio coincide con la busqueda.</p>
+
+  {% if extras %}
+  <div class="extras-lista">
+    <h4 class="estudio-h4">Tarifas {{ marca }} ({{ extras|length }})</h4>
+    <p class="sub">Tarifas fijadas por el despacho para servicios propios.
+      No forman parte de la Resolucion 02/2002 de CONALBOS y no sustituyen las tarifas oficiales.</p>
+    {% for e in extras %}
+    <div class="extra-fila">
+      <div>
+        <b>{{ e.numero }} {{ e.servicio }}</b> — {{ e.valor|cop }}
+        <span class="badge propio">{{ marca }}</span>
+        {% if e.smmlv %}<span class="estudio-mult">{{ e.smmlv }} x SMMLV</span>{% endif %}
+        <div style="font-size:.76rem;color:var(--muted)">{{ e.fuente }}</div>
+      </div>
+      <form method="post" action="{{ url_for('admin_tarifario_eliminar', tid=e.id) }}"
+            onsubmit="return confirm('&#191;Eliminar la tarifa {{ marca }} &quot;{{ e.servicio }}&quot;?')">
+        <button type="submit" class="btn btn-ghost btn-xs">Eliminar</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</details>
+
+<div class="reporte-grid" style="margin-bottom:22px">
+  <div class="reporte-card">
+    <span>Total cartera</span><b class="moneda">{{ total_cartera|cop }}</b>
+  </div>
+  <div class="reporte-card">
+    <span>Total pagado</span><b class="moneda positivo">{{ total_pagado|cop }}</b>
+  </div>
+  <div class="reporte-card">
+    <span>Saldo pendiente</span><b class="moneda negativo">{{ total_saldo|cop }}</b>
+  </div>
+  <div class="reporte-card">
+    <span>Servicios vencidos</span><b class="moneda">{{ vencidas }}</b>
+  </div>
+</div>
+
+<div style="margin-bottom:14px">
+  <form method="get" action="{{ url_for('admin_cartera') }}">
+    <label style="font-size:.85rem;font-weight:700;color:var(--ink)">Filtrar por cliente
+      <select name="cliente_id" onchange="this.form.submit()">
+        <option value="">Todos</option>
+        {% for c in clientes %}
+        <option value="{{ c.id }}" {{ 'selected' if c.id == cliente_id }}>{{ c.nombre }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    {% if cliente_id %}<a class="btn btn-sm btn-outline" href="{{ url_for('admin_cartera') }}">Quitar filtro</a>{% endif %}
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table class="tabla-contablo">
+    <thead>
+      <tr>
+        <th>Cliente</th><th>Servicio</th>
+        <th class="num">Valor</th><th class="num">Pagado</th><th class="num">Saldo</th>
+        <th>Vence</th><th>Estado</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in registros %}
+      <tr>
+        <td><b>{{ r.cliente }}</b><br><span style="font-size:.78rem;color:var(--muted)">{{ r.correo_cliente }}</span></td>
+        <td>{{ r.servicio }}{% if r.descripcion %}<br><span style="font-size:.78rem;color:var(--muted)">{{ r.descripcion }}</span>{% endif %}</td>
+        <td class="num">{{ r.valor_total|cop }}</td>
+        <td class="num positivo">{{ r.pagado|cop }}</td>
+        <td class="num"><b class="{{ 'negativo' if r.saldo > 0 else 'positivo' }}">{{ r.saldo|cop }}</b></td>
+        <td>{{ r.vencimiento or '—' }}</td>
+        <td>
+          {% if r.estado == 'Pagada' %}
+            <span class="badge favor">Pagada</span>
+          {% elif r.estado == 'Vencida' %}
+            <span class="badge vencida">Vencida</span>
+          {% elif r.estado == 'Al día' %}
+            <span class="badge estudio">Al día</span>
+          {% else %}
+            <span class="badge tramite">Por pagar</span>
+          {% endif %}
+        </td>
+        <td>
+          <details class="editar-inline">
+            <summary class="btn btn-sm btn-outline" style="display:inline-block">Editar</summary>
+            <div class="panel-form" style="margin-top:8px">
+              <form method="post" action="{{ url_for('admin_cartera_editar', cid=r.id) }}"
+                    class="form-editar-cartera" data-valor-inicial="{{ r.valor_total }}">
+                <div class="form-row">
+                  <div class="campo" style="flex:2">
+                    <label>Servicio</label>
+                    <input name="servicio" class="svc-editar" required list="servicios_cartera"
+                           value="{{ r.servicio }}" autocomplete="off">
+                  </div>
+                  <div class="campo">
+                    <label class="chk-label">
+                      <input type="checkbox" class="usar-conalbos-editar"> Aplicar tarifa CONALBOS
+                    </label>
+                    <div class="ref-nota nota-conalbos-editar">&nbsp;</div>
+                  </div>
+                  <div class="campo">
+                    <label>Valor (COP)</label>
+                    <input type="number" name="valor_total" class="valor-editar" min="0" step="1"
+                           value="{{ r.valor_total }}">
+                  </div>
+                  <div class="campo">
+                    <label>Pagado (COP)</label>
+                    <input type="number" name="pagado" min="0" step="1" value="{{ r.pagado }}">
+                  </div>
+                  <div class="campo">
+                    <label>Saldo (COP)</label>
+                    <input type="text" class="saldo-editar readonly-calc" readonly value="{{ r.saldo|cop }}">
+                  </div>
+                  <div class="campo">
+                    <label>Vence</label>
+                    <input type="date" name="vencimiento" value="{{ r.vencimiento }}">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="campo" style="flex:1">
+                    <label>Descripción</label>
+                    <input name="descripcion" value="{{ r.descripcion }}">
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-navy" type="submit">Guardar cambios</button>
+              </form>
+            </div>
+          </details>
+          <form method="post" action="{{ url_for('admin_cartera_eliminar', cid=r.id) }}" onsubmit="return confirm('¿Eliminar este registro de cartera?')" style="display:inline-block;margin-top:6px">
+            <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="color:var(--muted)">Aún no hay registros de cartera. Agrega el primero con el formulario de arriba.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if registros %}
+    <tfoot>
+      <tr>
+        <th colspan="2" style="text-align:right">TOTALES</th>
+        <th class="num">{{ total_cartera|cop }}</th>
+        <th class="num positivo">{{ total_pagado|cop }}</th>
+        <th class="num negativo">{{ total_saldo|cop }}</th>
+        <th colspan="3"></th>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>
+
+<h2 style="margin-top:30px">Comprobantes de pago</h2>
+<p class="sub">Comprobantes subidos por los clientes desde el portal. Al validar, el abono se aplica automáticamente a la cartera.</p>
+<div class="table-wrap">
+  <table class="tabla-contablo">
+    <thead>
+      <tr>
+        <th>Cliente</th><th>Servicio</th><th class="num">Importe</th>
+        <th>Nota</th><th>Comprobante</th><th>Subido</th><th>Estado</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cp in comprobantes %}
+      <tr>
+        <td><b>{{ cp.cliente }}</b><br><span style="font-size:.78rem;color:var(--muted)">{{ cp.correo_cliente }}</span></td>
+        <td>{{ cp.servicio or '—' }}</td>
+        <td class="num">{{ cp.importe|cop }}</td>
+        <td>{{ cp.nota or '—' }}</td>
+        <td><a class="adjunto" href="{{ url_for('ver_comprobante_cliente', cid=cp.id) }}" target="_blank">{{ cp.nombre_archivo[:35] }}{{ '…' if cp.nombre_archivo|length > 35 }}</a></td>
+        <td>{{ cp.cargado_el[:10] }}</td>
+        <td>
+          {% if cp.estado == 'Validado' %}
+            <span class="badge favor">Validado</span>
+          {% elif cp.estado == 'Rechazado' %}
+            <span class="badge vencida">Rechazado</span>
+          {% else %}
+            <span class="badge tramite">Pendiente</span>
+          {% endif %}
+          {% if cp.validado_el %}<br><span style="font-size:.75rem;color:var(--muted)">{{ cp.validado_el[:10] }}{% if cp.validado_por %} · {{ cp.validado_por }}{% endif %}</span>{% endif %}
+        </td>
+        <td>
+          {% if cp.estado == 'Pendiente' %}
+          <form method="post" action="{{ url_for('admin_comprobante_validar', cid=cp.id) }}" style="display:inline-block">
+            <button class="btn btn-sm btn-navy" type="submit">Validar y aplicar</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_comprobante_rechazar', cid=cp.id) }}" style="display:inline-block">
+            <button class="btn btn-sm btn-danger" type="submit">Rechazar</button>
+          </form>
+          {% else %}
+          <span style="color:var(--muted);font-size:.82rem">Procesado</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="color:var(--muted)">Aún no hay comprobantes. Se listarán aquí cuando un cliente suba su comprobante de pago.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+(function () {
+  const TARIFAS = {{ JS_TARIFAS | tojson }};
+
+  // indice por clave exacta
+  const POR_CLAVE = {};
+  TARIFAS.forEach(function (t) { POR_CLAVE[t.clave] = t; });
+
+  // busqueda tolerante: por numero exacto, por prefijo de numero o por coincidencia de texto
+  function buscar(texto) {
+    const s = texto.trim();
+    if (!s) return null;
+    if (POR_CLAVE[s]) return POR_CLAVE[s];
+    const bajo = s.toLowerCase();
+    // coincidencia exacta ignorando mayusculas
+    for (const k in POR_CLAVE) {
+      if (k.toLowerCase() === bajo) return POR_CLAVE[k];
+    }
+    // el usuario escribio solo el numero (p.ej. "12.4" o "18.7.9")
+    const porNumero = TARIFAS.filter(function (t) { return t.numero === bajo; });
+    if (porNumero.length === 1) return porNumero[0];
+    // coincidencia parcial sobre el numero al inicio ("12" -> todos los 12.x)
+    const porPrefijo = TARIFAS.filter(function (t) { return t.numero === bajo || t.numero.indexOf(bajo + ".") === 0; });
+    if (porPrefijo.length) return porPrefijo[0];
+    // coincidencia de texto
+    const porTexto = TARIFAS.filter(function (t) {
+      return (t.numero + " " + t.clave).toLowerCase().indexOf(bajo) !== -1;
+    });
+    return porTexto.length ? porTexto[0] : null;
+  }
+
+  function fmt(n) {
+    n = Number(n) || 0;
+    return "$" + Math.abs(Math.round(n)).toLocaleString("es-CO").replace(/ /g, ".");
+  }
+
+  function wiring(svc, chk, valor, nota, saldo, preview, getPagado) {
+    function recalcular() {
+      if (!saldo) return;
+      const p = getPagado ? Number(getPagado()) : 0;
+      saldo.value = fmt(Number(valor.value || 0) - p);
+    }
+
+    function aplicar() {
+      const t = buscar(svc.value);
+      if (!chk.checked) {
+        nota.innerHTML = "Autocompletado CONALBOS desactivado · valor manual";
+        if (preview) preview.innerHTML = "&nbsp;";
+      } else if (!t) {
+        nota.innerHTML = "Sin coincidencia en el tarifario. Puedes desactivar el autocompletado.";
+        if (preview) preview.innerHTML = "&nbsp;";
+      } else if (t.autocompleta) {
+        valor.value = t.valor;
+        nota.innerHTML = "CONALBOS " + t.numero + ": " + fmt(t.valor) + " · " + t.nota;
+        if (preview) preview.innerHTML = "Referencia aplicada: <b>" + fmt(t.valor) + "</b>";
+      } else {
+        nota.innerHTML = "CONALBOS " + t.numero + ": " + t.nota + " · escribe el valor manualmente";
+        if (preview) preview.innerHTML = "<span class='ref-warn'>Sin tarifa fija: digita el valor</span>";
+      }
+      recalcular();
+    }
+
+    svc.addEventListener("change", aplicar);
+    svc.addEventListener("blur", aplicar);
+    svc.addEventListener("keyup", function (e) { if (e.key === "Enter") { e.preventDefault(); aplicar(); } });
+    chk.addEventListener("change", aplicar);
+    valor.addEventListener("input", recalcular);
+    const pagado = getPagado ? getPagado() : null;
+    if (pagado && pagado.tagName === "INPUT") pagado.addEventListener("input", recalcular);
+    aplicar();
+  }
+
+  const formNuevo = document.getElementById("formCartera");
+  const pagadoNuevo = formNuevo.querySelector('input[name="pagado"]');
+  wiring(
+    document.getElementById("svcNuevo"),
+    document.getElementById("usarConalbosNuevo"),
+    document.getElementById("valorNuevo"),
+    document.getElementById("notaConalbosNuevo"),
+    document.getElementById("saldoNuevo"),
+    document.getElementById("previewNuevo"),
+    () => pagadoNuevo.value
+  );
+
+  document.querySelectorAll(".form-editar-cartera").forEach(function (form) {
+    const pagado = form.querySelector('input[name="pagado"]');
+    wiring(
+      form.querySelector(".svc-editar"),
+      form.querySelector(".usar-conalbos-editar"),
+      form.querySelector(".valor-editar"),
+      form.querySelector(".nota-conalbos-editar"),
+      form.querySelector(".saldo-editar"),
+      null,
+      () => pagado.value
+    );
+  });
+
+  // ---- buscador del tarifario
+  const buscador = document.getElementById("buscarTarifa");
+  if (buscador) {
+    const filas = Array.prototype.slice.call(document.querySelectorAll(".fila-tarifa"));
+    const areas = Array.prototype.slice.call(document.querySelectorAll(".fila-area"));
+    const vacio = document.getElementById("sinResultado");
+    buscador.addEventListener("input", function () {
+      const q = buscador.value.trim().toLowerCase();
+      let visibles = 0;
+      const areasVisibles = new Set();
+      filas.forEach(function (f) {
+        const hit = !q || f.dataset.busca.indexOf(q) !== -1;
+        f.style.display = hit ? "" : "none";
+        if (hit) { visibles++; areasVisibles.add(f.previousElementSibling.textContent.trim()); }
+      });
+      areas.forEach(function (a) {
+        a.style.display = areasVisibles.has(a.textContent.trim()) ? "" : "none";
+      });
+      vacio.style.display = visibles ? "none" : "";
+    });
+  }
+
+  // ===================================================================
+  //  Alta manual de una Tarifa Derechos On (numeracion asistida)
+  // ===================================================================
+  const svcNuevo = document.getElementById("svcNuevo");
+  const hintNuevo = document.getElementById("hintNuevo");
+  const avisoNuevo = document.getElementById("avisoNuevo");
+  const selAreaAlta = document.getElementById("altaArea");
+  const numAlta = document.getElementById("altaNumero");
+  const notaAlta = document.getElementById("altaNumeroNota");
+  const valAlta = document.getElementById("altaValor");
+  const smmlvAlta = document.getElementById("altaSmmlv");
+  const smmlvNotaAlta = document.getElementById("altaSmmlvNota");
+  const MARCA = {{ marca|tojson }};
+  const SMMLV = {{ smmlv|tojson }};
+  const OPCIONES_ALTA = {{ opciones_alta|tojson }};
+
+  // aviso cuando el servicio escrito no existe en el tarifario oficial
+  function avisarFalta() {
+    const v = svcNuevo.value.trim();
+    if (v.length >= 3 && !buscar(v)) {
+      avisoNuevo.style.display = "";
+    } else {
+      avisoNuevo.style.display = "none";
+    }
+  }
+
+  // al cambiar el area, propone el siguiente numero libre de esa area
+  function actualizarNumero() {
+    const raiz = selAreaAlta.value;
+    const a = OPCIONES_ALTA.find(function (x) { return x.numero === raiz; });
+    if (!a) return;
+    if (!numAlta.value.trim() || numAlta.dataset.auto === "1") {
+      numAlta.value = a.siguiente;
+      numAlta.dataset.auto = "1";
+    }
+    const previo = parseInt(a.siguiente.split(".")[1], 10) - 1;
+    notaAlta.innerHTML = a.propia
+      ? '<b>' + a.area + '</b> es un area propia de ' + MARCA + ", no de CONALBOS. " +
+        "Sus tarifas se numeran desde <b>" + a.siguiente + "</b>."
+      : "El ultimo item del area " + a.numero + " es " +
+        (previo > 0 ? a.numero + "." + previo : "ninguno") + ". El siguiente es <b>" +
+        a.siguiente + "</b>." +
+        (a.huecos && a.huecos.length
+          ? '<br><span class="ref-warn">CONALBOS dejo sin usar ' + a.huecos.join(", ") +
+            ". No se usan, para no parecer un item oficial.</span>"
+          : "");
+  }
+
+
+  // si el abogado escribe el valor a mano, calcula el equivalente en salarios minimos
+  function actualizarSmmlv() {
+    const v = parseFloat(valAlta.value);
+    if (!v || v <= 0 || !SMMLV) {
+      smmlvNotaAlta.innerHTML = "&nbsp;";
+      return;
+    }
+    const m = v / SMMLV;
+    smmlvNotaAlta.innerHTML = "equivale a <b>" + m.toFixed(2) +
+      "</b> " + (m === 1 ? "salario minimo" : "salarios minimos");
+    if (!smmlvAlta.value.trim()) smmlvAlta.value = m.toFixed(2);
+  }
+
+  if (svcNuevo) svcNuevo.addEventListener("input", avisarFalta);
+  if (selAreaAlta) selAreaAlta.addEventListener("change", actualizarNumero);
+  if (valAlta) valAlta.addEventListener("input", actualizarSmmlv);
+  // si el abogado edita el numero a mano, se respeta su decision
+  if (numAlta) {
+    numAlta.addEventListener("input", function () { numAlta.dataset.auto = "0"; });
+  }
+  actualizarNumero();
+})();
+</script>
+{% endblock %}
+

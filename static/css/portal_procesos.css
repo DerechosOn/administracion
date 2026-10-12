@@ -1,0 +1,340 @@
+/* ==========================================================================
+   Portal "Mis procesos" — UI moderna de seguimiento y avance de procesos
+   ========================================================================== */
+
+.pp-dash { background: #eef3fb; }
+.pp-main { padding: 34px 38px 56px; background:
+  radial-gradient(1200px 300px at 100% -10%, rgba(30,109,240,.10), transparent 60%),
+  var(--bg-soft); }
+
+/* ---------- Encabezado / hero ---------- */
+.pp-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
+  flex-wrap: wrap;
+  padding: 28px 30px;
+  border-radius: 20px;
+  color: #eaf1ff;
+  background: linear-gradient(120deg, var(--blue-900) 0%, #123c9e 48%, var(--blue-600) 100%);
+  box-shadow: 0 20px 45px rgba(10,45,134,.28);
+  overflow: hidden;
+}
+.pp-hero::after {
+  content: "";
+  position: absolute;
+  right: -60px; top: -80px;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.22), transparent 68%);
+  pointer-events: none;
+}
+.pp-hero-text { max-width: 620px; z-index: 1; }
+.pp-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+  color: #9dc2ff; font-weight: 700; margin-bottom: 10px;
+}
+.pp-eyebrow svg { width: 15px; height: 15px; }
+.pp-hero h1 { color: #fff; font-size: 1.9rem; line-height: 1.15; margin-bottom: 6px; }
+.pp-hero p { color: #cbdafb; font-size: .95rem; margin: 0; max-width: 560px; }
+.pp-hero-side { display: flex; align-items: center; gap: 20px; z-index: 1; }
+
+/* ---------- Anillo de progreso (SVG) ---------- */
+.pp-ring { position: relative; width: 112px; height: 112px; flex: 0 0 auto; }
+.pp-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.pp-ring circle { fill: none; stroke-linecap: round; }
+.pp-ring .pp-ring-bg { stroke: rgba(255,255,255,.18); stroke-width: 11; }
+.pp-ring .pp-ring-fg { stroke: #56e0a4; stroke-width: 11; transition: stroke-dasharray .9s cubic-bezier(.4,0,.2,1); }
+.pp-ring-txt {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+}
+.pp-ring-txt b { font-size: 1.5rem; font-weight: 900; color: #fff; line-height: 1; }
+.pp-ring-txt span { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: #a9c4f2; margin-top: 3px; }
+
+/* Variante del anillo dentro de tarjetas (fondo claro) */
+.pp-card .pp-ring { width: 96px; height: 96px; }
+.pp-card .pp-ring .pp-ring-bg { stroke: #e7edf8; }
+.pp-card .pp-ring .pp-ring-fg { stroke: var(--blue-600); }
+.pp-card .pp-ring[data-clase="favor"] .pp-ring-fg { stroke: #0f9d63; }
+.pp-card .pp-ring[data-clase="contra"] .pp-ring-fg { stroke: #c0392b; }
+.pp-card .pp-ring[data-clase="archivado"] .pp-ring-fg { stroke: #6d4a8a; }
+.pp-card .pp-ring[data-clase="apelacion"] .pp-ring-fg { stroke: #e08a2b; }
+.pp-card .pp-ring-txt b { color: var(--blue-900); }
+.pp-card .pp-ring-txt span { color: var(--muted); }
+.pp-stepper li[data-final] .pp-dot { background: #0f9d63; }
+.pp-stepper li[data-final][data-clase="contra"] .pp-dot { background: #c0392b; }
+.pp-stepper li[data-final][data-clase="archivado"] .pp-dot { background: #6d4a8a; }
+
+/* ---------- KPIs ---------- */
+.pp-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 22px 0 26px;
+}
+.pp-kpi {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 8px 22px rgba(10,45,134,.06);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.pp-kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pp-kpi-ico {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #e9f1ff, #d9e8ff); color: var(--blue-700);
+}
+.pp-kpi-ico svg { width: 20px; height: 20px; }
+.pp-kpi b { font-size: 2rem; font-weight: 900; color: var(--blue-900); line-height: 1; }
+.pp-kpi .pp-kpi-lab { color: var(--muted); font-size: .82rem; }
+.pp-kpi .pp-kpi-bar { height: 6px; border-radius: 999px; background: #eef2fa; overflow: hidden; }
+.pp-kpi .pp-kpi-bar > i { display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--blue-500), var(--blue-700)); }
+
+/* ---------- Paneles ---------- */
+.pp-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 10px 28px rgba(10,45,134,.07);
+  margin-bottom: 26px;
+}
+.pp-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.pp-panel h2 { font-size: 1.12rem; }
+.pp-panel .pp-panel-sub { color: var(--muted); font-size: .82rem; }
+
+/* ---------- Gráfico de barras: avance por proceso ---------- */
+.pp-barchart { display: flex; flex-direction: column; gap: 14px; }
+.pp-barrow {
+  display: grid;
+  grid-template-columns: minmax(150px, 260px) 1fr 54px;
+  align-items: center;
+  gap: 14px;
+}
+.pp-barrow-lab {
+  font-size: .88rem; color: var(--ink); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pp-barrow-track { height: 12px; background: #eef2fa; border-radius: 999px; overflow: hidden; }
+.pp-barrow-fill {
+  display: block; height: 100%; border-radius: 999px;
+  width: calc(var(--pct) * 1%);
+  background: linear-gradient(90deg, #4f9bff, var(--blue-700));
+  transition: width .9s cubic-bezier(.4,0,.2,1);
+}
+.pp-barrow-val { text-align: right; font-weight: 800; color: var(--blue-800); font-size: .9rem; }
+[data-clase="favor"] .pp-barrow-fill { background: linear-gradient(90deg, #34d399, #0f9d63); }
+[data-clase="contra"] .pp-barrow-fill { background: linear-gradient(90deg, #f08a8a, #c0392b); }
+[data-clase="archivado"] .pp-barrow-fill { background: linear-gradient(90deg, #b9a7d6, #6d4a8a); }
+[data-clase="apelacion"] .pp-barrow-fill { background: linear-gradient(90deg, #f6a96b, #d97a1f); }
+
+/* ---------- Rejilla y tarjetas de proceso ---------- */
+.pp-grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
+.pp-card[data-clase="favor"] { border-left-color: #0f9d63; }
+.pp-card[data-clase="contra"] { border-left-color: #c0392b; }
+.pp-card[data-clase="archivado"] { border-left-color: #6d4a8a; }
+
+/* Stepper de etapas */
+.pp-stepper {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 6px 0 20px;
+  padding: 0;
+}
+.pp-step { position: relative; text-align: center; }
+.pp-stepper .pp-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #dfe7f4; border: 3px solid #fff;
+  box-shadow: 0 0 0 1.5px #dbe3f0;
+  display: inline-block; position: relative; z-index: 1;
+}
+.pp-stepper li::before {
+  content: ""; position: absolute; top: 7px; left: -50%; width: 100%;
+  height: 3px; background: #e7edf8;
+}
+.pp-stepper li:first-child::before { display: none; }
+.pp-stepper li.done::before, .pp-stepper li.now::before {
+  background: linear-gradient(90deg, #4f9bff, var(--blue-600));
+}
+.pp-stepper li.done .pp-dot { background: var(--blue-600); }
+.pp-stepper li.now .pp-dot { background: #fff; border: 3px solid var(--blue-600); box-shadow: 0 0 0 5px rgba(30,109,240,.18); }
+.pp-stepper li.done[data-final="1"] .pp-dot { background: #0f9d63; }
+.pp-stepper .pp-lbl {
+  display: block; margin-top: 8px; font-size: .74rem; font-weight: 600; color: #9aa6bd;
+}
+.pp-stepper li.now .pp-lbl, .pp-stepper li.done .pp-lbl { color: var(--blue-800); }
+
+/* ---------- Tarjeta de proceso ---------- */
+.pp-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(10,45,134,.07);
+  margin-bottom: 20px; overflow: hidden;
+  border-left: 4px solid var(--blue-600);
+}
+.pp-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 18px; padding: 22px 24px 16px; flex-wrap: wrap;
+}
+.pp-card-title h3 { font-size: 1.15rem; margin-bottom: 8px; }
+.pp-card-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.pp-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .76rem; font-weight: 600; color: #40506e;
+  background: #f1f5fc; border: 1px solid #e3ebf7; border-radius: 999px;
+  padding: 5px 11px;
+}
+.pp-chip svg { width: 13px; height: 13px; }
+
+.pp-card-body { padding: 0 24px 22px; }
+
+/* Meta grid */
+.pp-meta {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px; margin: 4px 0 16px;
+}
+.pp-meta-item { background: #f7faff; border: 1px solid #e9f0fb; border-radius: 12px; padding: 10px 13px; }
+.pp-meta-lab { display: block; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; color: #8a94a8; }
+.pp-card .pp-meta b, .pp-meta b { color: var(--blue-900); font-size: .9rem; font-weight: 700; }
+.pp-card p.desc { color: var(--muted); font-size: .92rem; margin: 4px 0 0; }
+.pp-nota {
+  margin-top: 12px; background: #f5f9ff; border-left: 3px solid var(--blue-500);
+  padding: 10px 14px; border-radius: 8px; font-size: .88rem; color: var(--ink);
+}
+
+/* Secciones internas (actuaciones / expedientes) */
+.pp-sec { margin-top: 18px; }
+.pp-sec h4 {
+  font-size: .82rem; text-transform: uppercase; letter-spacing: .07em;
+  color: #8a94a8; margin-bottom: 10px; font-weight: 800;
+}
+
+/* Botón de desplegable moderno */
+.pp-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #f1f5fc; border: 1px solid #e0e9f7; color: var(--blue-800);
+  font-weight: 700; font-size: .82rem; border-radius: 10px;
+  padding: 9px 14px; cursor: pointer; list-style: none;
+}
+.pp-toggle::-webkit-details-marker { display: none; }
+.pp-toggle::after { content: "▾"; transition: transform .2s; }
+details[open] .pp-toggle::after { transform: rotate(180deg); }
+details[open] .pp-toggle { margin-bottom: 12px; }
+
+/* Timeline reutilizada con realce moderno */
+.pp-card .timeline { border-left-color: #d7e3f7; }
+
+/* ==========================================================================
+   Visuales estilo Power BI (anillo de casos + medidor de avance)
+   ========================================================================== */
+.pp-bi-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 26px;
+}
+.pp-bi-card {
+  background: #fff;
+  border: 1px solid #e8ecf2;
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 6px 18px rgba(37,36,35,.07);
+}
+.pp-bi-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .86rem; font-weight: 700; color: #252423;
+  margin-bottom: 10px;
+}
+.pp-bi-title svg { width: 16px; height: 16px; color: #605e5c; }
+
+/* ----- Anillo (donut) ----- */
+.pp-donut-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.pp-donut { position: relative; width: 176px; height: 176px; flex: 0 0 auto; }
+.pp-donut svg { width: 100%; height: 100%; }
+.pp-donut circle { transition: stroke-dasharray .8s ease, stroke .3s ease; }
+.pp-donut-c {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.pp-donut-c b { font-size: 1.7rem; font-weight: 900; color: #252423; line-height: 1; }
+.pp-donut-c span { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: #8a8886; margin-top: 2px; }
+
+.pp-legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 7px; }
+.pp-legend li { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: #252423; }
+.pp-legend i { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+.pp-legend .pp-leg-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pp-legend .pp-leg-val { font-weight: 800; color: #252423; }
+.pp-legend .pp-leg-pct { color: #8a8886; font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
+.pp-legend .pp-leg-vacio { color: #8a8886; font-size: .82rem; line-height: 1.45; }
+
+/* ----- Gauge (medidor) ----- */
+.pp-gauge-wrap { position: relative; display: flex; justify-content: center; }
+.pp-gauge { width: 100%; max-width: 300px; height: auto; display: block; }
+.pp-gauge path { fill: none; stroke-width: 20; stroke-linecap: round; }
+.pp-gauge-track { stroke: #eaeaea; }
+.pp-gauge-fill { stroke: #118DFF; transition: stroke-dasharray 1s cubic-bezier(.4,0,.2,1), stroke .3s ease; }
+.pp-gauge-fill.ok { stroke: #0F9D63; }
+.pp-gauge-fill.mid { stroke: #118DFF; }
+.pp-gauge-fill.low { stroke: #E66C37; }
+.pp-gauge-min, .pp-gauge-max { fill: #8a8886; font-size: 11px; font-weight: 600; }
+.pp-gauge-c {
+  position: absolute; left: 0; right: 0; top: 46%;
+  display: flex; flex-direction: column; align-items: center;
+}
+.pp-gauge-c b { font-size: 2rem; font-weight: 900; color: #252423; line-height: 1; }
+.pp-gauge-c span { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: #8a8886; margin-top: 3px; }
+
+/* ---------- Estado de cuenta (sección contable) ---------- */
+.ec-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+  font-weight: 800; color: var(--blue-700);
+}
+.ec-eyebrow svg { width: 15px; height: 15px; }
+.ec-h { font-size: 1.05rem; margin: 26px 0 12px; color: var(--blue-900); }
+.ec-resumen {
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  padding: 20px 22px; box-shadow: 0 10px 28px rgba(10,45,134,.07);
+}
+.ec-resumen-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ec-num { display: flex; flex-direction: column; gap: 4px; }
+.ec-num span { font-size: .78rem; color: var(--muted); }
+.ec-num b { font-size: 1.65rem; font-weight: 900; color: var(--blue-900); line-height: 1; }
+.ec-num.verde b { color: var(--verde); }
+.ec-num.rojo b { color: var(--rojo); }
+.ec-resumen-bar { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+.ec-resumen-bar b { color: var(--blue-800); font-size: .95rem; white-space: nowrap; }
+.ec-bar { flex: 1; height: 10px; border-radius: 999px; background: #eef2fa; overflow: hidden; display: inline-block; }
+.ec-bar > i { display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, #34d399, #0f9d63); transition: width .8s ease; }
+.ec-bar.sm { height: 7px; max-width: 110px; vertical-align: middle; }
+.ec-table td { vertical-align: top; }
+.ec-muted { color: var(--muted); font-size: .78rem; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1080px) {
+  .pp-bi-row { grid-template-columns: 1fr; }
+  .pp-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .pp-main { padding: 22px 16px 40px; }
+  .pp-hero { padding: 22px; }
+  .pp-hero h1 { font-size: 1.5rem; }
+  .pp-kpis { grid-template-columns: 1fr 1fr; }
+  .pp-barrow { grid-template-columns: 1fr; gap: 6px; }
+  .pp-barrow-val { text-align: left; }
+  .pp-stepper .pp-lbl { font-size: .64rem; }
+  .ec-resumen-nums { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .pp-kpis { grid-template-columns: 1fr; }
+  .pp-card-top { flex-direction: column; }
+}

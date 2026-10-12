@@ -1,0 +1,163 @@
+{% extends "asociacion/base_asociacion.html" %}
+{% block asociacion %}
+<h1>Incentivo al Aprovechamiento y Tratamiento de Residuos Sólidos (IAT)</h1>
+<p class="sub">Acompañamiento jurídico y administrativo para que tu organización de recicladores de oficio presente y haga seguimiento a sus proyectos de aprovechamiento ante la alcaldía municipal o distrital.</p>
+
+<div class="notas aviso" style="max-width:860px">
+  <b>¿Qué es el IAT?</b>
+  El IAT es un incentivo económico creado por el <b>artículo 88 de la Ley 1753 de 2015</b> (Plan Nacional de Desarrollo 2014-2018) destinado a personas prestadoras de la actividad de aprovechamiento del servicio público de aseo, incluidas las organizaciones de recicladores de oficio en proceso de formalización. Se paga al prestador que maximice el aprovechamiento de residuos evitando su disposición final en rellenos sanitarios.
+</div>
+
+<section style="margin-top:26px;max-width:860px">
+  <h3 style="font-size:1.15rem;margin-bottom:10px">¿Quiénes pueden presentar proyectos?</h3>
+  <ul style="line-height:1.9;padding-left:20px">
+    <li>Personas prestadoras de las <b>actividades principales y complementarias</b> del servicio público de aseo.</li>
+    <li><b>Organizaciones y asociaciones de recicladores de oficio</b> en proceso de formalización como prestadores de la actividad de aprovechamiento.</li>
+    <li>Un solo proyecto por prestador u organización por vigencia.</li>
+  </ul>
+  <h3 style="font-size:1.15rem;margin:22px 0 10px">¿Cómo se evalúa?</h3>
+  <ul style="line-height:1.9;padding-left:20px">
+    <li>El municipio o distrito evalúa el proyecto según criterios de elegibilidad de la Resolución 547 de 2022.</li>
+    <li>Puntaje por tipo de prestador: formalizado (50), en proceso de formalización (40), otros (30).</li>
+    <li>Puntaje por reducción de toneladas dispuestas: reducción mayor al 10% (50), entre 5% y 10% (40), menor a 5% (30).</li>
+    <li>El valor del incentivo corresponde al <b>0,80% del salario mínimo legal mensual vigente por tonelada de residuos no aprovechables</b> dispuestos en relleno.</li>
+  </ul>
+</section>
+
+<section class="panel-form" style="max-width:860px;margin-top:30px">
+  <h3>Asistente IAT — construye, evalúa y radica tu proyecto</h3>
+  <p class="sub">Un agente experto en el incentivo te guía en la construcción del proyecto, consulta la normatividad de tu ciudad o municipio, te permite cargar el documento del proyecto y genera una <b>evaluación con puntaje real</b> (fortalezas, debilidades y cambios) junto con instrumentos de radicación.</p>
+
+  <div class="iat-asis" id="iatAsis">
+    <input type="hidden" id="iatOrganizacion" value="{{ organizacion|e }}">
+    <input type="hidden" id="iatTiposJson" value="{{ tipos|tojson|forceescape }}">
+
+    <div class="iat-grid">
+      <div class="iat-chat-col">
+        <div class="iat-chat-head">
+          <span class="iat-orb"></span>
+          <b>Agente IAT</b>
+          <span class="iat-estado" id="iatEstado"><span id="iatDot" class="{{ 'iat-dot' if ia_activa else 'iat-dot off' }}"></span>
+            {{ 'Experto con IA activo' if ia_activa else 'Modo guía (IA no configurada)' }}</span>
+        </div>
+        <div class="iat-hilo" id="iatHilo"></div>
+        <div class="iat-compositor">
+          <textarea id="iatEntrada" rows="1" placeholder="Cuéntale al agente qué necesitas: norma del municipio, requisitos, o lleva los datos de tu proyecto…"></textarea>
+          <button id="iatEnviar" type="button" title="Enviar">Enviar</button>
+        </div>
+        <div class="iat-acciones">
+          <label class="btn iat-file-btn" for="iatDoc">Cargar proyecto (PDF/TXT/DOCX)</label>
+          <input type="file" id="iatDoc" accept=".txt,.md,.pdf,.docx" hidden>
+          <button class="btn btn-navy" id="iatEvaluar" type="button">Evaluar proyecto</button>
+          <button class="btn" id="iatRadicar" type="button">Radicar proyecto en la alcaldía</button>
+        </div>
+        <div id="iatDocEstado" class="iat-doc-estado"></div>
+      </div>
+
+      <div class="iat-ficha-col">
+        <h4>Ficha del proyecto</h4>
+        <p class="iat-note">Escribe los datos aquí o díselo al agente en el chat; ambos se sincronizan. Antes de radicar, evalúa el proyecto para conocer su puntaje.</p>
+        <div class="iat-campos">
+          <label>Título del proyecto *</label>
+          <input data-iat="titulo" maxlength="200" placeholder="Ej. Ampliación del servicio de aprovechamiento en la comuna 5">
+          <label>Tipo</label>
+          <select data-iat="tipo">{% for t in tipos %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select>
+          <label>Municipio / distrito</label>
+          <input data-iat="municipio" maxlength="120" placeholder="Ej. Medellín">
+          <div class="iat-dos">
+            <div>
+              <label>Toneladas/mes</label>
+              <input data-iat="toneladas" type="number" min="0" step="0.01" placeholder="0">
+            </div>
+            <div>
+              <label>Censo de recicladores</label>
+              <input data-iat="censo" type="number" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+          <div class="iat-dos">
+            <div>
+              <label>% del censo que agrupa</label>
+              <input data-iat="asociados_pct" type="number" min="0" max="100" step="1" placeholder="Ej. 90">
+            </div>
+            <div>
+              <label>Formalización</label>
+              <select data-iat="formalizacion">
+                <option value="en_formalizacion">En proceso de formalización</option>
+                <option value="formalizada">Prestador formalizado</option>
+                <option value="otra">Solo constituida</option>
+              </select>
+            </div>
+          </div>
+          <label>Meta de reducción a relleno</label>
+          <select data-iat="meta_reduccion">
+            <option value="superior">Mayor al 10% (máx. puntaje)</option>
+            <option value="entre">Entre 5% y 10%</option>
+            <option value="menor">Menor al 5%</option>
+          </select>
+          <label>Acuerdos con operador / esquema (rutas, personal)</label>
+          <textarea data-iat="acuerdos" rows="2" maxlength="800" placeholder="Ej. Convenio con el operador local, 3 rutas de recolección, 40 recicladores vinculados…"></textarea>
+          <label>Descripción del proyecto *</label>
+          <textarea data-iat="descripcion" rows="4" maxlength="4000" placeholder="Operación actual, rutas, acuerdos comerciales con el esquema de aseo, personal vinculado, metas de reducción de toneladas a relleno…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div id="iatEva" class="iat-eva" hidden>
+      <div class="iat-eva-score">
+        <div class="iat-eva-num" id="iatPuntaje">0</div>
+        <div class="iat-eva-max">/ 100</div>
+        <div class="iat-eva-bar"><div id="iatBarra"></div></div>
+      </div>
+      <div class="iat-eva-cuerpo" id="iatEvaCuerpo"></div>
+      <div class="iat-eva-inst" id="iatInst"></div>
+    </div>
+
+    <form id="iatForm" method="post" action="{{ url_for('asociacion_iat_crear') }}" style="display:none"></form>
+  </div>
+</section>
+
+<section style="margin-top:30px">
+  <h3 style="font-size:1.15rem;margin-bottom:10px">Mis solicitudes</h3>
+  {% if solicitudes %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Radicado</th><th>Proyecto</th><th>Tipo</th><th>Toneladas</th><th>Estado</th><th>Radicado el</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in solicitudes %}
+        <tr>
+          <td><b>{{ s.radicado }}</b></td>
+          <td>{{ s.titulo }}</td>
+          <td>{{ s.tipo }}</td>
+          <td>{{ s.toneladas or 0 }}</td>
+          <td>
+            {% if s.estado == 'Aprobado' %}
+              <span class="badge favor">Aprobado</span>
+            {% elif s.estado == 'Negado' %}
+              <span class="badge vencida">Negado</span>
+            {% elif s.estado == 'En evaluación' %}
+              <span class="badge estudio">En evaluación</span>
+            {% else %}
+              <span class="badge tramite">Radicado</span>
+            {% endif %}
+          </td>
+          <td>{{ s.fecha_radicado[:10] }}</td>
+          <td><a class="btn" style="padding:4px 10px" href="{{ url_for('asociacion_iat_detalle', sid=s.id) }}">Ver</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="vacio">
+    <p style="margin:0">Aún no has radicado proyectos. Usa el asistente de arriba para construir, evaluar y presentar tu primera solicitud.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/iat_asistente.css') }}">
+<script src="{{ url_for('static', filename='js/iat_asistente.js') }}"></script>
+{% endblock %}

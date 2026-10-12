@@ -1,0 +1,85 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Áreas de atención — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Áreas de atención jurídica</h1>
+<p class="sub">Agrega o edita las especialidades que se muestran en la página principal (campos libres).</p>
+
+<div class="panel-form">
+  <h3>Agregar nueva área</h3>
+  <form method="post" action="{{ url_for('admin_areas_crear') }}">
+    <div class="form-row">
+      <div class="campo">
+        <label>Nombre del área *</label>
+        <input name="nombre" required placeholder="Ej. Derecho Ambiental">
+      </div>
+      <div class="campo">
+        <label>Icono (clave)</label>
+        <input name="icono" placeholder="scale | book | users | briefcase | gavel | chart | building | shield | star" value="scale">
+      </div>
+    </div>
+    <div class="campo">
+      <label>Descripción</label>
+      <textarea name="descripcion" placeholder="Describe el área de atención..."></textarea>
+    </div>
+    <button class="btn btn-navy" type="submit">Agregar área</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Área</th><th>Descripción</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for a in areas %}
+      <tr>
+        <td>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span class="icono" style="width:40px;height:40px;font-size:1.1rem;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;border-radius:10px;display:grid;place-items:center">{{ a.icono|icono_svg|safe }}</span>
+            <b>{{ a.nombre }}</b>
+          </div>
+        </td>
+        <td>{{ a.descripcion }}</td>
+        <td>
+          <div class="acciones">
+            <button class="btn btn-sm btn-outline" data-abre-modal="modal-area-{{ a.id }}">Editar</button>
+            <form method="post" action="{{ url_for('admin_areas_eliminar', aid=a.id) }}" data-confirmar="¿Eliminar esta área?">
+              <button class="btn btn-sm btn-danger" type="submit">Borrar</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" style="color:var(--muted)">No hay áreas registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% for a in areas %}
+<div class="modal" id="modal-area-{{ a.id }}">
+  <div class="modal-box">
+    <button class="cerrar-modal" type="button">×</button>
+    <h3>Editar área</h3>
+    <form method="post" action="{{ url_for('admin_areas_editar', aid=a.id) }}">
+      <div class="campo">
+        <label>Nombre del área *</label>
+        <input name="nombre" value="{{ a.nombre }}" required>
+      </div>
+      <div class="campo">
+        <label>Icono (clave)</label>
+        <input name="icono" value="{{ a.icono }}">
+      </div>
+      <div class="campo">
+        <label>Descripción</label>
+        <textarea name="descripcion">{{ a.descripcion }}</textarea>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" class="btn btn-outline" data-cierra-modal="1">Cancelar</button>
+        <button class="btn btn-navy" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

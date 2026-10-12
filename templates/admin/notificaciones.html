@@ -1,0 +1,51 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Notificaciones — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Notificaciones por correo</h1>
+<p class="sub">Cada vez que alguien envía el formulario de contacto o agenda una cita, se envía un aviso automático a la bandeja del despacho.</p>
+
+<div class="panel-form" style="max-width:640px">
+  <h3>Configuración SMTP del sitio</h3>
+  <form method="post" action="{{ url_for('admin_notificaciones') }}" id="form-notif">
+    <div class="form-row">
+      <div class="campo">
+        <label>Servidor SMTP</label>
+        <input name="servidor_smtp" value="{{ cfg.servidor_smtp or 'smtp.hostinger.com' if cfg else 'smtp.hostinger.com' }}">
+      </div>
+      <div class="campo">
+        <label>Puerto SMTP</label>
+        <input type="number" name="puerto_smtp" value="{{ cfg.puerto_smtp or 465 if cfg else 465 }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Correo remitente *</label>
+        <input type="email" name="correo" value="{{ cfg.correo if cfg else '' }}" required placeholder="notificaciones@derechoson.co">
+      </div>
+      <div class="campo">
+        <label>Contraseña del correo *</label>
+        <input type="password" name="clave" value="{{ cfg.clave if cfg else '' }}" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Destino de los avisos *</label>
+        <input type="email" name="destino" value="{{ cfg.destino if cfg else '' }}" required placeholder="contacto@derechoson.co">
+        <small style="color:var(--muted);font-size:.72rem">A esta casilla llegarán los avisos de contacto y citas.</small>
+      </div>
+      <div class="campo">
+        <label>Activar notificaciones</label>
+        <select name="activo">
+          <option value="1" {{ 'selected' if cfg and cfg.activo }}>Sí</option>
+          <option value="0" {{ 'selected' if not cfg or not cfg.activo }}>No</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-navy" type="submit">Guardar configuración</button>
+      <button class="btn btn-outline" type="submit" name="accion" value="prueba">Guardar y enviar correo de prueba</button>
+    </div>
+  </form>
+  <p style="margin-top:16px;color:var(--muted);font-size:.8rem">La prueba fallará si las credenciales SMTP son incorrectas o el hosting no está accesible. El mensaje queda guardado aunque el envío falle.</p>
+</div>
+{% endblock %}

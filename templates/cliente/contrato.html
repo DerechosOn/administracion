@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block titulo %}{{ c.numero }} — Contrato Derechos On{% endblock %}
+{% block contenido %}
+<div class="ct-toolbar no-print">
+  <a class="btn btn-outline" href="{{ url_for('cliente_contrato') }}">← Mis contratos</a>
+  <span class="ct-ver">Contrato N.° {{ c.numero }} — cliente: {{ c.cliente_nombre }}</span>
+  <button class="btn btn-navy" onclick="window.print()">Imprimir / Guardar PDF</button>
+</div>
+<div class="ct-pag">
+  <div class="ct-hoja">
+    {{ c.texto|safe }}
+
+    {% set f_nombre = C.get('contrato_firmante_nombre', '') %}
+    {% set f_cargo = C.get('contrato_firmante_cargo', '') %}
+    {% set f_archivo = C.get('contrato_firma_archivo', '') %}
+
+    <div class="ct-firma">
+      <div class="ct-f-col">
+        {% if f_archivo %}
+        <img class="firma-img" src="{{ url_for('static', filename='img/' ~ f_archivo) }}" alt="Firma de {{ f_nombre }}">
+        <p class="ct-linea"></p>
+        {% else %}
+        <p class="ct-linea">{{ f_nombre or 'DERECHOS ON' }}</p>
+        {% endif %}
+        <p class="ct-firma-nombre"><b>{{ f_nombre or 'DERECHOS ON' }}</b></p>
+        <p class="ct-firma-cargo">{{ f_cargo or 'Firma autorizada del despacho' }}</p>
+        <p class="ct-firma-rol">EL DESPACHO · DERECHOS ON</p>
+      </div>
+      <div class="ct-f-col">
+        {% if c.firmado_el %}
+        <img class="firma-img" src="{{ c.firma_imagen }}" alt="Firma digital de {{ c.firma_nombre }}">
+        <p class="ct-firma-nombre"><b>{{ c.firma_nombre }}</b></p>
+        <p class="ct-firma-fecha">Firmado digitalmente el {{ c.firmado_el|fecha_es }} — {{ c.ciudad }}, Colombia.</p>
+        <p class="ct-firma-rol">EL CLIENTE</p>
+        {% else %}
+        <p class="ct-linea"></p>
+        <p class="ct-firma-cargo">Pendiente de firma digital del cliente</p>
+        <p class="ct-firma-rol">EL CLIENTE</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if c.firmado_el %}
+    <p class="ct-nota">Huella electrónica del cliente con plena validez conforme a la Ley 527 de 1999.</p>
+    {% endif %}
+    {% if not c.firmado_el %}
+    <div class="ct-firmar no-print">
+      <h3>Firma aquí tu contrato</h3>
+      <p class="sub">Dibuja tu firma en el recuadro y escribe tu nombre completo. Al hacerlo, manifiestas haber leído y aceptado el contrato, con plena validez jurídica conforme a la Ley 527 de 1999 (mensajes de datos).</p>
+      <canvas id="pad-firma" width="520" height="150"></canvas>
+      <div class="ct-firmar-ops">
+        <button type="button" class="btn btn-outline" id="btn-limpiar">Limpiar firma</button>
+      </div>
+      <div class="campo" style="max-width:460px;margin-top:14px">
+        <label for="firma-nombre">Nombre completo del firmante *</label>
+        <input type="text" id="firma-nombre" value="{{ usuario.nombre }}" placeholder="Escribe tu nombre tal como aparece en el documento">
+      </div>
+      <button type="button" class="btn btn-navy" id="btn-firmar">Firmar digitalmente</button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if not c.firmado_el %}
+<script>
+(function () {
+  var pad = document.getElementById('pad-firma');
+  var ctx = pad.getContext('2d');
+  var dibujando = false;
+  var hayTrazos = false;
+  ctx.lineWidth = 2.4;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#1d2733';
+
+  function pos(e) {
+    var r = pad.getBoundingClientRect();
+    var escalaX = pad.width / r.width;
+    var escalaY = pad.height / r.height;
+    var p = e.touches ? e.touches[0] : e;
+    return { x: (p.clientX - r.left) * escalaX, y: (p.clientY - r.top) * escalaY };
+  }
+
+  function iniciar(e) {
+    e.preventDefault();
+    dibujando = true;
+    hayTrazos = true;
+    ctx.beginPath();
+    var p = pos(e);
+    ctx.moveTo(p.x, p.y);
+  }
+  function mover(e) {
+    if (!dibujando) return;
+    e.preventDefault();
+    var p = pos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+  function detener(e) {
+    if (!dibujando) return;
+    dibujando = false;
+    ctx.beginPath();
+  }
+
+  pad.addEventListener('mousedown', iniciar);
+  pad.addEventListener('mousemove', mover);
+  pad.addEventListener('mouseup', detener);
+  pad.addEventListener('mouseleave', detener);
+  pad.addEventListener('touchstart', iniciar, { passive: false });
+  pad.addEventListener('touchmove', mover, { passive: false });
+  pad.addEventListener('touchend', detener);
+
+  document.getElementById('btn-limpiar').addEventListener('click', function () {
+    ctx.clearRect(0, 0, pad.width, pad.height);
+    hayTrazos = false;
+  });
+
+  document.getElementById('btn-firmar').addEventListener('click', function () {
+    var nombre = document.getElementById('firma-nombre').value.trim();
+    if (nombre.length < 3) { alert('Escribe tu nombre completo para firmar.'); return; }
+    if (!hayTrazos) { alert('Dibuja tu firma en el recuadro.'); return; }
+    var imagen = pad.toDataURL('image/png');
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = {{ url_for('cliente_contrato_firmar', cid=c.id)|tojson }};
+    form.style.display = 'none';
+    var i1 = document.createElement('input'); i1.name = 'firma_nombre'; i1.value = nombre;
+    var i2 = document.createElement('input'); i2.name = 'firma_imagen'; i2.value = imagen;
+    form.appendChild(i1); form.appendChild(i2);
+    document.body.appendChild(form);
+    form.submit();
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

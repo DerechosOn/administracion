@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titulo %}Registro Asociación de Recicladores — Derechos On{% endblock %}
+{% block contenido %}
+<div class="auth-wrap">
+  <div class="auth-card" style="max-width:760px">
+    <h1>Registro — Asociación de Recicladores</h1>
+    <p class="sub">Registro para asociaciones de recicladores de oficio. Ingresa los datos de la asociación y su representante legal.</p>
+
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+    <form method="post">
+      <h3 style="margin:0 0 10px;font-size:1.08rem">Datos de la asociación</h3>
+      <div class="campo">
+        <label for="razon_social_asoc">Razón social de la asociación *</label>
+        <input type="text" id="razon_social_asoc" name="razon_social_asoc" value="{{ request.form.get('razon_social_asoc','') }}" placeholder="Ej. Asociación de Recicladores de Oficio de Bogotá" required>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="nit_asoc">NIT *</label>
+          <input type="text" id="nit_asoc" name="nit_asoc" value="{{ request.form.get('nit_asoc','') }}" placeholder="900123456-1" required>
+        </div>
+        <div class="campo" style="flex:0 0 220px">
+          <label for="ciudad_asoc">Ciudad / Municipio *</label>
+          <input type="text" id="ciudad_asoc" name="ciudad_asoc" value="{{ request.form.get('ciudad_asoc','') }}" placeholder="Bogotá D.C." required>
+        </div>
+      </div>
+      <div class="campo">
+        <label for="direccion_asoc">Dirección *</label>
+        <input type="text" id="direccion_asoc" name="direccion_asoc" value="{{ request.form.get('direccion_asoc','') }}" placeholder="Carrera 4 # 45-21, Barrio Santa Fe" required>
+      </div>
+
+      <h4 style="margin:20px 0 8px;font-size:1rem">Representante legal</h4>
+      <div class="campo">
+        <label for="rep_asoc_nombre">Nombre del representante legal *</label>
+        <input type="text" id="rep_asoc_nombre" name="rep_asoc_nombre" value="{{ request.form.get('rep_asoc_nombre','') }}" placeholder="Nombres y apellidos" required>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="rep_asoc_cedula">Cédula del representante legal *</label>
+          <input type="text" id="rep_asoc_cedula" name="rep_asoc_cedula" value="{{ request.form.get('rep_asoc_cedula','') }}" placeholder="1234567890" required>
+        </div>
+        <div class="campo">
+          <label for="email_asoc">Correo electrónico *</label>
+          <input type="email" id="email_asoc" name="email_asoc" value="{{ request.form.get('email_asoc','') }}" placeholder="contacto@asociacion.com.co" required>
+        </div>
+      </div>
+
+      <h3 style="margin:22px 0 10px;font-size:1.08rem">Datos de acceso</h3>
+      <div class="campo">
+        <label for="tipo_servicio">Tipo de servicio *</label>
+        <select id="tipo_servicio" name="tipo_servicio" required>
+          <option value="">Selecciona el servicio que requieres</option>
+          {% for s in servicios %}
+          <option value="{{ s }}" {{ 'selected' if request.form.get('tipo_servicio') == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="clave">Contraseña *</label>
+          <input type="password" id="clave" name="clave" placeholder="Mínimo 6 caracteres" required>
+        </div>
+        <div class="campo">
+          <label for="clave2">Confirmar contraseña *</label>
+          <input type="password" id="clave2" name="clave2" placeholder="Repítela" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Crear mi cuenta</button>
+    </form>
+
+    <p class="swap"><a href="{{ url_for('registro') }}">← Volver a selección de tipo de cliente</a></p>
+  </div>
+</div>
+{% endblock %}

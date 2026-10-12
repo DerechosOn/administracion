@@ -1,0 +1,78 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Motor de búsqueda de clientes — Administración Derechos On{% endblock %}
+{% block contenido %}
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+  <div>
+    <h1>Motor de búsqueda de clientes</h1>
+    <p class="sub">Registra una búsqueda (redes sociales, buscadores, cámaras de comercio — especialmente la Cámara de Comercio de Bogotá—, directorios públicos, referidos) y luego importa los resultados para clasificarlos y generar propuestas, con especial atención a las personas jurídicas.</p>
+  </div>
+  <a class="btn btn-outline" href="{{ url_for('admin_agente') }}">← Volver a prospectos</a>
+</div>
+
+<div class="reporte-grid" style="grid-template-columns:1fr 1fr;margin:22px 0;gap:18px">
+  <div class="panel">
+    <h3>1. Registrar búsqueda</h3>
+    <form method="post" class="panel-form" style="margin-top:6px">
+      <div class="campo">
+        <label>¿Qué buscas? (empresa, actividad económica, sector, NIT…)</label>
+        <textarea name="texto" rows="2" required placeholder="Ej.: constructoras de vivienda en Bogotá / tecnología SAS cambios de razón social…"></textarea>
+      </div>
+      <div class="campo">
+        <label>Fuentes consultadas</label>
+        <div class="checks">
+          {% for f in fuentes %}
+          <label class="chk"><input type="checkbox" name="fuentes" value="{{ f }}"> {{ f }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <button class="btn btn-navy" name="accion" value="buscar" type="submit">Registrar búsqueda</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>2. Importar resultados</h3>
+    <p style="font-size:.85rem;color:var(--muted)">Pega una fila por línea con formato <code>Nombre;Documento;Sector;Correo;Telefono</code>. La clasificación (persona jurídica/natural), sector y prioridad se calculan automáticamente. <a href="{{ url_for('admin_agente_plantilla') }}">Descargar plantilla CSV</a>.</p>
+    <form method="post" class="panel-form" style="margin-top:6px">
+      <div class="campo">
+        <label>Resultados a importar</label>
+        <textarea name="resultados" rows="7" required placeholder="Construcciones Alfa SAS;900123456;Construccion;ventas@alfa.co;+57 300 000 0001"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Fuente</label>
+          <select name="fuente_import">
+            {% for f in fuentes %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Consulta de origen</label>
+          <input name="consulta_import" placeholder="Ej.: constructoras Bogotá">
+        </div>
+      </div>
+      <button class="btn btn-navy" name="accion" value="importar" type="submit">Importar y clasificar</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:18px">
+  <h3>Historial de búsquedas ({{ busquedas|length }})</h3>
+  <div class="tabla-wrap">
+    <table class="tabla">
+      <thead><tr><th>Fecha</th><th>Consulta</th><th>Fuentes</th><th>Estado</th><th>Importados</th></tr></thead>
+      <tbody>
+        {% for b in busquedas %}
+        <tr>
+          <td style="font-size:.8rem;color:var(--muted)">{{ b.creado_el[:10] }}</td>
+          <td>{{ b.texto }}</td>
+          <td style="font-size:.8rem">{{ b.fuentes }}</td>
+          <td><span class="badge {{ 'favor' if b.resultado == 'Importada' else 'archivado' }}">{{ b.resultado }}</span></td>
+          <td>{{ b.nro_resultados }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Sin búsquedas registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

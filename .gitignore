@@ -1,0 +1,20 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datos locales y privacidad: no subir la base con información de clientes.
+# En el hosting se crea una BD nueva y el administrador se siembra solo.
+derechos.db
+crm.db
+derechos_backup_before_cleanup.db
+uploads/
+
+# Copia estática para Hostinger y empaquetados (no hacen falta en la app)
+public_html/
+estatico_extra/
+exportar_sitio.py
+*.zip
+
+.venv/
+*.log

@@ -1,0 +1,216 @@
+{% extends "abogado/base_abogado.html" %}
+{% block abogado %}
+<style>
+.motor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:14px 0}
+.motor-card{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.motor-card b{font-size:.95rem}
+.motor-card .kpi{font-size:1.5rem;font-weight:800;color:var(--blue-800);line-height:1.1}
+.motor-tabla{width:100%;border-collapse:collapse}
+.motor-tabla th,.motor-tabla td{padding:7px 9px;border-bottom:1px solid var(--line);font-size:.86rem;vertical-align:top;text-align:left}
+.motor-tabla th{background:var(--bg-soft);color:var(--ink-soft);font-weight:700}
+.etq{display:inline-block;padding:1px 8px;border-radius:20px;font-size:.72rem;font-weight:700}
+.etq-pend{background:#fff3cd;color:#8a6d00}
+.etq-aprob{background:#d5f5e3;color:#1e7e34}
+.etq-desc{background:#f1f3f5;color:#6c757d}
+.buscar-caja{display:flex;gap:10px;flex-wrap:wrap}
+.buscar-caja input[type=search]{flex:1;min-width:260px;padding:9px 12px;border:1px solid var(--line);border-radius:8px}
+.res-hd{font-family:Consolas,Monaco,monospace;font-size:.8rem;color:var(--ink-soft);margin:0 0 4px}
+.res-t{font-weight:700}
+.link-btn{background:none;border:none;color:var(--blue-800);cursor:pointer;font-size:.82rem;padding:2px 6px;text-decoration:underline}
+.link-btn.danger{color:#b02a37}
+</style>
+
+<section style="max-width:960px">
+  <h1>Base jurídica del IAT</h1>
+  <p class="sub">Marco normativo y jurisprudencia del <b>Incentivo al Aprovechamiento y Tratamiento de Residuos (IAT)</b> y de las organizaciones de recicladores de oficio (aprovechamiento, reconocimiento, formalización, RUOR, PGIRS). Esta base la mantiene el equipo jurídico y alimenta al agente IAT del portal de asociaciones. El <b>motor de búsqueda y actualización</b> está dedicado a este tema: mantiene al abogado al día con las normas y providencias del IAT.</p>
+
+  <div class="motor-grid">
+    <div class="motor-card"><span class="sub">Catálogo IAT total</span><div class="kpi">{{ motor_resumen.total }}</div></div>
+    <div class="motor-card"><span class="sub">Pendientes por revisar</span><div class="kpi">{{ motor_resumen.pendientes }}</div></div>
+    <div class="motor-card"><span class="sub">Normas IAT aprobadas</span><div class="kpi">{{ motor_resumen.aprobadas }}</div></div>
+    <div class="motor-card"><span class="sub">Fuentes vigiladas</span><div class="kpi">{{ motor_resumen.fuentes }}</div></div>
+  </div>
+
+  <div class="panel-form" style="margin-top:10px">
+    <form method="get" action="{{ url_for('abogado_base') }}" class="buscar-caja">
+      <input type="search" name="q" value="{{ consulta }}" placeholder="Buscar en el tema IAT… (ej. 'aprovechamiento', 'recicladores', 'RUOR', 'Resolución 547', 'PGIRS')" autofocus>
+      <button class="btn btn-navy" type="submit">Buscar</button>
+      {% if consulta %}<a class="btn" href="{{ url_for('abogado_base') }}">Limpiar</a>{% endif %}
+    </form>
+
+    {% if consulta and resultado is not none %}
+    <div style="margin-top:16px">
+      <p class="sub"><b>{{ resultado.total }}</b> resultado(s) para «{{ consulta }}»</p>
+      {% if not resultado.resultados %}
+        <p class="sub">Sin coincidencias en la base IAT ni en el catálogo. Prueba otros términos o revisa las fuentes externas con «Revisar fuentes ahora».</p>
+      {% else %}
+        {% for x in resultado.resultados %}
+        <div style="padding:9px 4px;border-bottom:1px solid var(--line)">
+          <p class="res-hd">{{ x.origen }}{% if x.estado %} · <span class="etq etq-{{ 'aprob' if x.estado=='aprobada' else ('desc' if x.estado=='descartada' else 'pend') }}">{{ x.estado }}</span>{% endif %}</p>
+          <p class="res-t">{{ x.titulo }}</p>
+          <p class="sub" style="margin:2px 0">{{ x.detalle }}</p>
+          {% if x.url %}<p class="sub"><a href="{{ x.url }}" target="_blank" rel="noopener">Ver fuente oficial ↗</a></p>{% endif %}
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="panel-form" style="margin-top:22px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <h3 style="margin:0">Motor de actualización del IAT</h3>
+      <form method="post" action="{{ url_for('abogado_base_motor_actualizar') }}" style="margin:0">
+        <button class="btn btn-navy" type="submit">Revisar fuentes ahora</button>
+      </form>
+    </div>
+    <p class="sub">El motor vigila estas páginas oficiales del sector. Cuando una cambia, extrae los títulos de normas/providencias <b>del tema IAT</b> y los deja como <b>pendientes</b> para que el abogado los revise. La revisión automática corre cada 24 h.</p>
+
+    <table class="motor-tabla">
+      <thead><tr><th>Fuente</th><th>Tipo</th><th>Área</th><th>Estado</th><th>Última revisión</th><th>Acciones</th></tr></thead>
+      <tbody>
+      {% for f in fuentes %}
+        <tr>
+          <td><a href="{{ f.url }}" target="_blank" rel="noopener">{{ f.nombre }}</a></td>
+          <td>{{ 'Jurisprudencia' if f.tipo=='jurisprudencia' else 'Norma' }}</td>
+          <td>{{ f.area }}</td>
+          <td>
+            {% if not f.activo %}pausada{% elif f.ultimo_error %}error: <span title="{{ f.ultimo_error }}">{{ f.ultimo_error[:28] }}</span>{% else %}activa{% endif %}
+            {% if f.novedades %} · <b>{{ f.novedades }} novedad(es)</b>{% endif %}
+          </td>
+          <td>{{ f.ultima_revision or 'sin revisar' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('abogado_base_fuentes_accion', fid=f.id) }}" style="display:inline;margin:0">
+              <button class="link-btn" type="submit" name="accion" value="revisar">Revisar</button>
+              {% if f.activo %}<button class="link-btn" type="submit" name="accion" value="desactivar">Pausar</button>
+              {% else %}<button class="link-btn" type="submit" name="accion" value="activar">Activar</button>{% endif %}
+              <button class="link-btn danger" type="submit" name="accion" value="eliminar" onclick="return confirm('¿Eliminar esta fuente?')">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <details style="margin:10px 0">
+      <summary style="cursor:pointer;font-size:.88rem;color:var(--blue-800)">Agregar una fuente oficial a vigilar</summary>
+      <form method="post" action="{{ url_for('abogado_base_fuentes_crear') }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px">
+        <input type="text" name="nombre" placeholder="Nombre de la fuente" required>
+        <select name="tipo">
+          <option value="norma">Norma</option>
+          <option value="jurisprudencia">Jurisprudencia</option>
+        </select>
+        <input type="text" name="area" placeholder="Área (ej. Laboral)">
+        <input type="url" name="url" placeholder="https://… (listado oficial)" required>
+        <button class="btn btn-navy" type="submit">Vigilar fuente</button>
+      </form>
+    </details>
+  </div>
+
+  <div class="panel-form" style="margin-top:22px">
+      <h3 style="margin:0">Catálogo del motor</h3>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="sub" style="margin:0">{{ motor_resumen.total }} registros</span>
+        <form method="post" action="{{ url_for('abogado_base_catalogo_cargar') }}" style="margin:0">
+          <button class="btn" type="submit">Cargar catálogo desde la base jurídica</button>
+        </form>
+      </div>
+    </div>
+
+    {% if pendientes %}
+    <h4 style="margin:14px 0 4px">Pendientes (descubiertos automáticamente o a mano)</h4>
+    <table class="motor-tabla">
+      <thead><tr><th>Título</th><th>Tipo</th><th>Fuente</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+      {% for n in pendientes %}
+        <tr>
+          <td>{{ n.titulo }}{% if n.url %}<div class="sub"><a href="{{ n.url }}" target="_blank" rel="noopener">ver fuente ↗</a></div>{% endif %}</td>
+          <td>{{ n.categoria or n.tipo }}</td>
+          <td>{{ {'motor':'motor automático','base':'base jurídica','manual':'manual'}.get(n.origen, n.origen) }}{% if n.area %} · {{ n.area }}{% endif %}</td>
+          <td><span class="etq etq-pend">pendiente</span></td>
+          <td>
+            <form method="post" action="{{ url_for('abogado_base_norma_accion', nid=n.id) }}" style="display:inline;margin:0">
+              <button class="link-btn" type="submit" name="accion" value="aprobar">Aprobar</button>
+              <button class="link-btn" type="submit" name="accion" value="descartar">Descartar</button>
+              <button class="link-btn danger" type="submit" name="accion" value="eliminar">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {% if aprobadas %}
+    <h4 style="margin:18px 0 4px">Aprobadas (catálogo vigente)</h4>
+    <table class="motor-tabla">
+      <thead><tr><th>Título</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+      {% for n in aprobadas %}
+        <tr>
+          <td>{{ n.titulo }}{% if n.url %}<div class="sub"><a href="{{ n.url }}" target="_blank" rel="noopener">ver fuente ↗</a></div>{% endif %}</td>
+          <td>{{ n.categoria or n.tipo }}</td>
+          <td><span class="etq etq-aprob">aprobada</span></td>
+          <td>
+            <form method="post" action="{{ url_for('abogado_base_norma_accion', nid=n.id) }}" style="display:inline;margin:0">
+              <button class="link-btn" type="submit" name="accion" value="reabrir">Reabrir</button>
+              <button class="link-btn danger" type="submit" name="accion" value="eliminar">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {% if not pendientes and not aprobadas %}
+    <p class="sub" style="margin-top:10px">El catálogo aún está vacío. Usa «Revisar fuentes ahora» o agrega una norma manualmente abajo.</p>
+    {% endif %}
+
+    <details style="margin:14px 0 0">
+      <summary style="cursor:pointer;font-size:.88rem;color:var(--blue-800)">Añadir norma o providencia manualmente (queda aprobada)</summary>
+      <form method="post" action="{{ url_for('abogado_base_norma_crear') }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:10px">
+        <input type="text" name="titulo" placeholder="Título (ej. Decreto 802 de 2022)" required>
+        <select name="tipo">
+          <option value="norma">Norma</option>
+          <option value="jurisprudencia">Jurisprudencia</option>
+        </select>
+        <input type="text" name="categoria" placeholder="Categoría (Ley, Decreto, Sentencia)">
+        <input type="text" name="numero" placeholder="Número">
+        <input type="text" name="fecha" placeholder="Año">
+        <input type="text" name="area" placeholder="Área">
+        <input type="url" name="url" placeholder="Enlace oficial (opcional)">
+        <input type="text" name="resumen" placeholder="Resumen breve (opcional)" style="grid-column:1/-1">
+        <button class="btn btn-navy" type="submit">Añadir al catálogo</button>
+      </form>
+    </details>
+  </div>
+
+  {% for clave, titulo, desc in secciones %}
+  <div class="panel-form" style="margin-top:22px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <h3 style="margin:0">{{ titulo }}</h3>
+      <span class="sub" style="margin:0">{{ C.get(clave, '')|length }} caracteres guardados</span>
+    </div>
+    <p class="sub">{{ desc }}</p>
+    <form method="post" action="{{ url_for('abogado_base') }}">
+      <textarea name="{{ clave }}" rows="20" spellcheck="false"
+                style="width:100%;min-height:340px;font-family:Consolas,Monaco,monospace;font-size:.85rem;line-height:1.55;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg-soft)">{{ C.get(clave, '')|e }}</textarea>
+      <div style="margin:10px 0">
+        <button class="btn btn-navy" type="submit">Guardar {{ titulo }}</button>
+      </div>
+    </form>
+    <details style="margin-top:2px">
+      <summary style="cursor:pointer;font-size:.88rem;color:var(--blue-800)">Ver vista previa (cómo se ve publicado)</summary>
+      <div class="notas" style="margin-top:10px;background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:14px 18px">
+        {{ C.get(clave, '')|safe }}
+      </div>
+    </details>
+  </div>
+  {% endfor %}
+
+  <div class="notas aviso" style="margin-top:24px">
+    <b>Uso:</b> el <b>buscador</b> consulta el catálogo IAT y las secciones de esta base jurídica; el <b>motor de actualización</b> vigila las fuentes oficiales del sector y propone las novedades del tema IAT como <em>pendientes</em>; tú apruebas, descartas o reabres cada registro. Así el abogado se mantiene actualizado en el IAT sin revisar los portales a mano. El portal conserva la versión más reciente que publiques y la usa como material de referencia para el agente IAT que orienta a las asociaciones.
+  </div>
+</section>
+{% endblock %}

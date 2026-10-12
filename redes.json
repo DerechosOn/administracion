@@ -1,0 +1,22 @@
+{
+  "linkedin": {
+    "activa": false,
+    "auto": true,
+    "token": "",
+    "autor_urn": ""
+  },
+  "x": {
+    "activa": false,
+    "auto": true,
+    "api_key": "",
+    "api_secret": "",
+    "access_token": "",
+    "access_secret": ""
+  },
+  "instagram": {
+    "activa": false,
+    "auto": true,
+    "token": "",
+    "id_cuenta": ""
+  }
+}

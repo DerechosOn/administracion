@@ -1,0 +1,42 @@
+{% extends "abogado/base_abogado.html" %}
+{% block titulo %}Configuración de correo — Derechos On{% endblock %}
+{% block abogado %}
+<div class="panel correo-config">
+  <h2>Correo institucional</h2>
+  <p>Configura tu cuenta de correo para usarla desde el portal. El asistente intenta
+     conectarse con los datos de Hostinger por defecto, pero puedes usar cualquier servidor
+     con IMAP/SMTP. La contraseña se guarda en la base de datos del sitio.</p>
+
+  <form method="post" action="{{ url_for('abogado_correo_config') }}" id="form-mail-config">
+    <div class="grid-2">
+      <label>Servidor de entrada (IMAP)
+        <input class="campo" name="servidor_imap" value="{{ cfg.servidor_imap if cfg else 'imap.hostinger.com' }}" required>
+      </label>
+      <label>Puerto IMAP
+        <input class="campo" name="puerto_imap" type="number" value="{{ cfg.puerto_imap if cfg else 993 }}" required>
+      </label>
+      <label>Servidor de salida (SMTP)
+        <input class="campo" name="servidor_smtp" value="{{ cfg.servidor_smtp if cfg else 'smtp.hostinger.com' }}" required>
+      </label>
+      <label>Puerto SMTP
+        <input class="campo" name="puerto_smtp" type="number" value="{{ cfg.puerto_smtp if cfg else 465 }}" required>
+      </label>
+    </div>
+    <label>Correo institucional
+      <input class="campo" name="correo" type="email" value="{{ correo }}" required>
+    </label>
+    <label>Contraseña
+      <input class="campo" name="clave" type="password" value="{{ cfg.clave if cfg else '' }}" required>
+    </label>
+    <div class="fila">
+      <button class="btn btn-nuevo" type="submit" name="accion" value="guardar">Guardar</button>
+      <button class="btn" type="button" id="mail-probar">Probar conexión</button>
+      {% if cfg %}
+      <button class="btn danger" type="submit" name="accion" value="quitar" formaction="{{ url_for('abogado_correo_quitar') }}"
+              data-confirmar="¿Quitar la configuración del correo del portal?">Quitar</button>
+      {% endif %}
+    </div>
+    <p id="mail-prueba"></p>
+  </form>
+</div>
+{% endblock %}

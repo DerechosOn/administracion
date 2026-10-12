@@ -1,0 +1,77 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Abogados — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Abogados del despacho</h1>
+<p class="sub">Agrega nuevos profesionales o retíralos del equipo. Con correo y contraseña, el abogado tendrá acceso a su portal propio (calendario, procesos y videollamada).</p>
+
+<div class="panel-form">
+  <h3>Agregar abogado</h3>
+  <form method="post" action="{{ url_for('admin_abogados_crear') }}">
+    <div class="form-row">
+      <div class="campo">
+        <label>Nombre completo *</label>
+        <input name="nombre" required placeholder="Ej. Dra. María Torres">
+      </div>
+      <div class="campo">
+        <label>Especialidad</label>
+        <input name="especialidad" placeholder="Ej. Derecho Penal">
+      </div>
+      <div class="campo">
+        <label>Tarjeta profesional</label>
+        <input name="tarjeta_profesional" placeholder="Ej. TP 123.456">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Correo (usuario del portal) *</label>
+        <input type="email" name="correo" required placeholder="abogado@derechoson.co">
+      </div>
+      <div class="campo">
+        <label>Contraseña del portal</label>
+        <input name="clave" placeholder="Mínimo 6 caracteres">
+        <small style="color:var(--muted);font-size:.72rem">Si la dejas vacía se creará la cuenta con la clave inicial Abogado123!.</small>
+      </div>
+      <div class="campo">
+        <label>Teléfono</label>
+        <input name="telefono" placeholder="+57 300 000 0000">
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Agregar abogado</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Nombre</th><th>Especialidad</th><th>Tarjeta</th><th>Contacto</th><th>Estado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for a in abogados %}
+      <tr>
+        <td><b>{{ a.nombre }}</b></td>
+        <td>{{ a.especialidad or '—' }}</td>
+        <td>{{ a.tarjeta_profesional or '—' }}</td>
+        <td>
+          {% if a.correo %}{{ a.correo }}{% endif %}
+          {% if a.telefono %}<br><small style="color:var(--muted)">{{ a.telefono }}</small>{% endif %}
+        </td>
+        <td>
+          {% if a.activo %}
+            <span class="badge favor">Activo</span>
+          {% else %}
+            <span class="badge contra">Retirado</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('admin_abogados_quitar', aid=a.id) }}" data-confirmar="¿Quitar a {{ a.nombre }} del despacho? Se desasignará de sus procesos.">
+            <button class="btn btn-sm btn-danger" type="submit">Quitar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="color:var(--muted)">No hay abogados registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

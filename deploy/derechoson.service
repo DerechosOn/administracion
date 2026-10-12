@@ -1,0 +1,16 @@
+[Unit]
+Description=Gunicorn para Derechos On (portal jurídico)
+After=network.target
+
+[Service]
+User=derechoson
+Group=derechoson
+WorkingDirectory=/home/derechoson/derechos-on
+EnvironmentFile=/etc/derechoson.env
+Environment="PATH=/home/derechoson/derechos-on/venv/bin"
+ExecStart=/home/derechoson/derechos-on/venv/bin/gunicorn --workers 2 --bind 127.0.0.1:8000 --timeout 120 wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

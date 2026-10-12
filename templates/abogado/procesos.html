@@ -1,0 +1,25 @@
+{% extends "abogado/base_abogado.html" %}
+{% block abogado %}
+<h1>Mis procesos</h1>
+<p class="sub">Procesos asignados a tu cargo, con su cliente, despacho y estado.</p>
+
+{% for proceso in procesos %}
+<article class="proceso">
+  <div class="proceso-head">
+    <h3><a href="{{ url_for('abogado_proceso', pid=proceso.id) }}" style="color:inherit">{{ proceso.titulo }}</a></h3>
+    <span class="badge {{ proceso.estado|estado_clase }}">{{ proceso.estado }}</span>
+  </div>
+  <div class="proceso-meta">
+    <span>Cliente: <b>{{ proceso.cliente }}</b></span>
+    <span>Despacho: <b>{{ proceso.despacho or 'Por asignar' }}</b></span>
+    <span>Área: <b>{{ proceso.tipo }}</b></span>
+    <span>Última actualización: <b>{{ proceso.fecha_actualizacion[:10] }}</b></span>
+  </div>
+  <div class="acciones" style="margin-top:12px">
+    <a class="btn btn-sm btn-outline" href="{{ url_for('abogado_proceso', pid=proceso.id) }}">Ver actuaciones y notas</a>
+  </div>
+</article>
+{% else %}
+<p style="color:var(--muted)">Aún no tienes procesos asignados. La administración te asignará clientes.</p>
+{% endfor %}
+{% endblock %}

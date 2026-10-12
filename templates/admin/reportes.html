@@ -1,0 +1,77 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Reportes — Administración Derechos On{% endblock %}
+{% block contenido %}
+<div class="reportes-head">
+  <h1>Reportes</h1>
+  <p class="sub">Resumen operativo. Exporta los datos a Excel (CSV) o imprime el reporte como PDF.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+    <a class="btn btn-primary" href="{{ url_for('admin_reportes_pdf') }}">Descargar PDF</a>
+    <button class="btn btn-outline" type="button" onclick="window.print()">Imprimir / Guardar PDF</button>
+    <a class="btn btn-outline" href="{{ url_for('admin_reportes_exportar', tipo='procesos') }}">CSV · Procesos</a>
+    <a class="btn btn-outline" href="{{ url_for('admin_reportes_exportar', tipo='actuaciones') }}">CSV · Actuaciones</a>
+    <a class="btn btn-outline" href="{{ url_for('admin_reportes_exportar', tipo='clientes') }}">CSV · Clientes</a>
+    <a class="btn btn-outline" href="{{ url_for('admin_reportes_exportar', tipo='citas') }}">CSV · Citas</a>
+    <a class="btn btn-outline" href="{{ url_for('admin_reportes_exportar', tipo='contactos') }}">CSV · Mensajes</a>
+  </div>
+</div>
+
+<div class="stat-cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+  <div class="stat-card"><b>{{ totales.clientes }}</b><span>Clientes</span></div>
+  <div class="stat-card"><b>{{ totales.procesos }}</b><span>Procesos</span></div>
+  <div class="stat-card"><b>{{ totales.actuaciones }}</b><span>Actuaciones</span></div>
+  <div class="stat-card"><b>{{ totales.documentos }}</b><span>Documentos</span></div>
+  <div class="stat-card"><b>{{ totales.expedientes }}</b><span>Expedientes</span></div>
+  <div class="stat-card"><b>{{ totales.abogados }}</b><span>Abogados</span></div>
+  <div class="stat-card"><b>{{ totales.citas_pendientes }}</b><span>Citas pendientes</span></div>
+  <div class="stat-card"><b>{{ totales.citas_confirmadas }}</b><span>Citas confirmadas</span></div>
+  <div class="stat-card"><b>{{ totales.contactos_no_leidos }}</b><span>Mensajes sin leer</span></div>
+</div>
+
+<div class="reporte-grid">
+  <div>
+    <h2>Procesos por abogado</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Abogado</th><th>Procesos</th><th>A favor</th></tr></thead>
+        <tbody>
+          {% for r in por_abogado %}
+          <tr><td>{{ r.nombre }}</td><td>{{ r.total }}</td><td>{{ r.favor or 0 }}</td></tr>
+          {% else %}
+          <tr><td colspan="3" style="color:var(--muted)">Sin datos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div>
+    <h2>Procesos por estado</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Estado</th><th>Cantidad</th></tr></thead>
+        <tbody>
+          {% for r in por_estado %}
+          <tr><td>{{ r.estado }}</td><td>{{ r.total }}</td></tr>
+          {% else %}
+          <tr><td colspan="2" style="color:var(--muted)">Sin datos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div>
+    <h2>Procesos por tipo</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Cantidad</th></tr></thead>
+        <tbody>
+          {% for r in por_tipo %}
+          <tr><td>{{ r.tipo or 'Sin tipo' }}</td><td>{{ r.total }}</td></tr>
+          {% else %}
+          <tr><td colspan="2" style="color:var(--muted)">Sin datos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "abogado/base_abogado.html" %}
+{% block titulo %}Redactar correo — Derechos On{% endblock %}
+{% block abogado %}
+<div class="panel correo-redactar">
+  <h2>{{ 'Responder mensaje' if original else 'Redactar correo' }}</h2>
+  {% if not cfg %}
+  <p>Debes <a href="{{ url_for('abogado_correo_config') }}">configurar tu correo institucional</a> antes de redactar.</p>
+  {% else %}
+  <form method="post" action="{{ url_for('abogado_correo_enviar') }}">
+    {% if original %}
+    <input type="hidden" name="original_uid" value="{{ original.uid }}">
+    <input type="hidden" name="carpeta" value="{{ original.carpeta }}">
+    {% endif %}
+    <label>Para
+      <input class="campo" name="para" value="{{ para }}" placeholder="destinatario@dominio.com" required>
+    </label>
+    <label>CC
+      <input class="campo" name="cc" value="{{ cc }}" placeholder="copia@dominio.com">
+    </label>
+    <label>Asunto
+      <input class="campo" name="asunto" value="{{ asunto }}" placeholder="Asunto del mensaje">
+    </label>
+    <label>Mensaje
+      <textarea class="campo" name="cuerpo" rows="9" placeholder="Escribe tu mensaje...">{{ cuerpo }}</textarea>
+    </label>
+    <div class="fila">
+      <button class="btn btn-nuevo" type="submit">Enviar</button>
+      <a class="btn" href="{{ url_for('abogado_correo', carpeta=original.carpeta if original else 'INBOX') }}">Cancelar</a>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

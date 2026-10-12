@@ -1,0 +1,64 @@
+{% extends "abogado/base_abogado.html" %}
+{% block titulo %}Correo institucional — Derechos On{% endblock %}
+{% block abogado %}
+<div class="mail">
+  {% if not cfg %}
+  <div class="panel">
+    <h2>Correo institucional</h2>
+    <p>Aún no has configurado tu cuenta de correo. Conecta tu correo institucional
+       (IMAP/SMTP) para leer y enviar mensajes desde el portal, con una interfaz similar a Outlook.</p>
+    <p><a class="btn" href="{{ url_for('abogado_correo_config') }}">Configurar correo</a></p>
+  </div>
+  {% else %}
+
+  <div class="mail-top">
+    <div class="mail-acciones">
+      <a class="btn btn-nuevo" href="{{ url_for('abogado_correo_redactar') }}">+ Redactar</a>
+      <a class="btn" href="{{ url_for('abogado_correo', carpeta=carpeta) }}">Actualizar</a>
+      <a class="btn" href="{{ url_for('abogado_correo_config') }}">Configuración</a>
+    </div>
+    <input class="campo mail-busqueda" id="mail-busca" type="search" placeholder="Buscar en la bandeja...">
+  </div>
+
+  <div class="mail-cuerpo">
+    <aside class="mail-carpetas">
+      <h3>Carpetas</h3>
+      <nav>
+        {% for codigo, nombre in carpetas %}
+        <a href="{{ url_for('abogado_correo', carpeta=codigo) }}"
+           class="{{ 'activo' if carpeta == codigo }}">
+          <span>{{ nombre }}</span>
+        </a>
+        {% endfor %}
+      </nav>
+      <p class="mail-tip">Conexión directa con <b>{{ cfg.correo }}</b></p>
+    </aside>
+
+    <section class="mail-lista" id="mail-lista">
+      {% if error %}
+      <div class="vacio">
+        <b class="rojo">No se pudo conectar al correo</b>
+        <p>{{ error }}</p>
+        <a class="btn" href="{{ url_for('abogado_correo_config') }}">Revisar configuración</a>
+      </div>
+      {% elif not mensajes %}
+      <div class="vacio">La bandeja está vacía.</div>
+      {% else %}
+      {% for m in mensajes %}
+      <article class="mail-item {{ 'no-leido' if m.no_leido }}"
+               data-uid="{{ m.uid }}" data-carpeta="{{ m.carpeta }}">
+        <h4>{{ m.de }}</h4>
+        <p class="asunto">{{ m.asunto }}</p>
+        <time>{{ m.fecha }}</time>
+      </article>
+      {% endfor %}
+      {% endif %}
+    </section>
+
+    <section class="mail-panel" id="mail-panel">
+      <div class="vacio">Selecciona un mensaje para verlo aquí.</div>
+    </section>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

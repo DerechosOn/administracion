@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titulo %}Política de privacidad — Derechos On{% endblock %}
+{% block contenido %}
+<section class="section soft" style="padding:56px 0">
+  <div class="container" style="max-width:820px">
+    <span class="kicker">Ley 1581 de 2012</span>
+    <h2>Política de tratamiento de datos personales</h2>
+    <p style="color:#64748b">Derechos On (en adelante "la firma") trata los datos personales de sus clientes y visitantes conforme a la Ley 1581 de 2012, su Decreto Reglamentario 1377 de 2013 y demás normas concordantes.</p>
+
+    <div class="home-seccion">
+      <div class="head"><span class="ico">{{ 'shield'|icono_svg|safe }}</span><div><h3>1. Responsable del tratamiento</h3></div></div>
+      <div class="cuerpo"><p>Representante legal o encargado designado por la firma, con domicilio en Carrera 15 # 80-40, Bogotá, Colombia. Correo de contacto: contacto@derechoson.co</p></div>
+    </div>
+
+    <div class="home-seccion">
+      <div class="head"><span class="ico">{{ 'book'|icono_svg|safe }}</span><div><h3>2. Datos que recopilamos</h3></div></div>
+      <div class="cuerpo">
+        <p>Recopilamos los datos que usted nos suministra voluntariamente: nombre, documento de identidad, correo electrónico, teléfono y la información necesaria para la atención de su caso. Así mismo, datos de navegación básicos a través de cookies.</p>
+      </div>
+    </div>
+
+    <div class="home-seccion">
+      <div class="head"><span class="ico">{{ 'chart'|icono_svg|safe }}</span><div><h3>3. Finalidades del tratamiento</h3></div></div>
+      <div class="cuerpo">
+        <p>Los datos se usan para: (a) atender sus solicitudes y prestar los servicios jurídicos contratados; (b) llevar el registro y seguimiento de sus procesos; (c) enviar información institucional y recordatorios si usted lo autoriza; (d) cumplir obligaciones legales y contractuales.</p>
+      </div>
+    </div>
+
+    <div class="home-seccion">
+      <div class="head"><span class="ico">{{ 'shield'|icono_svg|safe }}</span><div><h3>4. Confidencialidad y seguridad</h3></div></div>
+      <div class="cuerpo">
+        <p>La información de sus casos es confidencial y está protegida por el secreto profesional abogado-cliente. Adoptamos medidas técnicas y administrativas para evitar el acceso no autorizado, la pérdida o la alteración de los datos. Sus datos no serán compartidos con terceros sin su autorización, salvo mandato legal.</p>
+      </div>
+    </div>
+
+    <div class="home-seccion">
+      <div class="head"><span class="ico">{{ 'users'|icono_svg|safe }}</span><div><h3>5. Derechos del titular</h3></div></div>
+      <div class="cuerpo">
+        <p>Usted puede ejercer los derechos de conocer, actualizar, rectificar, solicitar prueba de la autorización, revocarla y suprimir sus datos, o presentar quejas ante la Superintendencia de Industria y Comercio (SIC). Para ejercerlos escriba a contacto@derechoson.co.</p>
+      </div>
+    </div>
+
+    <div class="home-seccion">
+      <div class="head"><span class="ico">{{ 'mail'|icono_svg|safe }}</span><div><h3>6. Cookies</h3></div></div>
+      <div class="cuerpo">
+        <p>Este sitio usa cookies propias para recordar preferencias de navegación (por ejemplo, si aceptó este aviso). Puede deshabilitarlas desde su navegador; el sitio seguirá funcionando con normalidad.</p>
+      </div>
+    </div>
+
+    <div class="home-seccion">
+      <div class="head"><span class="ico">{{ 'star'|icono_svg|safe }}</span><div><h3>7. Vigencia</h3></div></div>
+      <div class="cuerpo">
+        <p>La presente política rige desde su publicación en esta página y puede ser actualizada. Le recomendamos consultarla periódicamente.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:24px;color:#64748b">Última actualización: {{ now.year }}.</p>
+  </div>
+</section>
+{% endblock %}

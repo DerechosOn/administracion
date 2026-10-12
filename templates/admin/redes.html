@@ -1,0 +1,131 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Redes sociales — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Redes sociales</h1>
+<p class="sub">Conecta los artículos para que se publiquen automáticamente en tus redes de Derechos On. Guarda las credenciales y activa la red.</p>
+
+<div class="tabs">
+  <a href="#red-linkedin">LinkedIn</a>
+  <a href="#red-x">X (Twitter)</a>
+  <a href="#red-instagram">Instagram</a>
+</div>
+
+<div class="panel-form" id="red-linkedin">
+  <h3>LinkedIn</h3>
+  <p style="color:var(--muted);font-size:.85rem;margin:0 0 16px">
+    Publica en tu perfil personal o de empresa. Necesitas un token de la API de LinkedIn
+    (crea una app en <b>developer.linkedin.com</b>, solicita el producto <b>Share on LinkedIn</b>
+    y genera el token de usuario con los alcances <code>w_member_social</code>/<code>w_organization_social</code>).
+  </p>
+  <form method="post" action="{{ url_for('admin_redes') }}">
+    <input type="hidden" name="plataforma" value="linkedin">
+    <div class="form-row">
+      <div class="campo">
+        <label>Token de acceso</label>
+        <input type="password" name="token" value="{{ redactado.linkedin.token }}" placeholder="Pega aquí tu token">
+      </div>
+      <div class="campo">
+        <label>Autor URN (opcional)</label>
+        <input name="autor_urn" value="{{ config.linkedin.autor_urn }}" placeholder="Ej. urn:li:person:XXXX o urn:li:organization:YYYY">
+        <small style="color:var(--muted);font-size:.72rem">Si lo dejas vacío, se detecta desde tu perfil al publicar.</small>
+      </div>
+    </div>
+    <div style="display:flex;gap:18px;align-items:center;margin:14px 0">
+      <label style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" name="activa" value="1" {% if config.linkedin.activa %}checked{% endif %}> Red activa
+      </label>
+      <label style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" name="auto" value="1" {% if config.linkedin.auto %}checked{% endif %}> Publicar al crear artículo
+      </label>
+    </div>
+    <button class="btn btn-navy" type="submit">Guardar LinkedIn</button>
+    <button class="btn btn-outline" type="submit" name="accion" value="test">Probar conexión</button>
+  </form>
+</div>
+
+<div class="panel-form" id="red-x">
+  <h3>X (Twitter)</h3>
+  <p style="color:var(--muted);font-size:.85rem;margin:0 0 16px">
+    Usa una app con autenticación OAuth 1.0a con permisos de <b>lectura y escritura</b>
+    (<b>developer.x.com</b> → User authentication → <code>Read and write</code>).
+    Copia aquí las 4 claves de la app.
+  </p>
+  <form method="post" action="{{ url_for('admin_redes') }}">
+    <input type="hidden" name="plataforma" value="x">
+    <div class="form-row">
+      <div class="campo">
+        <label>API Key</label>
+        <input type="password" name="api_key" value="{{ redactado.x.api_key }}">
+      </div>
+      <div class="campo">
+        <label>API Secret</label>
+        <input type="password" name="api_secret" value="{{ redactado.x.api_secret }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Access Token</label>
+        <input type="password" name="access_token" value="{{ redactado.x.access_token }}">
+      </div>
+      <div class="campo">
+        <label>Access Token Secret</label>
+        <input type="password" name="access_secret" value="{{ redactado.x.access_secret }}">
+      </div>
+    </div>
+    <div style="display:flex;gap:18px;align-items:center;margin:14px 0">
+      <label style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" name="activa" value="1" {% if config.x.activa %}checked{% endif %}> Red activa
+      </label>
+      <label style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" name="auto" value="1" {% if config.x.auto %}checked{% endif %}> Publicar al crear artículo
+      </label>
+    </div>
+    <button class="btn btn-navy" type="submit">Guardar X</button>
+    <button class="btn btn-outline" type="submit" name="accion" value="test">Probar conexión</button>
+  </form>
+</div>
+
+<div class="panel-form" id="red-instagram">
+  <h3>Instagram</h3>
+  <p style="color:var(--muted);font-size:.85rem;margin:0 0 16px">
+    Requiere una <b>cuenta de negocio</b> de Instagram vinculada a una página de Facebook y
+    un token de la Graph API con los alcances <code>instagram_basic</code>,
+    <code>instagram_content_publish</code> y <code>pages_read_engagement</code>
+    (desde <b>developers.facebook.com</b>). Usa la <b>Herramienta de generación de tokens</b>
+    para obtener el token y el ID de la cuenta.
+  </p>
+  <form method="post" action="{{ url_for('admin_redes') }}">
+    <input type="hidden" name="plataforma" value="instagram">
+    <div class="form-row">
+      <div class="campo">
+        <label>Token de acceso</label>
+        <input type="password" name="token" value="{{ redactado.instagram.token }}">
+      </div>
+      <div class="campo">
+        <label>ID de la cuenta de Instagram</label>
+        <input name="id_cuenta" value="{{ config.instagram.id_cuenta }}" placeholder="Número visible al probar conexión">
+      </div>
+    </div>
+    <div style="display:flex;gap:18px;align-items:center;margin:14px 0">
+      <label style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" name="activa" value="1" {% if config.instagram.activa %}checked{% endif %}> Red activa
+      </label>
+      <label style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" name="auto" value="1" {% if config.instagram.auto %}checked{% endif %}> Publicar al crear artículo
+      </label>
+    </div>
+    <button class="btn btn-navy" type="submit">Guardar Instagram</button>
+    <button class="btn btn-outline" type="submit" name="accion" value="test">Probar conexión</button>
+  </form>
+</div>
+
+<div class="panel-form" style="background:#f4f7fc">
+  <h3 style="margin-bottom:6px">Notas</h3>
+  <ul style="margin:0;padding-left:18px;color:var(--muted);font-size:.85rem;line-height:1.7">
+    <li>El botón <b>Compartir</b> en la lista de artículos publica la entrada en las redes que estén activas en ese momento.</li>
+    <li>Si está marcado <b>Publicar al crear artículo</b>, la publicación se hace automáticamente al guardar un artículo nuevo.</li>
+    <li>Las publicaciones incluyen el título, el resumen, la etiqueta y el enlace a la página del artículo. Instagram además usa la imagen del artículo.</li>
+    <li>Las credenciales se guardan en el archivo <code>redes.json</code> dentro del proyecto: no lo compartas ni lo subas a un repositorio.</li>
+  </ul>
+</div>
+{% endblock %}

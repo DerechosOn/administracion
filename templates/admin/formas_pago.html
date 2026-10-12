@@ -1,0 +1,135 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Formas de pago — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Formas de pago</h1>
+<p class="sub">Crea y gestiona los medios de pago disponibles. Solo los que estén marcados como activos aparecerán en el "Estado de cuenta" del portal de clientes.</p>
+
+<div class="panel-form">
+  <h3>Nueva forma de pago</h3>
+  <form method="post" action="{{ url_for('admin_formas_pago_crear') }}">
+    <div class="form-row">
+      <div class="campo">
+        <label>Nombre *</label>
+        <input name="nombre" required placeholder="Ej. Transferencia bancaria">
+      </div>
+      <div class="campo">
+        <label>Tipo de medio</label>
+        <select name="tipo">
+          {% for valor, etiqueta in tipos %}
+          <option value="{{ valor }}">{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label>Beneficiario / titular</label>
+        <input name="beneficiario" placeholder="Ej. Derechos On SAS">
+      </div>
+      <div class="campo">
+        <label>Orden</label>
+        <input type="number" name="orden" min="0" value="0">
+      </div>
+      <div class="campo" style="justify-content:flex-end">
+        <label class="chk" style="align-items:center;gap:6px"><input type="checkbox" name="activa" value="1" checked> Activa en el portal</label>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Datos para el pago</label>
+        <textarea name="datos" rows="3" placeholder="Banco · Número de cuenta · Tipo de cuenta · Correo (si aplica). Ej.: Bancolombia · Cuenta de ahorros 12345678901 · a nombre de Derechos On"></textarea>
+      </div>
+      <div class="campo" style="flex:1">
+        <label>Instrucciones</label>
+        <textarea name="instrucciones" rows="3" placeholder="Ej. Realiza la transferencia y sube el comprobante; coloca tu nombre como referencia."></textarea>
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Crear forma de pago</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Forma</th><th>Medio</th><th>Beneficiario</th><th>Datos</th><th>Portal</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for f in formas %}
+      <tr>
+        <td>
+          <b>{{ f.nombre }}</b>
+          {% if f.instrucciones %}<br><span style="font-size:.78rem;color:var(--muted)">{{ f.instrucciones }}</span>{% endif %}
+        </td>
+        <td style="font-size:.85rem">
+          {% for valor, etiqueta in tipos %}{% if valor == f.tipo %}{{ etiqueta }}{% endif %}{% endfor %}
+        </td>
+        <td>{{ f.beneficiario or '—' }}</td>
+        <td style="max-width:280px;white-space:pre-line;font-size:.82rem">{{ f.datos or '—' }}</td>
+        <td>
+          {% if f.activa %}
+            <span class="badge favor">Activa</span>
+          {% else %}
+            <span class="badge archivado">Oculta</span>
+          {% endif %}
+        </td>
+        <td>
+          <details class="editar-inline">
+            <summary class="btn btn-sm btn-outline" style="display:inline-block">Editar</summary>
+            <div class="panel-form" style="margin-top:8px">
+              <form method="post" action="{{ url_for('admin_formas_pago_editar', fid=f.id) }}">
+                <div class="form-row">
+                  <div class="campo">
+                    <label>Nombre</label>
+                    <input name="nombre" value="{{ f.nombre }}" required>
+                  </div>
+                  <div class="campo">
+                    <label>Tipo</label>
+                    <select name="tipo">
+                      {% for valor, etiqueta in tipos %}
+                      <option value="{{ valor }}" {{ 'selected' if f.tipo == valor }}>{{ etiqueta }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="campo">
+                    <label>Beneficiario</label>
+                    <input name="beneficiario" value="{{ f.beneficiario }}">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="campo">
+                    <label>Datos para el pago</label>
+                    <textarea name="datos" rows="3">{{ f.datos }}</textarea>
+                  </div>
+                  <div class="campo">
+                    <label>Instrucciones</label>
+                    <textarea name="instrucciones" rows="3">{{ f.instrucciones }}</textarea>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="campo" style="flex:0">
+                    <label>Orden</label>
+                    <input type="number" name="orden" min="0" value="{{ f.orden }}">
+                  </div>
+                  <div class="campo" style="justify-content:flex-end">
+                    <label class="chk" style="align-items:center;gap:6px"><input type="checkbox" name="activa" value="1" {{ 'checked' if f.activa }}> Activa en el portal</label>
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-navy" type="submit">Guardar cambios</button>
+              </form>
+            </div>
+          </details>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+            <form method="post" action="{{ url_for('admin_formas_pago_estado', fid=f.id) }}" style="display:inline-block">
+              <button class="btn btn-sm btn-outline" type="submit">{{ 'Ocultar' if f.activa else 'Mostrar' }}</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_formas_pago_eliminar', fid=f.id) }}" data-confirmar="¿Eliminar la forma de pago '{{ f.nombre }}'?" style="display:inline-block">
+              <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="color:var(--muted)">Aún no hay formas de pago. Crea la primera con el formulario de arriba.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

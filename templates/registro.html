@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}Registro de clientes — Derechos On{% endblock %}
+{% block contenido %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Regístrate como cliente</h1>
+    <p class="sub">Selecciona el tipo de cliente para iniciar tu registro.</p>
+    <div style="display:flex;flex-direction:column;gap:16px;margin-top:20px">
+      <a class="btn btn-primary" href="{{ url_for('registro_persona') }}">Registro para Persona Natural</a>
+      <a class="btn btn-outline" href="{{ url_for('registro_empresa') }}">Registro para Empresa / Persona Jurídica</a>
+      <a class="btn btn-outline" href="{{ url_for('registro_asociacion') }}">Registro para Asociación de Recicladores</a>
+    </div>
+    <p class="swap">¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión</a></p>
+  </div>
+</div>
+{% endblock %}

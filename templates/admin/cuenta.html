@@ -1,0 +1,30 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Mi cuenta — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Mi cuenta</h1>
+<p class="sub">Cambia la contraseña de acceso al panel de administración. Recomendado usar una clave única y segura.</p>
+
+<div class="panel-form" style="max-width:520px">
+  <h3>Cambiar contraseña</h3>
+  <form method="post" action="{{ url_for('admin_cuenta') }}">
+    <div class="form-row">
+      <div class="campo">
+        <label>Contraseña actual *</label>
+        <input type="password" name="actual" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Nueva contraseña *</label>
+        <input type="password" name="nuevo" minlength="6" required>
+      </div>
+      <div class="campo">
+        <label>Repetir nueva contraseña *</label>
+        <input type="password" name="repetir" minlength="6" required>
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Actualizar contraseña</button>
+  </form>
+  <p style="margin-top:16px;color:var(--muted);font-size:.8rem">Tu sesión actual sigue activa después del cambio; la nueva clave se pedirá en el próximo ingreso.</p>
+</div>
+{% endblock %}

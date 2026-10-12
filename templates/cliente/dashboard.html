@@ -1,0 +1,518 @@
+{% extends "base.html" %}
+{% block titulo %}Mis procesos — Derechos On{% endblock %}
+{% block estilos %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/portal_procesos.css') }}">
+{% endblock %}
+{% block contenido %}
+<div class="dash pp-dash">
+  <aside class="dash-side">
+    <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
+    <div class="usuario">
+      <b>{{ usuario.nombre }}</b>
+      <span>{{ usuario.email }}</span>
+    </div>
+    <nav>
+      <a href="{{ url_for('inicio') }}">Inicio</a>
+      <a href="{{ url_for('cliente_inicio') }}" class="activo">Mis procesos</a>
+      <a href="#estado-cuenta">Estado de cuenta</a>
+      {% if not solo_procesos %}
+      <a href="{{ url_for('cliente_contrato') }}">Mi contrato</a>
+      {% else %}
+      <a href="{{ url_for('asociacion_inicio') }}">Portal de la asociación</a>
+      {% endif %}
+      <a href="{{ url_for('salir') }}">Cerrar sesión</a>
+    </nav>
+    <div class="foot">Versión cliente · Datos confidenciales protegidos</div>
+  </aside>
+
+  <section class="dash-main pp-main">
+    <div class="pp-hero">
+      <div class="pp-hero-text">
+        <span class="pp-eyebrow">{{ 'scale'|icono_svg|safe }} Seguimiento de tu caso</span>
+        <h1>Hola, {{ usuario.nombre.split(' ')[0] }}</h1>
+        <p>{{ C.get('portal_mensaje', 'Estos son los procesos que tenemos a tu cargo. El estado se actualiza automáticamente cuando nuestro equipo avanza tu caso.') }}</p>
+      </div>
+      <div class="pp-hero-side">
+        <div class="pp-ring">
+          <svg viewBox="0 0 120 120" role="img" aria-label="Avance total {{ resumen.promedio }} por ciento">
+            <circle class="pp-ring-bg" cx="60" cy="60" r="52"></circle>
+            <circle class="pp-ring-fg" cx="60" cy="60" r="52" pathLength="100" style="stroke-dasharray: {{ resumen.promedio }} 100"></circle>
+          </svg>
+          <div class="pp-ring-txt"><b>{{ resumen.promedio }}%</b><span>avance total</span></div>
+        </div>
+      </div>
+    </div>
+
+    {% if C.get('portal_aviso') %}
+    <div class="notas aviso" style="margin-top:22px"><b>Aviso:</b> {{ C.get('portal_aviso') }}</div>
+    {% endif %}
+
+    {% if en_mora and not solo_procesos %}
+    <div class="vacio" style="border-color:#f3c4c4;margin-top:22px">
+      <p style="font-size:1.1rem;margin-bottom:8px;"><b>Acceso restringido.</b></p>
+      <p>Por un saldo pendiente vencido, la información de tus procesos está bloqueada.<br>Regulariza tu situación en el estado de cuenta de arriba y podrás consultar tu expediente completo en cuanto la administración valide tu pago.</p>
+    </div>
+    {% else %}
+    <div class="pp-kpis">
+      <div class="pp-kpi">
+        <div class="pp-kpi-top">
+          <span class="pp-kpi-ico">{{ 'briefcase'|icono_svg|safe }}</span>
+          <b>{{ resumen.total }}</b>
+        </div>
+        <span class="pp-kpi-lab">Procesos a tu nombre</span>
+        <span class="pp-kpi-bar"><i style="width:100%"></i></span>
+      </div>
+      <div class="pp-kpi">
+        <div class="pp-kpi-top">
+          <span class="pp-kpi-ico">{{ 'scale'|icono_svg|safe }}</span>
+          <b>{{ resumen.abiertos }}</b>
+        </div>
+        <span class="pp-kpi-lab">En curso actualmente</span>
+        <span class="pp-kpi-bar"><i style="width:{{ (resumen.abiertos / resumen.total * 100)|round if resumen.total else 0 }}%"></i></span>
+      </div>
+      <div class="pp-kpi">
+        <div class="pp-kpi-top">
+          <span class="pp-kpi-ico">{{ 'gavel'|icono_svg|safe }}</span>
+          <b>{{ resumen.resueltos }}</b>
+        </div>
+        <span class="pp-kpi-lab">Casos resueltos</span>
+        <span class="pp-kpi-bar"><i style="width:{{ (resumen.resueltos / resumen.total * 100)|round if resumen.total else 0 }}%"></i></span>
+      </div>
+      <div class="pp-kpi">
+        <div class="pp-kpi-top">
+          <span class="pp-kpi-ico">{{ 'chart'|icono_svg|safe }}</span>
+          <b>{{ resumen.promedio }}%</b>
+        </div>
+        <span class="pp-kpi-lab">Avance promedio</span>
+        <span class="pp-kpi-bar"><i style="width:{{ resumen.promedio }}%"></i></span>
+      </div>
+    </div>
+
+    <div class="pp-bi-row">
+      <div class="pp-bi-card">
+        <div class="pp-bi-title">{{ 'chart'|icono_svg|safe }} Casos por estado</div>
+        <div class="pp-donut-wrap">
+          <div class="pp-donut">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Distribución de casos por estado">
+              {% if estados_resumen %}
+              {% for seg in estados_resumen %}
+              <g transform="rotate({{ (-90 + seg.start * 3.6)|round(2) }} 60 60)">
+                <circle cx="60" cy="60" r="46" fill="none" stroke="{{ seg.color }}" stroke-width="18"
+                        pathLength="100" stroke-dasharray="{{ seg.pct }} 100"></circle>
+              </g>
+              {% endfor %}
+              {% else %}
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#eaeaea" stroke-width="18"></circle>
+              {% endif %}
+            </svg>
+            <div class="pp-donut-c"><b>{{ resumen.total }}</b><span>{{ 'casos' if estados_resumen else 'sin casos' }}</span></div>
+          </div>
+          <ul class="pp-legend">
+            {% for seg in estados_resumen %}
+            <li>
+              <i style="background:{{ seg.color }}"></i>
+              <span class="pp-leg-name">{{ seg.estado }}</span>
+              <span class="pp-leg-val">{{ seg.n }}</span>
+              <span class="pp-leg-pct">{{ seg.pct }}%</span>
+            </li>
+            {% else %}
+            <li class="pp-leg-vacio">Aún no hay casos con los que construir este gráfico.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="pp-bi-card">
+        {% set tone = 'ok' if resumen.promedio >= 75 else ('mid' if resumen.promedio >= 45 else 'low') %}
+        <div class="pp-bi-title">{{ 'scale'|icono_svg|safe }} Avance promedio de los casos</div>
+        <div class="pp-gauge-wrap">
+          <svg viewBox="0 0 200 128" class="pp-gauge" role="img" aria-label="Avance promedio {{ resumen.promedio }} por ciento">
+            <path d="M20 100 A80 80 0 0 1 180 100" class="pp-gauge-track" pathLength="100"/>
+            <path d="M20 100 A80 80 0 0 1 180 100" class="pp-gauge-fill {{ tone }}" pathLength="100"
+                  style="stroke-dasharray: {{ resumen.promedio }} 100"/>
+            <text x="20" y="116" class="pp-gauge-min">0%</text>
+            <text x="180" y="116" class="pp-gauge-max" text-anchor="end">100%</text>
+          </svg>
+          <div class="pp-gauge-c"><b>{{ resumen.promedio }}%</b><span>avance promedio</span></div>
+        </div>
+      </div>
+    </div>
+
+    {% if procesos %}
+    <div class="pp-panel">
+      <div class="pp-panel-head">
+        <h2>Avance por proceso</h2>
+        <span class="pp-panel-sub">Porcentaje de gestión completado en cada caso</span>
+      </div>
+      <div class="pp-barchart">
+        {% for p in procesos %}
+        <div class="pp-barrow" data-clase="{{ p.clase }}">
+          <span class="pp-barrow-lab" title="{{ p.titulo }}">{{ p.titulo }}</span>
+          <span class="pp-barrow-track"><span class="pp-barrow-fill" style="--pct: {{ p.avance }}"></span></span>
+          <span class="pp-barrow-val">{{ p.avance }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if ver_cuenta %}
+    <section class="cartera-cliente" id="estado-cuenta" style="margin-bottom:34px">
+      {% set total_valor = cartera|sum(attribute='valor_total') %}
+      {% set total_pagado = cartera|sum(attribute='pagado') %}
+      {% set total_saldo = total_valor - total_pagado %}
+      {% set pct_total = (total_pagado / total_valor * 100) if total_valor else 0 %}
+
+      <span class="ec-eyebrow">{{ 'chart'|icono_svg|safe }} Sección contable</span>
+      <h2 style="margin:.15rem 0 .3rem">Estado de cuenta</h2>
+      <p class="sub" style="margin:0 0 18px">Registro detallado de los servicios facturados, tus pagos, sus soportes y el estado de validación.</p>
+
+      {% if en_mora %}
+      <div class="alerta-mora">
+        <b>Te encuentras en mora.</b>
+        Tienes {% set vencidos = cartera|selectattr('estado', 'equalto', 'Vencida')|list %}{{ vencidos|length }} servicio(s) con saldo pendiente después de su fecha límite:
+        {% for v in vencidos %}<b>{{ v.servicio }}</b>{% if not loop.last %}, {% endif %}{% endfor %}.
+        Por favor realiza el pago y sube el comprobante para regularizar tu situación.
+      </div>
+      {% endif %}
+
+      <div class="ec-resumen">
+        <div class="ec-resumen-nums">
+          <div class="ec-num"><span>Total facturado</span><b>${{ total_valor|int }}</b></div>
+          <div class="ec-num verde"><span>Pagado a la fecha</span><b>${{ total_pagado|int }}</b></div>
+          <div class="ec-num rojo"><span>Saldo pendiente</span><b>${{ total_saldo|int }}</b></div>
+        </div>
+        <div class="ec-resumen-bar">
+          <span class="ec-bar"><i style="width:{{ pct_total }}%"></i></span>
+          <b>{{ pct_total|round(1) }}%</b>
+          <span class="ec-muted">pagado del total</span>
+        </div>
+      </div>
+
+      <h3 class="ec-h">Detalle por servicio</h3>
+      {% if cartera %}
+      <div class="table-wrap">
+        <table class="ec-table">
+          <thead>
+            <tr><th>Servicio</th><th>Valor</th><th>Pagado</th><th>Saldo</th><th>Avance</th><th>Vence</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            {% for r in cartera %}
+            {% set pct = (r.pagado / r.valor_total * 100) if r.valor_total else 0 %}
+            <tr>
+              <td><b>{{ r.servicio }}</b>{% if r.descripcion %}<br><small class="ec-muted">{{ r.descripcion }}</small>{% endif %}</td>
+              <td>${{ r.valor_total|int }}</td>
+              <td>${{ r.pagado|int }}</td>
+              <td><b>${{ r.saldo|int }}</b></td>
+              <td><span class="ec-bar sm"><i style="width:{{ pct }}%"></i></span> <small class="ec-muted">{{ pct|round }}%</small></td>
+              <td>{{ r.vencimiento or '—' }}</td>
+              <td>
+                {% if r.estado == 'Pagada' %}
+                  <span class="badge favor">Pagada</span>
+                {% elif r.estado == 'Vencida' %}
+                  <span class="badge vencida">Vencida</span>
+                {% elif r.estado == 'Al día' %}
+                  <span class="badge estudio">Al día</span>
+                {% else %}
+                  <span class="badge tramite">Por pagar</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="vacio" style="padding:26px 20px">
+        <p style="margin:0">Aún no tienes servicios facturados. Tu estado de cuenta aparecerá aquí cuando la administración registre tus servicios.</p>
+      </div>
+      {% endif %}
+
+      <h3 class="ec-h">Pagos y soportes</h3>
+      {% if comprobantes %}
+      <div class="table-wrap">
+        <table class="ec-table">
+          <thead>
+            <tr><th>Fecha</th><th>Servicio</th><th>Importe</th><th>Referencia</th><th>Soporte</th><th>Estado</th><th>Validación</th></tr>
+          </thead>
+          <tbody>
+            {% for cp in comprobantes %}
+            <tr>
+              <td>{{ cp.cargado_el[:10] if cp.cargado_el else '—' }}</td>
+              <td>{{ cp.servicio or 'Pago general' }}</td>
+              <td><b>${{ cp.importe|int }}</b></td>
+              <td>{{ cp.nota or '—' }}</td>
+              <td>
+                {% if cp.archivo %}
+                <a class="adjunto" href="{{ url_for('ver_comprobante_cliente', cid=cp.id) }}" target="_blank">
+                  <svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                  {{ cp.nombre_archivo or 'Ver soporte' }}
+                </a>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if cp.estado == 'Validado' %}
+                  <span class="badge favor">Validado</span>
+                {% elif cp.estado == 'Rechazado' %}
+                  <span class="badge vencida">Rechazado</span>
+                {% else %}
+                  <span class="badge tramite">Pendiente</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if cp.validado_el %}
+                  <small class="ec-muted">{{ cp.validado_el }}{% if cp.validado_por %}<br>por {{ cp.validado_por }}{% endif %}</small>
+                {% else %}
+                  <small class="ec-muted">En revisión</small>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="vacio" style="padding:20px">
+        <p style="margin:0">Aún no has registrado pagos. Cuando subas un comprobante aparecerá aquí con su soporte y su estado de validación.</p>
+      </div>
+      {% endif %}
+
+      {% if cartera %}
+      <details class="subir-comprobante" style="margin-top:18px">
+        <summary class="btn btn-navy" style="display:inline-block;cursor:pointer">Registrar pago / subir soporte</summary>
+        <div class="panel-form" style="margin-top:14px">
+          <h3>Soporte de pago</h3>
+          <p class="sub" style="margin-bottom:16px">Adjunta tu comprobante (transferencia, consignación o factura de pago). La administración lo validará y aplicará el abono a tu cuenta.</p>
+          <form method="post" action="{{ url_for('cliente_comprobante_subir') }}" enctype="multipart/form-data">
+            <div class="form-row">
+              <div class="campo">
+                <label>Servicio (opcional)</label>
+                <select name="cartera_id">
+                  <option value="">Pago general / otro</option>
+                  {% for r in cartera %}
+                  <option value="{{ r.id }}">{{ r.servicio }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="campo">
+                <label>Importe pagado</label>
+                <input type="number" name="importe" min="0" step="0.01" placeholder="0">
+              </div>
+              <div class="campo" style="flex:1">
+                <label>Comprobante *</label>
+                <input type="file" name="archivo" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="campo" style="flex:1">
+                <label>Nota / referencia</label>
+                <input name="nota" placeholder="Ej. transferencia #1234, junio">
+              </div>
+            </div>
+            <button class="btn btn-navy" type="submit">Enviar comprobante</button>
+          </form>
+        </div>
+      </details>
+      {% endif %}
+
+      {% if formas_pago %}
+      <div style="margin-top:24px">
+        <h3 style="font-size:1.05rem;margin-bottom:4px">Formas de pago disponibles</h3>
+        <p style="color:var(--muted);font-size:.88rem;margin:0">Realiza tu pago por cualquiera de estos medios y adjunta el comprobante de abajo.</p>
+        {% set fp_nombre = {'bancaria': 'Transferencia / consignación', 'movil': 'Billetera móvil', 'efectivo': 'Efectivo', 'online': 'Pago en línea', 'otro': 'Otro medio'} %}
+        {% set fp_titulo = {'bancaria': 'Banco', 'movil': 'Móvil', 'efectivo': 'Caja', 'online': 'Web', 'otro': 'Medio'} %}
+        <div class="formas-pago">
+          {% for fp in formas_pago %}
+          <div class="forma-pago">
+            <div class="fp-head">
+              <div class="fp-icon">
+                {% if fp.tipo == 'bancaria' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 10h18v10H3z"/><path d="M3 10V7l9-4 9 4v3"/><path d="M7 14v3M12 14v3M17 14v3"/></svg>
+                {% elif fp.tipo == 'movil' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>
+                {% elif fp.tipo == 'efectivo' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+                {% elif fp.tipo == 'online' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+                {% endif %}
+              </div>
+              <div>
+                <h4>{{ fp.nombre }}</h4>
+                <span>{{ fp_nombre.get(fp.tipo, 'Otro medio') }} · {{ fp_titulo.get(fp.tipo, 'Medio') }}</span>
+              </div>
+            </div>
+            {% if fp.beneficiario %}<p style="font-size:.85rem;color:var(--ink)"><b>Beneficiario:</b> {{ fp.beneficiario }}</p>{% endif %}
+            {% if fp.datos %}<div class="fp-datos">{{ fp.datos }}</div>{% endif %}
+            {% if fp.instrucciones %}<p class="fp-instr">{{ fp.instrucciones }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if not en_mora or solo_procesos %}
+    {% if procesos %}
+    <div class="pp-panel-head" style="margin:6px 2px 14px">
+      <h2 style="font-size:1.2rem">Tus procesos</h2>
+      <span class="pp-panel-sub">{{ procesos|length }} caso(s) en seguimiento</span>
+    </div>
+    {% endif %}
+    <div class="pp-grid">
+      {% for proceso in procesos %}
+      <article class="pp-card" data-clase="{{ proceso.clase }}">
+
+        <div class="pp-card-top">
+          <div class="pp-card-title">
+            <h3>{{ proceso.titulo }}</h3>
+            <div class="pp-card-tags">
+              <span class="badge {{ proceso.estado|estado_clase }}">{{ proceso.estado }}</span>
+              <span class="pp-chip">{{ 'briefcase'|icono_svg|safe }} {{ proceso.tipo }}</span>
+              <span class="pp-chip">{{ 'building'|icono_svg|safe }} {{ proceso.despacho or 'Por asignar' }}</span>
+            </div>
+          </div>
+          <div class="pp-ring" data-clase="{{ proceso.clase }}">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Avance {{ proceso.avance }} por ciento">
+              <circle class="pp-ring-bg" cx="60" cy="60" r="52"></circle>
+              <circle class="pp-ring-fg" cx="60" cy="60" r="52" pathLength="100" style="stroke-dasharray: {{ proceso.avance }} 100"></circle>
+            </svg>
+            <div class="pp-ring-txt"><b>{{ proceso.avance }}%</b><span>avance</span></div>
+          </div>
+        </div>
+
+        <div class="pp-card-body">
+
+          {% set fin = proceso.avance >= 100 %}
+          <ol class="pp-stepper">
+            {% for etapa in etapas %}
+            {% set i = loop.index0 %}
+            <li class="{{ 'done' if (fin or i < proceso.etapa_idx) else ('now' if i == proceso.etapa_idx else '') }}"
+                {% if fin and loop.last %}data-final="1" data-clase="{{ proceso.clase }}"{% endif %}>
+              <span class="pp-dot"></span>
+              <span class="pp-lbl">{{ etapa }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+
+          <div class="pp-meta">
+            <div class="pp-meta-item">
+              <span class="pp-meta-lab">Abogado(a)</span>
+              <b>{{ proceso.abogado_nombre or 'Por asignar' }}</b>
+            </div>
+            <div class="pp-meta-item">
+              <span class="pp-meta-lab">Apertura</span>
+              <b>{{ proceso.fecha_apertura }}</b>
+            </div>
+            <div class="pp-meta-item">
+              <span class="pp-meta-lab">Última actualización</span>
+              <b>{{ proceso.fecha_actualizacion[:10] }}</b>
+            </div>
+          </div>
+
+          {% if proceso.descripcion %}<p class="desc">{{ proceso.descripcion }}</p>{% endif %}
+          {% if proceso.notas %}
+          <div class="pp-nota"><b>Nota del equipo:</b> {{ proceso.notas }}</div>
+          {% endif %}
+
+          {% set acts = actuaciones|selectattr('proceso_id', 'equalto', proceso.id)|list %}
+          {% if acts %}
+          <details class="pp-sec" open>
+            <summary class="pp-toggle">Actuaciones realizadas ({{ acts|length }})</summary>
+            <ol class="timeline">
+              {% for a in acts %}
+              <li class="tl-item">
+                <span class="tl-fecha">{{ a.fecha }}</span>
+                <div class="tl-body">
+                  <span class="tl-desc">{{ a.descripcion }}</span>
+                  {% set adj = documentos|selectattr('actuacion_id', 'equalto', a.id)|list %}
+                  {% if adj %}
+                  <div class="adjuntos">
+                    {% for d in adj %}
+                    <a class="adjunto" href="{{ url_for('ver_documento', did=d.id) }}" target="_blank">
+                      <svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                      {{ d.nombre_archivo or ('Documento ' ~ d.id) }}
+                    </a>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+              </li>
+              {% endfor %}
+            </ol>
+          </details>
+          {% endif %}
+
+          {% set exps = expedientes|selectattr('proceso_id', 'equalto', proceso.id)|list %}
+          {% if exps %}
+          <details class="pp-sec">
+            <summary class="pp-toggle">Expedientes y documentos ({{ exps|length }})</summary>
+            <div class="expedientes">
+              <ul>
+                {% for e in exps %}
+                <li>
+                  <span class="badge estudio">{{ e.tipo }}</span>
+                  <b>{{ e.titulo }}</b>
+                  {% if e.fecha %} · {{ e.fecha[:10] }}{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </details>
+          {% endif %}
+
+        </div>
+      </article>
+      {% else %}
+      <div class="vacio">
+        <p style="font-size:1.1rem;margin-bottom:8px;">Todavía no tienes procesos registrados.</p>
+        <p>Cuando nuestro equipo abra un caso a tu nombre, aparecerá aquí para que consultes su avance paso a paso.</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not solo_procesos %}
+    <section class="pp-panel" style="margin-top:30px">
+      <h2 style="margin-bottom:4px">Deja tu testimonio</h2>
+      {% if testimonio %}
+        <p style="color:var(--muted);font-size:.9rem;margin:0 0 14px">
+          {% if testimonio.activo %}
+            Ya publicaste un testimonio y está visible en la portada de la web.
+          {% else %}
+            Ya enviaste tu testimonio y está en revisión. La administración lo publicará en la portada una vez validado.
+          {% endif %}
+        </p>
+        <div style="background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:16px 18px">
+          <div style="color:#f5b301;margin-bottom:6px">{{ '★' * testimonio.calificacion }}</div>
+          <p style="margin:0 0 4px">{{ testimonio.texto }}</p>
+          <small style="color:var(--muted)">— {{ testimonio.cliente_nombre }}</small>
+        </div>
+      {% else %}
+        <p class="sub" style="margin-bottom:16px">Cuéntanos cómo ha sido tu experiencia con nuestro equipo. Tu testimonio pasará a validación de la administración antes de publicarse en la portada.</p>
+        <form method="post" action="{{ url_for('cliente_testimonio_enviar') }}" class="panel-form" style="max-width:640px">
+          <div class="form-row">
+            <div class="campo" style="flex:0 0 180px">
+              <label>Calificación</label>
+              <select name="calificacion">
+                {% for n in [1,2,3,4,5] %}
+                <option value="{{ n }}" {{ 'selected' if n == 5 }}>{{ n }} {{ 'estrella' if n == 1 else 'estrellas' }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="campo" style="flex:1">
+              <label>Tu testimonio *</label>
+              <textarea name="texto" rows="3" required minlength="10" placeholder="El acompañamiento de Derechos On…"></textarea>
+            </div>
+          </div>
+          <button class="btn btn-navy" type="submit">Enviar testimonio</button>
+        </form>
+      {% endif %}
+    </section>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

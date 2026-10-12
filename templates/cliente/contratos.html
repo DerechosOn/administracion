@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block titulo %}Mi contrato — Derechos On{% endblock %}
+{% block contenido %}
+<div class="dash">
+  <aside class="dash-side">
+    <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
+    <div class="usuario">
+      <b>{{ usuario.nombre }}</b>
+      <span>{{ usuario.email }}</span>
+    </div>
+    <nav>
+      <a href="{{ url_for('inicio') }}">Inicio</a>
+      <a href="{{ url_for('cliente_inicio') }}">Mis procesos</a>
+      <a href="#si" class="activo">Mi contrato</a>
+      <a href="{{ url_for('salir') }}">Cerrar sesión</a>
+    </nav>
+    <div class="foot">Versión cliente · Datos confidenciales protegidos</div>
+  </aside>
+
+  <section class="dash-main">
+    <h1>Mi contrato</h1>
+    <p class="sub">Contrato electrónico de prestación de servicios jurídicos. Puedes imprimirlo o guardarlo; su validez se rige por la Ley 527 de 1999.</p>
+
+    {% for c in contratos %}
+    <article class="proceso">
+      <div class="proceso-head">
+        <h3>{{ c.servicio or 'Servicios jurídicos' }}</h3>
+        {% if c.firmado_el %}
+        <span class="badge favor">Firmado</span>
+        {% else %}
+        <span class="badge tramite">Pendiente de firma</span>
+        {% endif %}
+      </div>
+      <div class="proceso-meta">
+        <span>Referencia: <b>{{ c.numero }}</b></span>
+        <span>Fecha de generación: <b>{{ c.creado_el|fecha_es }}</b></span>
+        <span>Ciudad: <b>{{ c.ciudad }}</b></span>
+        {% if c.firmado_el %}<span>Firmado el: <b>{{ c.firmado_el|fecha_es }}</b></span>{% endif %}
+      </div>
+      <p class="desc">Documento generado electrónicamente al momento de tu registro, con plena validez conforme a la Ley 527 de 1999 (mensajes de datos) y la Ley 1581 de 2012 (protección de datos personales).</p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <a class="btn btn-navy" href="{{ url_for('cliente_contrato_ver', cid=c.id) }}" target="_blank">Ver e imprimir contrato</a>
+        {% if not c.firmado_el %}
+        <a class="btn btn-outline" href="{{ url_for('cliente_contrato_ver', cid=c.id) }}#firma">Firmar digitalmente</a>
+        {% endif %}
+      </div>
+    </article>
+    {% else %}
+    <div class="vacio">
+      <p style="margin:0">Aún no tienes un contrato generado. Se creará automáticamente cuando completes tu registro con el tipo de servicio.</p>
+    </div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

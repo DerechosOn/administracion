@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titulo %}{{ noticia.titulo }} — Derechos On{% endblock %}
+{% block contenido %}
+<section class="page-head">
+  <div class="container">
+    <a href="{{ url_for('inicio') }}#noticias" class="btn btn-outline btn-sm" style="margin-bottom:18px">← Volver a artículos</a>
+    <span class="kicker">{{ noticia.etiqueta }}</span>
+    <h1>{{ noticia.titulo }}</h1>
+    <p class="fecha">{{ noticia.creado_el }}</p>
+    {% if noticia.imagen %}
+    <div class="arti-img">
+      <img src="{{ url_for('static', filename='img/articulos/' ~ noticia.imagen) }}" alt="{{ noticia.titulo }}">
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container narrow">
+    {% if noticia.resumen %}
+    <p class="lead">{{ noticia.resumen }}</p>
+    {% endif %}
+    <div class="arti-body">
+      {% for parrafo in noticia.contenido.split('\n') %}
+      {% if parrafo.strip() %}<p>{{ parrafo }}</p>{% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if otras %}
+<section class="section soft">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Sigue leyendo</span>
+      <h2>Más artículos</h2>
+    </div>
+    <div class="news-grid">
+      {% for o in otras %}
+      <a class="news-card" href="{{ url_for('articulo', aid=o.id) }}">
+        <div class="banner">
+          {% if o.imagen %}
+          <img src="{{ url_for('static', filename='img/articulos/' ~ o.imagen) }}" alt="{{ o.titulo }}">
+          {% else %}
+          <span>⚖</span>
+          {% endif %}
+        </div>
+        <div class="body">
+          <span class="tag">{{ o.etiqueta }}</span>
+          <h3>{{ o.titulo }}</h3>
+          <p>{{ o.resumen or o.contenido[:120] }}</p>
+          <span class="fecha">{{ o.creado_el[:10] }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "abogado/base_abogado.html" %}
+{% block abogado %}
+<h1>Hola, {{ abogado.nombre.split(' ')[0] }}</h1>
+<p class="sub">Este es tu día a día: procesos asignados, próximos vencimientos y actuaciones del mes por cliente.</p>
+
+<div class="stat-cards">
+  <div class="stat-card"><b>{{ num_procesos }}</b><span>Procesos a tu cargo</span></div>
+  <div class="stat-card"><b>{{ num_actuaciones }}</b><span>Actuaciones registradas</span></div>
+  <div class="stat-card"><b>{{ proximas|length }}</b><span>Próximas fechas / límites</span></div>
+</div>
+
+<div class="panel-form">
+  <h3>Próximas actuaciones y fechas máximas</h3>
+  {% if proximas %}
+  <table>
+    <thead><tr><th>Fecha</th><th>Tipo</th><th>Proceso</th><th>Cliente</th><th>Detalle</th></tr></thead>
+    <tbody>
+      {% for p in proximas %}
+      <tr>
+        <td><b>{{ p.fecha }}</b>{% if p.dia == now.date() %}<span class="tag" style="background:#ffe9e6;color:#c0392b;margin-left:8px">Hoy</span>{% endif %}</td>
+        <td>{{ p.tipo }}</td>
+        <td><a href="{{ url_for('abogado_proceso', pid=p.pid) }}" style="color:var(--blue-700)">{{ p.proceso }}</a></td>
+        <td>{{ p.cliente }}</td>
+        <td>{{ p.descripcion }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted)">No hay fechas próximas registradas en tus procesos.</p>
+  {% endif %}
+</div>
+
+<div class="panel-form">
+  <h3>Artículos del mes</h3>
+  <a class="btn btn-outline btn-sm" href="{{ url_for('abogado_calendario') }}">Abrir calendario completo</a>
+  <p class="sub" style="margin-top:10px">Los días con <span class="cal-punto"></span> marcan actuaciones y los días con <span class="cal-punto due"></span> marcan la fecha máxima para presentarlas.</p>
+</div>
+{% endblock %}

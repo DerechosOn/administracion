@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titulo %}Portal del abogado — Derechos On{% endblock %}
+{% block contenido %}
+<div class="p-portal">
+  <header class="p-header">
+    <div class="container p-header-in">
+      <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
+      <span class="p-titulo">Portal del abogado</span>
+      <div class="p-usr">
+        <span class="p-avatar">{{ (abogado.nombre or '?')[:1] }}</span>
+        <div class="p-usr-nombre">
+          <b>{{ abogado.nombre }}</b>
+          <span>{{ abogado.especialidad or abogado.correo }}</span>
+        </div>
+        <a class="p-boton-salir" href="{{ url_for('salir') }}">Salir</a>
+      </div>
+    </div>
+  </header>
+
+  <nav class="p-nav">
+    <div class="container p-nav-in">
+      <a href="{{ url_for('abogado_inicio') }}" class="{{ 'activo' if request.endpoint == 'abogado_inicio' }}">Inicio</a>
+      <a href="{{ url_for('abogado_calendario') }}" class="{{ 'activo' if request.endpoint == 'abogado_calendario' }}">Calendario</a>
+      <a href="{{ url_for('abogado_crm') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_crm') }}">Tareas</a>
+      <a href="{{ url_for('abogado_procesos') }}" class="{{ 'activo' if request.endpoint in ['abogado_procesos', 'abogado_proceso'] }}">Procesos</a>
+      <a href="{{ url_for('abogado_archivos') }}" class="{{ 'activo' if request.endpoint == 'abogado_archivos' }}">Archivos</a>
+      <a href="{{ url_for('abogado_correo') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_correo') }}">Correo</a>
+      <a href="{{ url_for('abogado_base') }}" class="{{ 'activo' if request.endpoint in ['abogado_base'] }}">Base jurídica</a>
+      <a href="{{ url_for('abogado_correo_config') }}" class="{{ 'activo' if request.endpoint == 'abogado_correo_config' }}">Configuración</a>
+    </div>
+  </nav>
+
+  <section class="dash-main p-main">
+    {% block abogado %}
+    {% endblock %}
+  </section>
+</div>
+{% endblock %}

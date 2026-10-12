@@ -1,0 +1,89 @@
+{% extends "abogado/base_abogado.html" %}
+{% block abogado %}
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+  <div>
+    <h1>{{ proceso.titulo }}</h1>
+    <p class="sub"><b>{{ proceso.cliente }}</b> · {{ (proceso.correo_cliente or '') }} · {{ proceso.despacho or 'Sin despacho' }}</p>
+  </div>
+  <a class="btn btn-outline btn-sm" href="{{ url_for('abogado_procesos') }}">← Mis procesos</a>
+</div>
+
+<div class="proc-badges">
+  <span class="badge {{ proceso.estado|estado_clase }}">{{ proceso.estado }}</span>
+  <span class="tag" style="background:rgba(30,109,240,.12);color:var(--blue-700);font-size:.75rem;font-weight:700;padding:5px 12px;border-radius:999px">{{ proceso.tipo }}</span>
+  {% if proceso.descripcion %}<span class="tag" style="background:#eef1f5;color:#5b6675;font-size:.75rem;padding:5px 12px;border-radius:999px">{{ proceso.descripcion }}</span>{% endif %}
+</div>
+
+<div class="panel-form">
+  <h3>Actuaciones del proceso</h3>
+  {% if actuaciones %}
+  <table>
+    <thead><tr><th>Fecha</th><th>Fecha máxima</th><th>Estado límite</th><th>Descripción</th></tr></thead>
+    <tbody>
+      {% for a in actuaciones %}
+      <tr>
+        <td><b>{{ a.fecha }}</b></td>
+        <td>{{ a.fecha_maxima or '—' }}</td>
+        <td>
+          {% if a.dias_restantes is none or a.dias_restantes < 0 %}
+          <span class="badge contra">Vencida</span>
+          {% elif a.dias_restantes == 0 %}
+          <span class="badge audiencia">Hoy</span>
+          {% elif a.dias_restantes <= 5 %}
+          <span class="badge estudio">{{ a.dias_restantes }} días</span>
+          {% else %}
+          <span class="badge favor">{{ a.dias_restantes }} días</span>
+          {% endif %}
+        </td>
+        <td>{{ a.descripcion }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted)">Este proceso aún no tiene actuaciones registradas.</p>
+  {% endif %}
+</div>
+
+<div class="panel-form">
+  <h3>Expedientes</h3>
+  {% if expedientes %}
+  <ol class="expedientes" style="list-style:none;padding:0">
+    {% for e in expedientes %}
+    <li><b>{{ e.fecha }}</b> — {{ e.tipo }}: {{ e.titulo }}{% if e.descripcion %} · {{ e.descripcion }}{% endif %}</li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p style="color:var(--muted)">Sin expedientes registrados.</p>
+  {% endif %}
+</div>
+
+<div class="panel-form">
+  <h3>Anotaciones del equipo</h3>
+  <form method="post" action="{{ url_for('abogado_proceso_notas', pid=proceso.id) }}" style="margin-bottom:18px">
+    <div class="campo">
+      <label>Nueva nota (visible para todo el equipo y la administración)</label>
+      <textarea name="texto" required placeholder="Escribe aquí tu anotación sobre el proceso..."></textarea>
+    </div>
+    <button class="btn btn-navy" type="submit">Guardar anotación</button>
+  </form>
+  {% if anotaciones %}
+  <div class="notas-lista">
+    {% for n in anotaciones %}
+    <div class="nota">
+      <div class="nota-head">
+        <b>{{ n.abogado_nombre or 'Equipo' }}</b>
+        <span>{{ n.creado_el }}</span>
+        <form method="post" action="{{ url_for('abogado_anotacion_eliminar', nid=n.id) }}" data-confirmar="¿Eliminar esta anotación?" style="display:inline">
+          <button type="submit" class="btn btn-sm btn-danger">Borrar</button>
+        </form>
+      </div>
+      <p>{{ n.texto }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--muted)">Aún no hay anotaciones en este proceso.</p>
+  {% endif %}
+</div>
+{% endblock %}

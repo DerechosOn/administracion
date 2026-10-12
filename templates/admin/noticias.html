@@ -1,0 +1,121 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Artículos — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Artículos y actualidad</h1>
+<p class="sub">Publica y actualiza los artículos que se muestran en la página principal.</p>
+
+<div class="panel-form">
+  <h3>Publicar nuevo artículo</h3>
+  <form method="post" action="{{ url_for('admin_noticias_crear') }}" enctype="multipart/form-data">
+    <div class="form-row">
+      <div class="campo">
+        <label>Título *</label>
+        <input name="titulo" required placeholder="Título del artículo">
+      </div>
+      <div class="campo">
+        <label>Etiqueta</label>
+        <input name="etiqueta" placeholder="Ej. Civil, Legal, Alerta" value="Artículo">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Resumen *</label>
+        <input name="resumen" required placeholder="Resumen breve que aparecerá en la tarjeta">
+      </div>
+      <div class="campo">
+        <label>Imagen</label>
+        <input type="file" name="imagen" accept=".jpg,.jpeg,.png,.webp,.gif">
+      </div>
+    </div>
+    <div class="campo">
+      <label>Contenido</label>
+      <textarea name="contenido" placeholder="Contenido completo del artículo..."></textarea>
+    </div>
+    <button class="btn btn-navy" type="submit">Publicar</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Imagen</th><th>Título</th><th>Etiqueta</th><th>Fecha</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for n in noticias %}
+      <tr>
+        <td class="img-cell">
+          {% if n.imagen %}
+          <img src="{{ url_for('static', filename='img/articulos/' ~ n.imagen) }}" alt="">
+          {% else %}
+          <span style="color:#b6bfcd">—</span>
+          {% endif %}
+        </td>
+        <td><b>{{ n.titulo }}</b><br><small style="color:var(--muted)">{{ n.resumen }}</small></td>
+        <td><span class="tag" style="background:rgba(30,109,240,.12);color:var(--blue-700);font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:999px">{{ n.etiqueta }}</span></td>
+        <td>{{ n.creado_el[:10] }}</td>
+        <td>
+          <div class="acciones">
+            <button class="btn btn-sm btn-outline" data-abre-modal="modal-noticia-{{ n.id }}">Editar</button>
+            <form method="post" action="{{ url_for('admin_noticias_compartir', nid=n.id) }}">
+              <button class="btn btn-sm btn-outline" type="submit">Compartir</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_noticias_eliminar', nid=n.id) }}" data-confirmar="¿Eliminar este artículo?">
+              <button class="btn btn-sm btn-danger" type="submit">Borrar</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="color:var(--muted)">No hay artículos publicados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% for n in noticias %}
+<div class="modal" id="modal-noticia-{{ n.id }}">
+  <div class="modal-box">
+    <button class="cerrar-modal" type="button">×</button>
+    <h3>Editar artículo</h3>
+    <form method="post" action="{{ url_for('admin_noticias_editar', nid=n.id) }}" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="campo">
+          <label>Título *</label>
+          <input name="titulo" value="{{ n.titulo }}" required>
+        </div>
+        <div class="campo">
+          <label>Etiqueta</label>
+          <input name="etiqueta" value="{{ n.etiqueta }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Resumen *</label>
+          <input name="resumen" value="{{ n.resumen }}" required>
+        </div>
+        <div class="campo">
+          <label>Imagen</label>
+          {% if n.imagen %}
+          <div class="img-mini">
+            <img src="{{ url_for('static', filename='img/articulos/' ~ n.imagen) }}" alt="">
+          </div>
+          {% else %}
+          <p style="color:var(--muted);font-size:.82rem;margin:4px 0">Sin imagen.</p>
+          {% endif %}
+          <input type="file" name="imagen" accept=".jpg,.jpeg,.png,.webp,.gif">
+          <small style="color:var(--muted);font-size:.72rem">Si eliges una imagen nueva, reemplazará la actual.</small>
+        </div>
+      </div>
+      <div class="campo">
+        <label>Contenido</label>
+        <textarea name="contenido">{{ n.contenido }}</textarea>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" class="btn btn-outline" data-cierra-modal="1">Cancelar</button>
+        <button class="btn btn-navy" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}Administración — Derechos On{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a2d86'/><circle cx='50' cy='50' r='16' fill='%232f80ff'/></svg>">
+</head>
+<body>
+<div class="dash">
+  <aside class="dash-side">
+    <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
+    <div class="usuario">
+      <b>{{ usuario.nombre }}</b>
+      <span>Administración</span>
+    </div>
+    <nav>
+      <a href="{{ url_for('panel_admin') }}" class="{{ 'activo' if request.endpoint == 'panel_admin' }}">Resumen</a>
+      <a href="{{ url_for('admin_panel') }}" class="{{ 'activo' if request.endpoint == 'admin_panel' }}">Panel de análisis</a>
+      <a href="{{ url_for('admin_clientes') }}" class="{{ 'activo' if request.endpoint == 'admin_clientes' }}">Clientes</a>
+      <a href="{{ url_for('admin_cartera') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('admin_cartera') }}">Cartera</a>
+      <a href="{{ url_for('admin_formas_pago') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('admin_formas_pago') }}">Formas de pago</a>
+      <a href="{{ url_for('admin_procesos') }}" class="{{ 'activo' if request.endpoint == 'admin_procesos' }}">Procesos</a>
+      <a href="{{ url_for('admin_actuaciones') }}" class="{{ 'activo' if request.endpoint == 'admin_actuaciones' }}">Actuaciones</a>
+      <a href="{{ url_for('admin_expedientes') }}" class="{{ 'activo' if request.endpoint == 'admin_expedientes' }}">Expedientes</a>
+      <a href="{{ url_for('admin_abogados') }}" class="{{ 'activo' if request.endpoint == 'admin_abogados' }}">Abogados</a>
+      <a href="{{ url_for('admin_citas') }}" class="{{ 'activo' if request.endpoint == 'admin_citas' }}">Citas</a>
+      <a href="{{ url_for('admin_contactos') }}" class="{{ 'activo' if request.endpoint == 'admin_contactos' }}">Mensajes</a>
+      <a href="{{ url_for('admin_testimonios') }}" class="{{ 'activo' if request.endpoint == 'admin_testimonios' }}">Testimonios</a>
+      <a href="{{ url_for('admin_reportes') }}" class="{{ 'activo' if request.endpoint == 'admin_reportes' }}">Reportes</a>
+      <a href="{{ url_for('admin_noticias') }}" class="{{ 'activo' if request.endpoint == 'admin_noticias' }}">Artículos</a>
+      <a href="{{ url_for('admin_areas') }}" class="{{ 'activo' if request.endpoint == 'admin_areas' }}">Áreas de atención</a>
+      <a href="{{ url_for('admin_contenido') }}" class="{{ 'activo' if request.endpoint in ['admin_contenido', 'admin_secciones'] }}">Contenido</a>
+      <a href="{{ url_for('admin_slides') }}" class="{{ 'activo' if request.endpoint == 'admin_slides' }}">Flyers portada</a>
+      <a href="{{ url_for('admin_agente') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('admin_agente') }}">Agente comercial</a>
+      <a href="{{ url_for('admin_contrato') }}" class="{{ 'activo' if request.endpoint == 'admin_contrato' }}">Contrato</a>
+      <a href="{{ url_for('admin_marketing') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('admin_marketing') }}">Marketing Digital</a>
+      <a href="{{ url_for('admin_redes') }}" class="{{ 'activo' if request.endpoint == 'admin_redes' }}">Redes</a>
+      <a href="{{ url_for('admin_notificaciones') }}" class="{{ 'activo' if request.endpoint == 'admin_notificaciones' }}">Notificaciones</a>
+      <a href="{{ url_for('admin_cuenta') }}" class="{{ 'activo' if request.endpoint == 'admin_cuenta' }}">Mi cuenta</a>
+      <a href="{{ url_for('inicio') }}">Ver sitio</a>
+      <a href="{{ url_for('salir') }}">Cerrar sesión</a>
+    </nav>
+    <div class="foot">Panel de administración · Derechos On</div>
+  </aside>
+
+  <section class="admin-main">
+    <div style="max-width:1100px">
+      {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensaje in mensajes %}
+          <div class="alert {{ categoria }}">{{ mensaje }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block contenido %}{% endblock %}
+    </div>
+  </section>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

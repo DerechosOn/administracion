@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block titulo %}Registro Persona Natural — Derechos On{% endblock %}
+{% block contenido %}
+<div class="auth-wrap">
+  <div class="auth-card" style="max-width:720px">
+    <h1>Registro — Persona Natural</h1>
+    <p class="sub">Completa tus datos para crear tu cuenta.</p>
+
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+    <form method="post">
+      <h3 style="margin:0 0 10px;font-size:1.08rem">Datos personales</h3>
+      <div class="campo">
+        <label for="nombre_natural">Nombre completo *</label>
+        <input type="text" id="nombre_natural" name="nombre_natural" value="{{ request.form.get('nombre_natural','') }}" placeholder="Ej. María Pérez Rodríguez" required>
+      </div>
+      <div class="form-row">
+        <div class="campo" style="flex:0 0 150px">
+          <label for="tipo_doc_natural">Tipo de documento *</label>
+          <select id="tipo_doc_natural" name="tipo_doc_natural" required>
+            {% set tdn = request.form.get('tipo_doc_natural','CC') %}
+            {% for td in ['CC','CE','PA','NIT'] %}
+            <option value="{{ td }}" {{ 'selected' if tdn == td }}>{{ td }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="documento_natural">Número de documento *</label>
+          <input type="text" id="documento_natural" name="documento_natural" value="{{ request.form.get('documento_natural','') }}" placeholder="123456789" required>
+        </div>
+        <div class="campo">
+          <label for="telefono_natural">Teléfono / Celular *</label>
+          <input type="text" id="telefono_natural" name="telefono_natural" value="{{ request.form.get('telefono_natural','') }}" placeholder="+57 300 000 0000" required>
+        </div>
+      </div>
+      <div class="campo">
+        <label for="email_natural">Correo electrónico *</label>
+        <input type="email" id="email_natural" name="email_natural" value="{{ request.form.get('email_natural','') }}" placeholder="cliente@correo.com" required>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="direccion_natural">Dirección de residencia</label>
+          <input type="text" id="direccion_natural" name="direccion_natural" value="{{ request.form.get('direccion_natural','') }}" placeholder="Carrera 7 # 32-16, Bogotá">
+        </div>
+        <div class="campo" style="flex:0 0 220px">
+          <label for="ciudad_natural">Ciudad / Municipio</label>
+          <input type="text" id="ciudad_natural" name="ciudad_natural" value="{{ request.form.get('ciudad_natural','') }}" placeholder="Bogotá D.C.">
+        </div>
+      </div>
+
+      <h3 style="margin:22px 0 10px;font-size:1.08rem">Datos de acceso</h3>
+      <div class="campo">
+        <label for="tipo_servicio">Tipo de servicio *</label>
+        <select id="tipo_servicio" name="tipo_servicio" required>
+          <option value="">Selecciona el servicio que requieres</option>
+          {% for s in servicios %}
+          <option value="{{ s }}" {{ 'selected' if request.form.get('tipo_servicio') == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="clave">Contraseña *</label>
+          <input type="password" id="clave" name="clave" placeholder="Mínimo 6 caracteres" required>
+        </div>
+        <div class="campo">
+          <label for="clave2">Confirmar contraseña *</label>
+          <input type="password" id="clave2" name="clave2" placeholder="Repítela" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Crear mi cuenta</button>
+    </form>
+
+    <p class="swap"><a href="{{ url_for('registro') }}">← Volver a selección de tipo de cliente</a></p>
+  </div>
+</div>
+{% endblock %}

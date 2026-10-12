@@ -1,0 +1,73 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Expedientes — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Expedientes de los procesos</h1>
+<p class="sub">Crea y elimina los documentos y actuaciones de cada proceso.</p>
+
+<div class="panel-form">
+  <h3>Agregar expediente</h3>
+  <form method="post" action="{{ url_for('admin_expedientes_crear') }}">
+    <div class="form-row">
+      <div class="campo">
+        <label>Proceso *</label>
+        <select name="proceso_id" required>
+          <option value="">— Seleccione proceso —</option>
+          {% for p in procesos %}
+          <option value="{{ p.id }}">{{ p.cliente }} · {{ p.titulo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label>Tipo</label>
+        <select name="tipo">
+          {% for t in tipos %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label>Fecha</label>
+        <input type="date" name="fecha">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Título del expediente *</label>
+        <input name="titulo" required placeholder="Ej. Memorial de demanda">
+      </div>
+      <div class="campo">
+        <label>Descripción</label>
+        <input name="descripcion" placeholder="Resumen de la actuación o documento">
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Agregar expediente</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Proceso</th><th>Cliente</th><th>Tipo</th><th>Título</th><th>Fecha</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for e in expedientes %}
+      <tr>
+        <td><b>{{ e.proceso }}</b></td>
+        <td>{{ e.cliente }}</td>
+        <td><span class="tag" style="background:rgba(30,109,240,.10);color:var(--blue-700);font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:999px">{{ e.tipo }}</span></td>
+        <td>
+          <b>{{ e.titulo }}</b>
+          {% if e.descripcion %}<br><small style="color:var(--muted)">{{ e.descripcion }}</small>{% endif %}
+        </td>
+        <td>{{ e.fecha }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_expedientes_eliminar', eid=e.id) }}" data-confirmar="¿Eliminar este expediente?">
+            <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="color:var(--muted)">No hay expedientes registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

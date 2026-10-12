@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Portal de asociaciones — Derechos On{% endblock %}
+{% block contenido %}
+<div class="p-portal">
+  <header class="p-header">
+    <div class="container p-header-in">
+      <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
+      <span class="p-titulo">Portal de asociaciones</span>
+      <div class="p-usr">
+        <span class="p-avatar">{{ (usuario.nombre or '?')[:1] }}</span>
+        <div class="p-usr-nombre">
+          <b>{{ usuario.nombre }}</b>
+          <span>{{ usuario.email }}</span>
+        </div>
+        <a class="p-boton-salir" href="{{ url_for('salir') }}">Salir</a>
+      </div>
+    </div>
+  </header>
+
+  <nav class="p-nav">
+    <div class="container p-nav-in">
+      <a href="{{ url_for('asociacion_inicio') }}" class="{{ 'activo' if request.endpoint == 'asociacion_inicio' }}">Inicio</a>
+      <a href="{{ url_for('asociacion_iat') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('asociacion_iat') }}">Incentivo IAT</a>
+      <a href="{{ url_for('cliente_inicio') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('cliente') }}">Mis procesos</a>
+      <a href="{{ url_for('cliente_contrato') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('cliente_contrato') }}">Mi contrato</a>
+      <a href="{{ url_for('cliente_inicio') }}#estado-cuenta">Estado de cuenta</a>
+      <a href="{{ url_for('salir') }}">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <section class="dash-main p-main">
+    {% block asociacion %}
+    {% endblock %}
+  </section>
+</div>
+{% endblock %}

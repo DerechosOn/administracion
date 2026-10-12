@@ -1,0 +1,34 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Contenido — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Editar contenido de la página</h1>
+<p class="sub">Modifica los textos de la portada y del portal de clientes. Los cambios se aplican inmediatamente en el sitio.</p>
+
+<div class="tabs">
+  <a href="{{ url_for('admin_contenido') }}" class="activo">Textos de la página</a>
+  <a href="{{ url_for('admin_secciones') }}">Secciones</a>
+  <a href="{{ url_for('admin_noticias') }}">Artículos</a>
+</div>
+
+<form method="post" action="{{ url_for('admin_contenido') }}">
+  {% for titulo, campos in grupos %}
+  <fieldset class="panel-form" style="margin-top:18px">
+    <legend><h3>{{ titulo }}</h3></legend>
+    {% for clave, etiqueta in campos %}
+    <div class="campo">
+      <label>{{ etiqueta }}</label>
+      {% set valor = C.get(clave, '') %}
+      {% if clave in ['hero1_titulo', 'hero2_titulo', 'hero3_titulo', 'quienes_titulo', 'areas_titulo', 'abogados_titulo', 'digital_titulo', 'noticias_titulo', 'contacto_titulo', 'footer_desc'] %}
+      <textarea name="{{ clave }}" rows="2">{{ valor }}</textarea>
+      {% else %}
+      <textarea name="{{ clave }}" rows="3">{{ valor }}</textarea>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </fieldset>
+  {% endfor %}
+  <div style="margin-top:20px">
+    <button class="btn btn-navy" type="submit">Guardar todos los cambios</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Clientes — Administración Derechos On{% endblock %}
+{% block contenido %}
+<div class="page-header">
+  <div>
+    <h1>Clientes registrados</h1>
+    <p class="sub">Administra las cuentas de los clientes y su estado de acceso.</p>
+  </div>
+  <a href="{{ url_for('admin_clientes_exportar') }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <span>Exportar a Excel</span>
+  </a>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Nombre</th><th>Correo</th><th>Documento</th><th>Teléfono</th><th>Procesos</th><th>Registro</th><th>Estado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for c in clientes %}
+      <tr>
+        <td><b>{{ c.nombre }}</b></td>
+        <td>{{ c.email }}</td>
+        <td>{{ c.documento or '—' }}</td>
+        <td>{{ c.telefono or '—' }}</td>
+        <td>{{ c.total_procesos }}</td>
+        <td>{{ c.fecha_registro[:10] }}</td>
+        <td>
+          {% if c.activo %}
+            <span class="badge favor">Activo</span>
+          {% else %}
+            <span class="badge contra">Inactivo</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('admin_clientes_estado', cid=c.id) }}">
+            {% if c.activo %}
+              <input type="hidden" name="activo" value="0">
+              <button class="btn btn-sm btn-danger" type="submit">Desactivar</button>
+            {% else %}
+              <input type="hidden" name="activo" value="1">
+              <button class="btn btn-sm btn-navy" type="submit">Activar</button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="color:var(--muted)">Aún no hay clientes registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

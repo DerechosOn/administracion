@@ -1,0 +1,25 @@
+{% extends "abogado/base_abogado.html" %}
+{% block titulo %}Archivos — Derechos On{% endblock %}
+{% block abogado %}
+<h1>Archivos</h1>
+<p class="sub">Expedientes y documentos compartidos en tus procesos.</p>
+
+{% if not expedientes %}
+<div class="vacio">Aún no hay archivos o expedientes en tus procesos.</div>
+{% else %}
+<div class="exp-grid">
+  {% for e in expedientes %}
+  <article class="panel exp-card">
+    <span class="chip">{{ e.tipo }}</span>
+    <h3>{{ e.titulo }}</h3>
+    <p>{{ e.descripcion or "Sin descripción." }}</p>
+    <div class="exp-meta">
+      <a href="{{ url_for('abogado_proceso', pid=e.proceso_id) }}">{{ e.proceso }}</a>
+      <span>{{ e.cliente }}</span>
+      <time>{{ e.fecha }}</time>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

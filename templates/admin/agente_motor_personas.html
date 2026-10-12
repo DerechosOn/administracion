@@ -1,0 +1,295 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Motor de personas — Administración Derechos On{% endblock %}
+{% block contenido %}
+<style>
+  .rues-cab {
+    background: linear-gradient(115deg, #0a2d86 0%, #0d3eb0 55%, #1e6df0 100%);
+    color: #fff; border-radius: 14px; padding: 22px 26px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px; box-shadow: 0 10px 24px rgba(10,45,134,.25);
+  }
+  .rues-marca { display: flex; align-items: center; gap: 14px; }
+  .rues-marca .rues-logo {
+    background: #fff; color: #0a2d86; font-weight: 900; font-size: 1.5rem;
+    letter-spacing: .02em; padding: 8px 16px 8px 10px; border-radius: 10px;
+    border-left: 8px solid #f8b84a; line-height: 1;
+  }
+  .rues-marca .rues-sub { font-size: .8rem; line-height: 1.35; color: #d5e3fb; }
+  .rues-marca .rues-sub b { font-size: .92rem; color: #fff; display: block; }
+  .rues-cab .rues-chip {
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.35);
+    padding: 7px 14px; border-radius: 999px; font-size: .78rem; font-weight: 600;
+    color: #fff; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .rues-pestanas { display: flex; gap: 8px; margin: 16px 0 0; flex-wrap: wrap; }
+  .rues-pestanas a {
+    text-decoration: none; font-weight: 700; font-size: .86rem;
+    padding: 9px 18px; border-radius: 999px; border: 1.5px solid #0d3eb0;
+    color: #0d3eb0; background: #fff; transition: all .15s;
+  }
+  .rues-pestanas a:hover { border-color: #1e6df0; }
+  .rues-pestanas a.activo { background: #0d3eb0; color: #fff; }
+  .rues-consulta {
+    margin: 18px 0 8px; border-radius: 14px; overflow: hidden;
+    border: 1px solid #dfe7f5; background: #fff; box-shadow: 0 6px 18px rgba(10,45,134,.08);
+  }
+  .rues-consulta .cc-head {
+    background: #f2f6ff; border-bottom: 1px solid #dfe7f5; padding: 12px 18px;
+    color: #0a2d86; font-weight: 800; font-size: .95rem; letter-spacing: .02em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .rues-bar {
+    padding: 20px 18px 12px;
+    display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap;
+  }
+  .rues-bar select {
+    border: 1px solid #c3d0e8; border-radius: 10px; padding: 0 12px;
+    font-size: .9rem; color: #12263a; background: #f8faff; min-width: 170px;
+  }
+  .rues-bar .campo { flex: 1; min-width: 260px; }
+  .rues-bar .campo input {
+    width: 100%; border: 2px solid #c3d0e8; border-radius: 12px;
+    padding: 12px 16px; font-size: 1rem; color: #12263a;
+  }
+  .rues-bar .campo input:focus { border-color: #1e6df0; outline: none;
+    box-shadow: 0 0 0 4px rgba(30,109,240,.12); }
+  .rues-buscar {
+    background: linear-gradient(135deg, #0d3eb0, #1e6df0); color: #fff; border: none;
+    padding: 0 26px; border-radius: 12px; font-size: .95rem; font-weight: 700;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    transition: all .2s;
+  }
+  .rues-buscar:hover { filter: brightness(1.1); box-shadow: 0 8px 18px rgba(30,109,240,.35); }
+  .rues-pies {
+    padding: 4px 18px 16px; display: flex; gap: 14px; align-items: center;
+    flex-wrap: wrap; font-size: .78rem; color: #5b6472;
+  }
+  .chk-rues {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    border: 1px solid #c3d0e8; border-radius: 999px; padding: 6px 12px;
+    background: #f8faff; color: #12263a; font-weight: 600; font-size: .8rem;
+    transition: all .15s; user-select: none;
+  }
+  .chk-rues:hover { border-color: #1e6df0; }
+  .chk-rues input { accent-color: #0d3eb0; }
+  .rues-res {
+    margin: 18px 0; border-radius: 14px; border: 1px solid #dfe7f5;
+    background: #fff; box-shadow: 0 6px 18px rgba(10,45,134,.08); overflow: hidden;
+  }
+  .rues-res .rr-head {
+    background: linear-gradient(115deg, #0a2d86, #0d3eb0); color: #fff;
+    padding: 12px 18px; font-weight: 800; display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .rues-resultado {
+    border-bottom: 1px solid #e6ecf7; padding: 16px 18px; display: flex; gap: 14px;
+    align-items: flex-start;
+  }
+  .rues-resultado:last-child { border-bottom: none; }
+  .rues-res .rn {
+    width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%;
+    background: #e8f1ff; color: #0d3eb0; font-weight: 800; font-size: .85rem;
+    display: grid; place-items: center; margin-top: 2px;
+  }
+  .rues-resultado .r-main { flex: 1; min-width: 0; }
+  .rues-resultado .r-razon {
+    color: #0a2d86; font-weight: 800; text-transform: uppercase;
+    font-size: .98rem; line-height: 1.3; letter-spacing: .01em;
+  }
+  .rues-resultado .r-nits { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 0; }
+  .rues-nb {
+    background: #f2f6ff; border: 1px solid #dfe7f5; color: #12263a;
+    border-radius: 8px; padding: 3px 10px; font-size: .75rem; font-weight: 700;
+  }
+  .rues-estado {
+    border-radius: 999px; padding: 5px 12px; font-size: .72rem; font-weight: 800;
+    letter-spacing: .03em; white-space: nowrap; display: inline-flex; align-items: center;
+    gap: 6px;
+  }
+  .rues-estado.verde { background: #e5f6e9; color: #1a7f37; }
+  .rues-estado.gris { background: #eef1f5; color: #5b6472; }
+  .rues-estado.ambar { background: #fff3d6; color: #8a6116; }
+  .rues-resultado .r-det {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px 18px; margin-top: 12px; background: #f8faff;
+    border: 1px solid #eef2fa; border-radius: 10px; padding: 10px 14px;
+  }
+  .rues-resultado .r-det div span {
+    display: block; font-size: .7rem; color: #5b6472; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px;
+  }
+  .rues-resultado .r-det div b { font-size: .85rem; color: #12263a; font-weight: 600; word-break: break-word; }
+  .rues-resultado .r-camara { font-size: .76rem; color: #5b6472; margin-top: 8px; }
+  .rues-importar {
+    background: #f2f6ff; border-top: 1px solid #dfe7f5; padding: 14px 18px;
+    display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+  }
+  .rues-hist .tabla thead th { background: #0a2d86; color: #fff; }
+  .rues-pie {
+    background: linear-gradient(115deg, #0a2d86, #0d3eb0); color: #d5e3fb;
+    border-radius: 12px; padding: 12px 18px; font-size: .76rem; margin-top: 16px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+</style>
+
+<div class="rues-cab">
+  <div class="rues-marca">
+    <span class="rues-logo">RUES</span>
+    <div class="rues-sub"><b>Personas naturales · clientes potenciales</b>Colombianas que ejercen comercio u oficios (Datos Abiertos) y demandantes/demandados en la Rama Judicial</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span class="rues-chip">⚖ Motor de personas que buscan abogado</span>
+    <a class="btn btn-outline-white" href="{{ url_for('admin_agente') }}">← Volver a prospectos</a>
+  </div>
+</div>
+
+<div class="rues-pestanas">
+  <a href="{{ url_for('admin_agente_motor') }}" class="{{ 'activo' if request.endpoint == 'admin_agente_motor' }}">🚚 Empresas</a>
+  <a href="{{ url_for('admin_agente_motor_personas') }}" class="{{ 'activo' if request.endpoint == 'admin_agente_motor_personas' }}">👤 Personas</a>
+</div>
+
+<div class="rues-consulta">
+  <div class="cc-head">🔍 Consulta de personas naturales · búscalas por nombre, apellido, documento o actividad</div>
+  <form method="post">
+    <div class="rues-bar">
+      <select name="tipo_consulta">
+        <option>Nombre y apellidos</option>
+        <option>Cédula / NIT</option>
+        <option>Actividad u oficio</option>
+        <option>Ciudad</option>
+      </select>
+      <div class="campo">
+        <input name="texto" value="{{ texto }}" required placeholder="Ej.: María Pérez García · lijado y pintura · restaurante en Ibagué" autofocus>
+      </div>
+      <select name="limite" title="Cantidad de resultados">
+        {% for n in [5, 10, 12, 20, 30] %}<option value="{{ n }}" {{ 'selected' if n == 12 }}>Hasta {{ n }}</option>{% endfor %}
+      </select>
+      <button class="rues-buscar" name="accion" value="buscar" type="submit"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg> Buscar</button>
+    </div>
+    <div class="rues-pies">
+      <span style="font-weight:700;color:#0a2d86">Fuentes consultadas:</span>
+      <label class="chk-rues"><input type="checkbox" name="fuentes" value="RUES · personas naturales" checked> RUES · personas naturales</label>
+      <label class="chk-rues"><input type="checkbox" name="fuentes" value="Cámara de Comercio de Ibagué · personas" checked> Cámaras de comercio</label>
+      <label class="chk-rues"><input type="checkbox" name="fuentes" value="Rama Judicial · demandantes y demandados" checked> ⚖ Rama Judicial · litigantes</label>
+    </div>
+  </form>
+</div>
+
+{% if encontradas %}
+<div class="rues-res">
+  <div class="rr-head">
+    <span>Resultado de la consulta — {{ encontradas|length }} persona(s) registrada(s)</span>
+    <span style="font-weight:600;font-size:.78rem">Selecciona las que quieras importar como clientes potenciales</span>
+  </div>
+  <form method="post">
+    <input type="hidden" name="bid_import" value="{{ bid }}">
+    <input type="hidden" name="consulta_import" value="{{ texto }}">
+    {% for e in encontradas %}
+    {% if e.rama and e.rol %}
+    <div class="rues-resultado">
+      <label style="display:inline-flex;align-items:center;margin-top:6px;cursor:pointer" title="Seleccionar para importar">
+        <input type="checkbox" name="id_p" value="{{ e.clave_import }}" style="width:17px;height:17px;accent-color:#0d3eb0">
+      </label>
+      <div class="rn">{{ loop.index }}</div>
+      <div class="r-main">
+        <div class="r-razon">{{ e.nombre or '—' }}</div>
+        <div class="r-nits">
+          <span class="rues-nb">⚖ Rama Judicial</span>
+          <span class="rues-estado {{ 'verde' if e.rol == 'Demandante' else 'ambar' }}">● {{ e.rol }}</span>
+          {% if e.fecha_ultima_actuacion %}<span class="rues-nb">Última actuación: {{ e.fecha_ultima_actuacion }}</span>{% endif %}
+        </div>
+        <div class="r-det">
+          <div><span>Calidad en el proceso</span><b>{{ e.rol }}</b></div>
+          <div><span>Radicado del proceso</span><b>{{ e.radicado or '—' }}</b></div>
+          <div><span>Despacho judicial</span><b>{{ e.despacho or '—' }}</b></div>
+          <div><span>Departamento</span><b>{{ e.departamento or '—' }}</b></div>
+          <div><span>Última actuación</span><b>{{ e.fecha_ultima_actuacion or '—' }}</b></div>
+        </div>
+        <div class="r-camara">⚖ Vinculado como <b>{{ e.rol }}</b> en un proceso público ante la Rama Judicial · radicado <b>{{ e.radicado or '—' }}</b> · {{ e.despacho or '' }}</div>
+      </div>
+    </div>
+    {% else %}
+    <div class="rues-resultado">
+      <label style="display:inline-flex;align-items:center;margin-top:6px;cursor:pointer" title="Seleccionar para importar">
+        <input type="checkbox" name="id_p" value="{{ e.nit }}" style="width:17px;height:17px;accent-color:#0d3eb0">
+      </label>
+      <div class="rn">{{ loop.index }}</div>
+      <div class="r-main">
+        <div class="r-razon">{{ e.nombre or '—' }}</div>
+        <div class="r-nits">
+          <span class="rues-nb">{{ (e.tipo_local or 'C.C. / NIT') }}: {{ e.nit or '—' }}</span>
+          {% if e.sector %}<span class="rues-nb">Actividad: {{ e.sector }}</span>{% endif %}
+          {% set est = (e.estado_matricula or '').upper() %}
+          {% if est == 'MATRICULA ACTIVA' %}
+            <span class="rues-estado verde">● {{ e.estado_matricula }}</span>
+          {% elif est and est not in ('NO APLICA',) %}
+            <span class="rues-estado ambar">● {{ e.estado_matricula }}</span>
+          {% else %}
+            <span class="rues-estado gris">Actividad libre (no requiere matrícula)</span>
+          {% endif %}
+        </div>
+        <div class="r-det">
+          <div><span>Documento</span><b>{{ e.nit or '—' }}</b></div>
+          <div><span>Actividad u oficio</span><b>{{ e.ciiu or e.sector or '—' }}</b></div>
+          <div><span>Domicilio principal</span><b>{{ e.municipio or (e.camara or '—') }}</b></div>
+          <div><span>Dirección</span><b>{{ e.direccion or '—' }}</b></div>
+          <div><span>Correo electrónico</span><b>{{ e.correo or '—' }}</b></div>
+        </div>
+        <div class="r-camara">📇 Registro en {{ e.camara or 'Cámara de Comercio / RUES' }} · {{ (e.estado_matricula or '—') }}</div>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    <div class="rues-importar">
+      <div class="campo" style="flex:1;min-width:220px">
+        <label>Fuente del registro</label>
+        <input name="fuente_import" value="Motor de personas · RUES" list="fuentes_motor">
+        <datalist id="fuentes_motor">{% for f in fuentes %}<option value="{{ f }}">{% endfor %}</datalist>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-navy" name="accion" value="importar" type="submit">Importar seleccionadas</button>
+        <button class="btn btn-outline" name="accion" value="importar_enviar" type="submit">Importar y enviar propuesta por correo</button>
+      </div>
+    </div>
+  </form>
+</div>
+<p style="font-size:.78rem;color:var(--muted)">Al importar se crea el prospecto como persona natural, con su sector/prioridad, y se genera la propuesta del portafolio para personas (laboral, civil, familia, comercial, etc.) con el logo de la página. Las personas halladas en la Rama Judicial se importan con su calidad procesal (demandante/demandado) y el radicado de su proceso.</p>
+{% endif %}
+
+<div class="panel rues-hist" style="margin-top:18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <h3 style="margin:0"><span style="border-left:6px solid #f8b84a;padding-left:10px">Historial del motor de personas ({{ busquedas|length }})</span></h3>
+    {% if busquedas %}
+    <form method="post" action="{{ url_for('admin_agente_motor_historial_limpiar') }}" style="display:inline" data-confirmar="¿Limpiar todo el historial del motor de personas?">
+      <input type="hidden" name="tipo" value="personas">
+      <button class="btn btn-sm btn-danger" type="submit">🗑 Limpiar historial</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="tabla-wrap">
+    <table class="tabla">
+      <thead><tr><th>Fecha</th><th>Consulta</th><th>Resultado</th><th></th></tr></thead>
+      <tbody>
+        {% for b in busquedas %}
+        <tr>
+          <td style="font-size:.8rem;color:var(--muted)">{{ b.creado_el[:10] }}</td>
+          <td>{{ b.texto }}</td>
+          <td>
+            <span class="badge {{ 'favor' if b.nro_resultados else 'archivado' }}">{{ b.nro_resultados }} persona(s)</span>
+            {% if b.nro_resultados and b.detalle %}<span class="badge estudio">con datos</span>{% endif %}
+          </td>
+          <td><a class="btn btn-sm btn-outline" href="{{ url_for('admin_agente_motor_personas', b=b.id) }}">Ver resultados</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Aún no hay búsquedas de personas del motor.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="rues-pie">
+  <span><b style="color:#fff">RUES</b> — Registro Único Empresarial y Social · Derechos On</span>
+  <span>Fuente de datos: Registro Único Empresarial y Cámaras de Comercio (Datos Abiertos Colombia, datos.gov.co) y consulta pública de procesos de la Rama Judicial (demandantes y demandados) · personas naturales que podrían requerir acompañamiento jurídico.</span>
+</div>
+{% endblock %}

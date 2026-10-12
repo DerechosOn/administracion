@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block titulo %}Agenda tu cita — Derechos On{% endblock %}
+{% block contenido %}
+<section class="section soft" style="padding:56px 0">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Primera consulta</span>
+      <h2>{{ C.get('agendar_titulo', 'Agenda tu primera consulta') }}</h2>
+      <p>Elige el abogado, la fecha y la hora. Confirmaremos tu cita por correo en la jornada siguiente.</p>
+    </div>
+    <div class="panel" style="max-width:720px;margin:0 auto">
+      <form method="post" action="{{ url_for('agendar_cita') }}" class="form-grid">
+        <div class="form-field">
+          <label for="nombre">Nombre completo *</label>
+          <input type="text" id="nombre" name="nombre" required autocomplete="name">
+        </div>
+        <div class="form-field">
+          <label for="correo">Correo electrónico *</label>
+          <input type="email" id="correo" name="correo" required autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label for="telefono">Teléfono</label>
+          <input type="tel" id="telefono" name="telefono" autocomplete="tel">
+        </div>
+        <div class="form-field">
+          <label for="abogado_id">Abogado</label>
+          <select id="abogado_id" name="abogado_id">
+            <option value="">Sin preferencia</option>
+            {% for abogado in abogados %}
+            <option value="{{ abogado.id }}">{{ abogado.nombre }} · {{ abogado.especialidad }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="fecha">Fecha *</label>
+          <input type="date" id="fecha" name="fecha" min="{{ hoy }}" required>
+        </div>
+        <div class="form-field">
+          <label for="hora">Hora *</label>
+          <select id="hora" name="hora" required>
+            {% for hora in horas %}
+            <option value="{{ hora }}">{{ hora }}</option>
+            {% endfor %}
+          </select>
+          <p class="hint" id="horaHint">Las horas ocupadas por actividades y citas se ocultan automáticamente.</p>
+        </div>
+        <div class="form-field" style="grid-column:1 / -1">
+          <label for="motivo">Motivo de la consulta</label>
+          <textarea id="motivo" name="motivo" rows="3" placeholder="Cuéntanos brevemente en qué te podemos ayudar"></textarea>
+        </div>
+        <div class="form-field" style="grid-column:1 / -1">
+          <button type="submit" class="btn btn-primary">Solicitar cita</button>
+          <a class="btn btn-outline" href="{{ url_for('inicio') }}#contacto">Volver</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+<script>
+(function () {
+  var fecha = document.getElementById("fecha");
+  var abogado = document.getElementById("abogado_id");
+  var horaSel = document.getElementById("hora");
+  var hint = document.getElementById("horaHint");
+  if (!fecha || !horaSel) return;
+  var previa = horaSel.value;
+  function refrescar() {
+    if (!fecha.value) return;
+    var url = "/agendar/horas?fecha=" + encodeURIComponent(fecha.value) +
+              (abogado && abogado.value ? "&abogado_id=" + encodeURIComponent(abogado.value) : "");
+    fetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var horas = d.horas || [];
+        horaSel.innerHTML = "";
+        horas.forEach(function (h) {
+          var o = document.createElement("option");
+          o.value = h; o.textContent = h;
+          horaSel.appendChild(o);
+        });
+        if (horas.length) {
+          hint.textContent = "Disponibles para la fecha y el abogado elegidos.";
+        } else {
+          hint.textContent = "No hay horarios libres esa fecha. Elige otra.";
+        }
+        if (horas.indexOf(previa) !== -1) horaSel.value = previa;
+      });
+  }
+  fecha.addEventListener("change", refrescar);
+  if (abogado) abogado.addEventListener("change", refrescar);
+  refrescar();
+})();
+</script>
+{% endblock %}

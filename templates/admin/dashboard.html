@@ -1,0 +1,77 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Resumen — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Panel de administración</h1>
+<p class="sub">Resumen general de la plataforma y últimos procesos actualizados.</p>
+
+<div class="stat-cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+  <div class="stat-card"><b>{{ cliente }}</b><span>Clientes registrados</span></div>
+  <div class="stat-card"><b>{{ procesos }}</b><span>Procesos activos</span></div>
+  <div class="stat-card"><b>{{ expedientes }}</b><span>Expedientes</span></div>
+  <div class="stat-card"><b>{{ abogados }}</b><span>Abogados activos</span></div>
+  <div class="stat-card"><b>{{ noticias }}</b><span>Artículos publicados</span></div>
+  <div class="stat-card"><b>{{ citas_pendientes }}</b><span>Citas pendientes</span></div>
+  <div class="stat-card"><b>{{ contactos_nuevos }}</b><span>Mensajes sin leer</span></div>
+</div>
+
+{% if citas %}
+<h2 style="font-size:1.2rem;margin-bottom:16px">Próximas citas por confirmar</h2>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Fecha</th><th>Hora</th><th>Solicitante</th><th>Abogado</th><th>Motivo</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for c in citas %}
+      <tr>
+        <td>{{ c.fecha }}</td>
+        <td>{{ c.hora }}</td>
+        <td><b>{{ c.nombre }}</b><br><small style="color:var(--muted)">{{ c.correo }}</small></td>
+        <td>{{ c.abogado_nombre or 'Sin preferencia' }}</td>
+        <td>{{ c.motivo or '—' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_citas_estado', cid=c.id) }}" style="display:inline-flex;gap:6px">
+            <input type="hidden" name="estado" value="Confirmada">
+            <button class="btn btn-sm btn-navy" type="submit">Confirmar</button>
+          </form>
+          <form method="post" action="{{ url_for('admin_citas_estado', cid=c.id) }}" style="display:inline-flex">
+            <input type="hidden" name="estado" value="Cancelada">
+            <button class="btn btn-sm btn-danger" type="submit">Cancelar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<h2 style="font-size:1.2rem;margin-bottom:16px">Últimas actualizaciones de procesos</h2>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Cliente</th><th>Proceso</th><th>Estado</th><th>Actualizado</th></tr>
+    </thead>
+    <tbody>
+      {% for p in ultimos %}
+      <tr>
+        <td>{{ p.cliente }}</td>
+        <td>{{ p.titulo }}</td>
+        <td><span class="badge {{ p.estado|estado_clase }}">{{ p.estado }}</span></td>
+        <td>{{ p.fecha_actualizacion[:10] }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="color:var(--muted)">No hay procesos registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:28px">
+  <a class="btn btn-navy" href="{{ url_for('admin_procesos') }}">Gestionar procesos</a>
+  <a class="btn btn-outline" href="{{ url_for('admin_expedientes') }}">Expedientes</a>
+  <a class="btn btn-outline" href="{{ url_for('admin_abogados') }}">Abogados</a>
+  <a class="btn btn-outline" href="{{ url_for('admin_noticias') }}">Publicar artículo</a>
+  <a class="btn btn-outline" href="{{ url_for('admin_clientes') }}">Ver clientes</a>
+</div>
+{% endblock %}

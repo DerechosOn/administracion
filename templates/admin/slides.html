@@ -1,0 +1,33 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Flyers de portada — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Flyers de la parte superior</h1>
+<p class="sub">Cambia las imágenes decorativas de cada diapositiva del carrusel superior (portada). Si un flyer no tiene imagen, se muestra el ícono actual. Los textos de cada diapositiva se editan en Contenido (Portada · Carrusel).</p>
+
+<form method="post" action="{{ url_for('admin_slides') }}" enctype="multipart/form-data">
+  <div class="reporte-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+    {% for i in range(1, 4) %}
+    {% set clave = 'hero_slide%d_imagen' % i %}
+    {% set archivo = C.get(clave, '') %}
+    <div class="panel-form" style="margin-top:0">
+      <h3>Diapositiva {{ i }}</h3>
+      {% if archivo %}
+      <img src="{{ url_for('static', filename='img/slides/' ~ archivo) }}" alt="Flyer {{ i }}"
+           style="max-width:100%;max-height:180px;border-radius:10px;border:1px solid var(--line);display:block;margin:0 0 10px">
+      <label class="chk" style="margin-bottom:10px">
+        <input type="checkbox" name="quitar_slide{{ i }}" value="1">
+        <span>Quitar imagen actual</span>
+      </label>
+      {% else %}
+      <p style="color:var(--muted);font-size:.82rem;margin:0 0 10px">Sin imagen; se muestra el ícono por defecto.</p>
+      {% endif %}
+      <input type="file" name="slide{{ i }}" accept=".jpg,.jpeg,.png,.webp,.gif">
+      <p class="hint">JPG, PNG, WEBP o GIF.</p>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="margin-top:20px">
+    <button class="btn btn-navy" type="submit">Guardar flyers</button>
+  </div>
+</form>
+{% endblock %}

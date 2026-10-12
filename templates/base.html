@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}Derechos On{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/jarvis.css') }}">
+  {% block estilos %}{% endblock %}
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a2d86'/><circle cx='50' cy='50' r='16' fill='%232f80ff'/></svg>">
+</head>
+<body>
+  {% if not hide_header %}
+  <div class="topbar">
+    <div class="container topbar-in">
+      <div class="segmentos">
+        <span class="seg activo">Clientes</span>
+      </div>
+      <div class="top-links">
+        <a href="{{ url_for('inicio') }}#quienes">¿Quiénes somos?</a>
+        <a href="{{ url_for('inicio') }}#contacto">Contacto</a>
+        {% if C.get('contacto_telefono') %}
+        <a href="tel:{{ C.get('contacto_telefono')|replace(' ', '') }}">{{ C.get('contacto_telefono') }}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <header class="header">
+    <div class="container header-in">
+      <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
+      {% if request.endpoint == 'inicio' %}
+      <div class="buscar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input id="buscador" type="search" placeholder="¿Qué estás buscando? Escribe: procesos, familia, artículos…" autocomplete="off">
+      </div>
+      {% else %}
+      <div class="buscar"></div>
+      {% endif %}
+      <div class="header-acciones">
+        {% if usuario %}
+          {% if usuario.rol == 'admin' %}
+            <a class="btn btn-outline btn-sm" href="{{ url_for('panel_admin') }}">Panel admin</a>
+          {% elif usuario.rol == 'abogado' %}
+            <a class="btn btn-outline btn-sm" href="{{ url_for('abogado_inicio') }}">Portal del abogado</a>
+          {% else %}
+            <a class="btn btn-outline btn-sm" href="{{ url_for('cliente_inicio') }}">Mis procesos</a>
+          {% endif %}
+          <a class="btn btn-primary btn-sm" href="{{ url_for('salir') }}">Salir</a>
+        {% else %}
+          <a class="btn btn-outline btn-sm" href="{{ url_for('login') }}">Ingresar</a>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('registro') }}">Registrarme</a>
+        {% endif %}
+      </div>
+    </div>
+    <nav class="nav-main">
+      <div class="container nav-in">
+        <a href="{{ url_for('inicio') }}#areas">Áreas de atención</a>
+        <a href="{{ url_for('inicio') }}#quienes">Quiénes somos</a>
+        <a href="{{ url_for('inicio') }}#noticias">Artículos jurídicos</a>
+        <a href="{{ url_for('inicio') }}#faq">Preguntas frecuentes</a>
+        <a href="{{ url_for('agendar_cita') }}">Agenda tu cita</a>
+        <a href="{{ url_for('inicio') }}#contacto">Contacto</a>
+        {% if usuario and usuario.rol == 'admin' %}
+          <a href="{{ url_for('panel_admin') }}">Panel administrativo</a>
+        {% elif usuario and usuario.rol == 'abogado' %}
+          <a href="{{ url_for('abogado_inicio') }}">Portal del abogado</a>
+        {% elif usuario %}
+          <a href="{{ url_for('cliente_inicio') }}">Mis procesos</a>
+        {% endif %}
+      </div>
+    </nav>
+  </header>
+  {% endif %}
+
+  <main>
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+      {% if mensajes %}
+        <div class="container" style="margin-top:24px">
+          {% for categoria, mensaje in mensajes %}
+            <div class="alert {{ categoria }}">{{ mensaje }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block contenido %}{% endblock %}
+  </main>
+
+  {% if not hide_header %}
+  <footer class="footer">
+    <div class="container">
+      <div class="grid">
+<div>
+          <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
+          <p>{{ C.get('footer_desc', 'Acompañamiento jurídico cercano, transparente y al día. Consulta el estado de tus procesos en tiempo real desde cualquier dispositivo.') }}</p>
+        </div>
+        <div>
+          <h4>Clientes</h4>
+          <ul>
+            <li><a href="{{ url_for('registro') }}">Registrarme</a></li>
+            <li><a href="{{ url_for('login') }}">Ingresar</a></li>
+            <li><a href="{{ url_for('cliente_inicio') }}">Consultar mis procesos</a></li>
+            <li><a href="{{ url_for('inicio') }}#contacto">Saber más</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Institucional</h4>
+          <ul>
+            <li><a href="{{ url_for('inicio') }}#areas">Áreas de atención</a></li>
+            <li><a href="{{ url_for('inicio') }}#quienes">Quiénes somos</a></li>
+            <li><a href="{{ url_for('inicio') }}#noticias">Artículos jurídicos</a></li>
+            <li><a href="{{ url_for('privacidad') }}">Política de privacidad</a></li>
+          </ul>
+        </div>
+        {% set info_contacto = [C.get('contacto_correo'), C.get('contacto_telefono'), C.get('contacto_direccion'), C.get('contacto_horario')]|select|list %}
+        {% if info_contacto %}
+        <div>
+          <h4>Información y contacto</h4>
+          <ul>
+            {% if C.get('contacto_correo') %}<li><a href="mailto:{{ C.get('contacto_correo') }}">{{ C.get('contacto_correo') }}</a></li>{% endif %}
+            {% if C.get('contacto_telefono') %}<li><a href="tel:{{ C.get('contacto_telefono')|replace(' ', '') }}">{{ C.get('contacto_telefono') }}</a></li>{% endif %}
+            {% if C.get('contacto_direccion') %}<li>{{ C.get('contacto_direccion') }}</li>{% endif %}
+            {% if C.get('contacto_horario') %}<li>{{ C.get('contacto_horario') }}</li>{% endif %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+      <div class="base">
+        <span>© {{ now.year }} Derechos On. Todos los derechos reservados.</span>
+        <span>Página de información jurídica · No constituye asesoría legal individualizada.</span>
+      </div>
+    </div>
+  </footer>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+  <button type="button" class="jv-launch" id="jvAbrir" aria-label="Abrir el asistente jurídico Doctor On">
+    <span class="jv-launch-bur">¿Alguna duda legal? <b class="jv-texto-marca">Pregúntale a Doctor <span class="b-on">On</span></b></span>
+    <span class="jv-orb-sm jv-launch-orb" aria-hidden="true"></span>
+  </button>
+
+  <div class="jv-wrap" id="jvWrap" hidden>
+    <div class="jv-shell" role="dialog" aria-modal="true" aria-label="Asistente jurídico Doctor On">
+
+      <aside class="jv-rail">
+        <div class="jv-rail-top">
+          <button type="button" class="jv-nueva" id="jvNueva">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Nueva consulta
+          </button>
+        </div>
+        <div class="jv-hist-label">Consultas recientes</div>
+        <div class="jv-hist" id="jvHist"></div>
+        <div class="jv-rail-foot">
+          <span class="jv-dot" id="jvDot"></span>
+          <span id="jvEstado">Asistente con IA activo</span>
+        </div>
+      </aside>
+
+      <main class="jv-col">
+        <header class="jv-topbar">
+          <span class="jv-orb-sm" aria-hidden="true"></span>
+          <div>
+            <h2 class="jv-texto-marca">Doctor <span class="b-on">On</span></h2>
+            <span class="jv-sub">Orientación sobre normativa colombiana · no reemplaza una consulta formal</span>
+          </div>
+          <div class="jv-topbar-acciones">
+            <button type="button" class="jv-ibtn" id="jvTopNueva" aria-label="Nueva consulta" title="Nueva consulta">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <button type="button" class="jv-ibtn" id="jvCerrar" aria-label="Cerrar" title="Cerrar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="jv-scroll" id="jvScroll">
+          <div class="jv-thread" id="jvHilo"></div>
+          <button type="button" class="jv-jump" id="jvJump" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+            Ver respuesta
+          </button>
+        </div>
+
+        <div class="jv-composer-wrap">
+          <div class="jv-composer-inner">
+            <div class="jv-chips">
+              <button type="button" class="jv-chip">¿Cuánto cuesta un proceso laboral?</button>
+              <button type="button" class="jv-chip">Me despidieron sin carta</button>
+              <button type="button" class="jv-chip">No me han pagado mi salario</button>
+            </div>
+            <div class="jv-composer">
+              <textarea id="jvEntrada" rows="1" placeholder="Cuéntame tu caso con tus palabras…"
+                        aria-label="Escribe tu consulta" maxlength="2000"></textarea>
+              <button type="button" class="jv-enviar" id="jvEnviar" aria-label="Enviar mensaje">
+                <svg id="jvIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </div>
+            <p class="jv-nota">La orientación es orientativa y no constituye asesoría legal. Verifica siempre la norma vigente con un profesional.</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="jv-modal" id="jvModal" hidden>
+    <div class="jv-modal-box" role="dialog" aria-modal="true" aria-label="Enviar conversación por correo">
+      <button type="button" class="jv-modal-x" id="jvMailCerrar" aria-label="Cerrar">&times;</button>
+      <h3>Envía tu conversación</h3>
+      <p>Te enviamos el resumen de esta consulta al correo que indiques.</p>
+      <form id="jvMailForm">
+        <input type="email" id="jvMailInput" placeholder="tucorreo@ejemplo.com" required autocomplete="email" aria-label="Correo electrónico">
+        <button type="submit" class="jv-modal-ok">Enviar por correo</button>
+        <span class="jv-modal-msg" id="jvMailMsg" role="status"></span>
+      </form>
+    </div>
+  </div>
+
+  <div class="sr-live" id="jvViva" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;"></div>
+
+  <script>
+  (function () {
+    var d = {
+      pagina: location.pathname,
+      dispositivo: (navigator.userAgentData && navigator.userAgentData.mobile) ? 'movil' : (innerWidth < 760 ? 'movil' : 'desktop'),
+      navegador: (navigator.userAgent || '').split(' ').slice(0, 3).join(' ')
+    };
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/visita', new Blob([JSON.stringify(d)], { type: 'application/json' }));
+      } else {
+        fetch('/api/visita', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d), keepalive: true });
+      }
+    } catch (e) {}
+    window.DerechosOnTrack = function (tipo, detalle) {
+      try {
+        fetch('/api/evento', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo: tipo, detalle: detalle || '', pagina: location.pathname }),
+          keepalive: true
+        });
+      } catch (err) {}
+    };
+  })();
+  </script>
+
+  <script src="{{ url_for('static', filename='js/jarvis.js') }}"></script>
+
+  <div class="cookie-banner" id="cookieBanner" hidden>
+    <div class="cookie-text">
+      <b>Uso de cookies</b>
+      <p>Usamos cookies propias para recordar tus preferencias de navegación. Consulta nuestra <a href="{{ url_for('privacidad') }}">política de privacidad</a>.</p>
+    </div>
+    <div class="cookie-acciones">
+      <button type="button" class="btn btn-primary btn-sm" data-cookie="1">Aceptar</button>
+      <button type="button" class="btn btn-outline btn-sm" data-cookie="0">Rechazar</button>
+    </div>
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

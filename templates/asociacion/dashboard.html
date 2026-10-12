@@ -1,0 +1,80 @@
+{% extends "asociacion/base_asociacion.html" %}
+{% block asociacion %}
+<h1>Hola, {{ usuario.nombre.split(' ')[0] }}</h1>
+<p class="sub">Este es el portal de tu organización de recicladores de oficio. Desde aquí puedes consultar el estado de tus proyectos ante el Incentivo al Aprovechamiento y Tratamiento de Residuos Sólidos (IAT).</p>
+
+<div class="stat-cards">
+  <div class="stat-card"><b>{{ total }}</b><span>Proyectos radicados</span></div>
+  <div class="stat-card"><b>{{ estados.get('Radicado', 0) }}</b><span>En radicado</span></div>
+  <div class="stat-card"><b>{{ estados.get('En evaluación', 0) }}</b><span>En evaluación</span></div>
+  <div class="stat-card"><b>{{ estados.get('Aprobado', 0) }}</b><span>Aprobados</span></div>
+</div>
+
+<section style="margin-top:26px">
+  <h3 style="font-size:1.1rem;margin-bottom:8px">Datos de la organización</h3>
+  <div class="table-wrap" style="max-width:720px">
+    <table>
+      <tbody>
+        <tr><th style="text-align:left">Razón social</th><td>{{ usuario.nombre }}</td></tr>
+        <tr><th style="text-align:left">NIT</th><td>{{ usuario.documento or '—' }}</td></tr>
+        <tr><th style="text-align:left">Correo</th><td>{{ usuario.email }}</td></tr>
+        <tr><th style="text-align:left">Teléfono</th><td>{{ usuario.telefono or '—' }}</td></tr>
+        <tr><th style="text-align:left">Ciudad</th><td>{{ extra.get('ciudad') or '—' }}</td></tr>
+        <tr><th style="text-align:left">Dirección</th><td>{{ extra.get('direccion') or '—' }}</td></tr>
+        {% set rep = (extra.get('representante_legal') or {}) %}
+        {% if rep.get('nombre') %}
+        <tr><th style="text-align:left">Representante legal</th><td>{{ rep.get('nombre') }}{% if rep.get('cedula') %} · CC {{ rep.get('cedula') }}{% endif %}</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section style="margin-top:30px">
+  <h3 style="font-size:1.1rem;margin-bottom:8px">Últimas solicitudes</h3>
+  {% if solicitudes %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Radicado</th><th>Proyecto</th><th>Tipo</th><th>Toneladas</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in solicitudes %}
+        <tr>
+          <td><b>{{ s.radicado }}</b></td>
+          <td>{{ s.titulo }}</td>
+          <td>{{ s.tipo }}</td>
+          <td>{{ s.toneladas or 0 }}</td>
+          <td>
+            {% if s.estado == 'Aprobado' %}
+              <span class="badge favor">Aprobado</span>
+            {% elif s.estado == 'Negado' %}
+              <span class="badge vencida">Negado</span>
+            {% elif s.estado == 'En evaluación' %}
+              <span class="badge estudio">En evaluación</span>
+            {% else %}
+              <span class="badge tramite">Radicado</span>
+            {% endif %}
+          </td>
+          <td><a class="btn" style="padding:4px 10px" href="{{ url_for('asociacion_iat_detalle', sid=s.id) }}">Ver</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="vacio">
+    <p style="margin:0">Aún no has radicado ningún proyecto. Ve a la sección <b>Incentivo IAT</b> para conocer los requisitos y presentar tu primera solicitud.</p>
+  </div>
+  {% endif %}
+</section>
+
+<section style="margin-top:30px;padding:20px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;max-width:720px">
+  <h4 style="margin:0 0 8px">¿Qué sigue?</h4>
+  <ol style="margin:0;padding-left:20px;line-height:1.8">
+    <li>Consulte si su municipio convoca proyectos de aprovechamiento dentro de la vigencia adherente.</li>
+    <li>Radique el proyecto en la Secretaría General de la Alcaldía con su formalización vigente.</li>
+    <li>El Comité del IAT evalúa con criterio diferencial para recicladores de oficio.</li>
+  </ol>
+</section>
+{% endblock %}

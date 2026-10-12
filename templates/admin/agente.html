@@ -1,0 +1,98 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Agente comercial — Administración Derechos On{% endblock %}
+{% block contenido %}
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+  <div>
+    <h1>Agente comercial</h1>
+    <p class="sub">Prospectos capturados desde redes sociales, buscadores, cámaras de comercio y directorios. Clasificados por naturaleza (persona jurídica / natural) con prioridad y propuestas de servicio generadas automáticamente.</p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a class="btn btn-navy" href="{{ url_for('admin_agente_motor') }}">Motor automático</a>
+    <a class="btn btn-outline" href="{{ url_for('admin_agente_motor_personas') }}">Motor de personas</a>
+    <a class="btn btn-outline" href="{{ url_for('admin_agente_buscar') }}">Importar resultados</a>
+    <a class="btn btn-outline" href="{{ url_for('admin_agente_nuevo') }}">+ Nuevo prospecto</a>
+  </div>
+</div>
+
+{% if resumen.total %}
+<div class="reporte-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:20px 0">
+  <div class="stat-card"><b>{{ resumen.total }}</b><span>Prospectos totales</span></div>
+  <div class="stat-card"><b>{{ resumen.juridicas }}</b><span>Personas jurídicas</span></div>
+  <div class="stat-card"><b>{{ resumen.naturales }}</b><span>Personas naturales</span></div>
+  <div class="stat-card"><b>{{ resumen.nuevos }}</b><span>Nuevos por gestionar</span></div>
+  <div class="stat-card"><b>{{ resumen.con_propuesta }}</b><span>Con propuesta generada</span></div>
+  <div class="stat-card"><b>{{ resumen.ganados }}</b><span>Ganados</span></div>
+</div>
+{% endif %}
+
+{% if por_fuente %}
+<div class="reporte-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:0 0 22px">
+  {% for f in por_fuente %}
+  <div class="notas aviso" style="padding:8px 12px;margin:0"><b>{{ f.fuente }}:</b> {{ f.n }} prospecto(s)</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<form method="get" action="{{ url_for('admin_agente') }}" class="panel-form" style="margin-bottom:20px">
+  <div class="form-row">
+    <div class="campo" style="flex:2"><input name="q" value="{{ fi_q }}" placeholder="Buscar por nombre, NIT, sector, correo…"></div>
+    <div class="campo">
+      <select name="tipo">
+        <option value="">Todos los tipos</option>
+        <option value="juridica" {{ 'selected' if fi_tipo == 'juridica' }}>Persona jurídica</option>
+        <option value="natural" {{ 'selected' if fi_tipo == 'natural' }}>Persona natural</option>
+      </select>
+    </div>
+    <div class="campo">
+      <select name="fuente">
+        <option value="">Todas las fuentes</option>
+        {% for f in fuentes %}<option value="{{ f }}" {{ 'selected' if fi_fuente == f }}>{{ f }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="campo">
+      <select name="estado">
+        <option value="">Todos los estados</option>
+        {% for e in estados %}<option value="{{ e }}" {{ 'selected' if fi_estado == e }}>{{ e }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-outline" type="submit">Filtrar</button>
+  </div>
+</form>
+
+<div class="tabla-wrap">
+  <table class="tabla">
+    <thead>
+      <tr><th>Prospecto</th><th>Naturaleza</th><th>Sector</th><th>Fuente</th><th>Prioridad</th><th>Estado</th><th>Propuesta</th><th>Registro</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in prospectos %}
+      <tr>
+        <td><b>{{ p.nombre }}</b><br><span style="font-size:.76rem;color:var(--muted)">{{ p.documento or '—' }}{% if p.correo %} · {{ p.correo }}{% endif %}</span></td>
+        <td><span class="badge {{ 'favor' if p.tipo == 'juridica' else 'estudio' }}">{{ 'Persona jurídica' if p.tipo == 'juridica' else 'Persona natural' }}</span><br><span style="font-size:.74rem;color:var(--muted)">{{ p.naturaleza }}</span></td>
+        <td>{{ p.sector or '—' }}</td>
+        <td style="font-size:.82rem">{{ p.fuente }}{% if p.consulta_origen %}<br><span style="color:var(--muted)">«{{ p.consulta_origen|truncate(28) }}»</span>{% endif %}</td>
+        <td><b>{{ p.score }}/100</b></td>
+        <td><span class="badge {{ 'favor' if p.estado == 'Ganado' else 'contra' if p.estado == 'Perdido' else 'tramite' if p.estado == 'Contactado' else 'estudio' }}">{{ p.estado }}</span></td>
+        <td>{% if p.propuesta %}<span class="badge favor">Generada</span>{% else %}<span class="badge archivado">Sin</span>{% endif %}</td>
+        <td style="font-size:.78rem;color:var(--muted)">{{ p.creado_el[:10] }}</td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center">
+            <a class="btn btn-sm btn-outline" href="{{ url_for('admin_agente_prospecto', pid=p.id) }}">Ver / Editar</a>
+            {% if p.propuesta %}
+            <form method="post" action="{{ url_for('admin_agente_enviar', pid=p.id) }}" style="display:inline">
+              <button class="btn btn-sm btn-outline" type="submit" {% if not p.correo %}disabled title="Sin correo registrado"{% endif %}>Enviar</button>
+            </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('admin_agente_eliminar', pid=p.id) }}" data-confirmar="¿Eliminar el prospecto {{ p.nombre }}?" style="display:inline">
+              <button class="btn btn-sm btn-danger" type="submit">Quitar</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:26px">Aún no hay prospectos. Usa el <a href="{{ url_for('admin_agente_buscar') }}">motor de búsqueda</a> o agrega uno manualmente.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

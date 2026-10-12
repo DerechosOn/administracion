@@ -1,0 +1,116 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Testimonios — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Testimonios de clientes</h1>
+<p class="sub">Los testimonios activos se muestran en la portada del sitio. Los enviados por los clientes pasan por tu validación antes de publicarse.</p>
+
+<div class="panel-form">
+  <h3>Agregar testimonio</h3>
+  <form method="post" action="{{ url_for('admin_testimonios_crear') }}">
+    <div class="form-row">
+      <div class="campo">
+        <label>Nombre del cliente *</label>
+        <input name="cliente_nombre" required placeholder="Ej. María Fernanda L.">
+      </div>
+      <div class="campo">
+        <label>Calificación (1 a 5)</label>
+        <input type="number" name="calificacion" min="1" max="5" value="5">
+      </div>
+      <div class="campo">
+        <label>Activo</label>
+        <select name="activo">
+          <option value="1">Sí</option>
+          <option value="0">No</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo">
+        <label>Texto del testimonio *</label>
+        <textarea name="texto" rows="3" required placeholder="El acompañamiento de Derechos On…"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Agregar testimonio</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Cliente</th><th>Origen</th><th>Texto</th><th>Estrellas</th><th>Estado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for t in testimonios %}
+      <tr>
+        <td><b>{{ t.cliente_nombre }}</b>{% if t.cliente_email %}<br><small style="color:var(--muted)">{{ t.cliente_email }}</small>{% endif %}</td>
+        <td>
+          {% if t.cliente_id %}
+            <span class="badge tramite">Cliente</span>
+          {% else %}
+            <span class="badge" style="background:#e2e8f0;color:#475569">Admin</span>
+          {% endif %}
+        </td>
+        <td style="max-width:420px">{{ t.texto }}</td>
+        <td>{{ '★' * t.calificacion }}</td>
+        <td>
+          {% if t.activo %}
+            <span class="badge favor">Publicado</span>
+          {% elif t.cliente_id %}
+            <span class="badge estudio">Pendiente de aprobación</span>
+          {% else %}
+            <span class="badge contra">Oculto</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if not t.activo and t.cliente_id %}
+          <form method="post" action="{{ url_for('admin_testimonios_publicar', tid=t.id) }}" style="display:inline">
+            <button class="btn btn-sm btn-navy" type="submit">Publicar</button>
+          </form>
+          {% elif t.activo %}
+          <form method="post" action="{{ url_for('admin_testimonios_ocultar', tid=t.id) }}" style="display:inline">
+            <button class="btn btn-sm btn-outline" type="submit">Ocultar</button>
+          </form>
+          {% endif %}
+          <details class="editar-inline" style="display:inline-block;vertical-align:top">
+            <summary class="btn btn-sm btn-outline" style="display:inline-block">Editar</summary>
+            <div class="panel-form" style="margin-top:8px">
+              <form method="post" action="{{ url_for('admin_testimonios_editar', tid=t.id) }}">
+                <div class="form-row">
+                  <div class="campo">
+                    <label>Nombre</label>
+                    <input name="cliente_nombre" value="{{ t.cliente_nombre }}" required>
+                  </div>
+                  <div class="campo">
+                    <label>Calificación</label>
+                    <input type="number" name="calificacion" min="1" max="5" value="{{ t.calificacion }}">
+                  </div>
+                  <div class="campo">
+                    <label>Activo</label>
+                    <select name="activo">
+                      <option value="1" {{ 'selected' if t.activo }}>Sí</option>
+                      <option value="0" {{ 'selected' if not t.activo }}>No</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="campo">
+                    <label>Texto</label>
+                    <textarea name="texto" rows="2" required>{{ t.texto }}</textarea>
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-navy" type="submit">Guardar</button>
+              </form>
+            </div>
+          </details>
+          <form method="post" action="{{ url_for('admin_testimonios_eliminar', tid=t.id) }}" data-confirmar="¿Eliminar el testimonio de {{ t.cliente_nombre }}?" style="display:inline">
+            <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="color:var(--muted)">No hay testimonios todavía.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

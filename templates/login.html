@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titulo %}Ingresar — Derechos On{% endblock %}
+{% block contenido %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Bienvenido de nuevo</h1>
+    <p class="sub">Accede para consultar el estado de tus procesos.</p>
+
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+    <form method="post" novalidate>
+      <div class="campo">
+        <label for="email">Correo electrónico</label>
+        <input type="email" id="email" name="email" placeholder="cliente@correo.com" required autofocus>
+      </div>
+      <div class="campo">
+        <label for="clave">Contraseña</label>
+        <input type="password" id="clave" name="clave" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+    </form>
+
+    <p class="swap">¿Aún no tienes cuenta? <a href="{{ url_for('registro') }}">Regístrate aquí</a></p>
+  </div>
+</div>
+{% endblock %}

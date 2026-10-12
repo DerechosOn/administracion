@@ -1,0 +1,116 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Secciones — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Secciones de la página</h1>
+<p class="sub">Crea secciones adicionales (título, subtítulo, contenido) que aparecen en la portada, con posición y visibilidad controlables.</p>
+
+<div class="tabs">
+  <a href="{{ url_for('admin_contenido') }}">Textos de la página</a>
+  <a href="{{ url_for('admin_secciones') }}" class="activo">Secciones</a>
+  <a href="{{ url_for('admin_noticias') }}">Artículos</a>
+</div>
+
+<div class="panel-form">
+  <h3>Agregar sección</h3>
+  <form method="post" action="{{ url_for('admin_secciones_crear') }}">
+    <div class="form-row">
+      <div class="campo">
+        <label>Título de la sección *</label>
+        <input name="titulo" required placeholder="Ej. Consultoría empresarial">
+      </div>
+      <div class="campo">
+        <label>Subtítulo</label>
+        <input name="subtitulo" placeholder="Frase corta bajo el título">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:2">
+        <label>Contenido</label>
+        <textarea name="contenido" placeholder="Texto de la sección. Usa saltos de línea para separar párrafos."></textarea>
+      </div>
+      <div class="campo">
+        <label>Posición (orden)</label>
+        <input type="number" name="posicion" value="0">
+      </div>
+      <div class="campo">
+        <label>Estado</label>
+        <label style="display:flex;gap:8px;align-items:center;margin-top:8px">
+          <input type="checkbox" name="activa" value="1" checked> Visible en la portada
+        </label>
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Agregar sección</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Pos.</th><th>Sección</th><th>Estado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for s in secciones %}
+      <tr>
+        <td>{{ s.posicion }}</td>
+        <td>
+          <b>{{ s.titulo }}</b>
+          {% if s.subtitulo %}<br><small style="color:var(--muted)">{{ s.subtitulo }}</small>{% endif %}
+        </td>
+        <td><span class="badge {{ 'favor' if s.activa else 'archivado' }}">{{ 'Visible' if s.activa else 'Oculta' }}</span></td>
+        <td>
+          <div class="acciones">
+            <button class="btn btn-sm btn-outline" data-abre-modal="modal-seccion-{{ s.id }}">Editar</button>
+            <form method="post" action="{{ url_for('admin_secciones_eliminar', sid=s.id) }}" data-confirmar="¿Eliminar esta sección?">
+              <button class="btn btn-sm btn-danger" type="submit">Borrar</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="color:var(--muted)">No hay secciones adicionales.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% for s in secciones %}
+<div class="modal" id="modal-seccion-{{ s.id }}">
+  <div class="modal-box">
+    <button class="cerrar-modal" type="button">×</button>
+    <h3>Editar sección</h3>
+    <form method="post" action="{{ url_for('admin_secciones_editar', sid=s.id) }}">
+      <div class="form-row">
+        <div class="campo">
+          <label>Título *</label>
+          <input name="titulo" value="{{ s.titulo }}" required>
+        </div>
+        <div class="campo">
+          <label>Subtítulo</label>
+          <input name="subtitulo" value="{{ s.subtitulo }}">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Contenido</label>
+        <textarea name="contenido">{{ s.contenido }}</textarea>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label>Posición (orden)</label>
+          <input type="number" name="posicion" value="{{ s.posicion }}">
+        </div>
+        <div class="campo">
+          <label>&nbsp;</label>
+          <label style="display:flex;gap:8px;align-items:center">
+            <input type="checkbox" name="activa" value="1" {{ 'checked' if s.activa }}> Visible en la portada
+          </label>
+        </div>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" class="btn btn-outline" data-cierra-modal="1">Cancelar</button>
+        <button class="btn btn-navy" type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

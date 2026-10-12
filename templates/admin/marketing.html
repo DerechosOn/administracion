@@ -1,0 +1,321 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Marketing Digital — Administración Derechos On{% endblock %}
+{% block contenido %}
+<div class="contracts-shell pbi">
+
+  <header class="contracts-header">
+    <div class="header-left">
+      <h1>Marketing Digital</h1>
+      <p class="subtitle">Posicionamiento en buscadores y viabilidad para publicar en redes</p>
+    </div>
+    <div class="header-right">
+      {% if analisis %}
+      <span class="badge badge-primary">{{ analisis.puntaje }}/100 en buscadores</span>
+      {% else %}
+      <span class="badge">Sin análisis todavía</span>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="contracts-grid">
+
+    <nav class="pbi-rail pbi-only" aria-label="Secciones">
+      <p class="pbi-rail-titulo">Secciones</p>
+      <a class="pbi-rail-item" href="#sec-analizar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span>Analizar</span>
+      </a>
+      <a class="pbi-rail-item" href="#sec-motores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5"/><path d="M4 19h16"/><rect x="7" y="11" width="3" height="5"/><rect x="12" y="7" width="3" height="9"/><rect x="17" y="13" width="3" height="3"/></svg>
+        <span>Buscadores</span>
+      </a>
+      <a class="pbi-rail-item" href="#sec-redes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        <span>Redes</span>
+      </a>
+      <a class="pbi-rail-item" href="#sec-plan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.3 1 2.1h5c0-.8.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>
+        <span>Plan con IA</span>
+      </a>
+      <a class="pbi-rail-item" href="#sec-historial">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
+        <span>Historial</span>
+      </a>
+      <p class="pbi-rail-titulo pbi-rail-titulo-sep">El flujo</p>
+      <ol class="pbi-flujo">
+        <li class="{{ 'is-ok' if analisis }}">Analiza la página</li>
+        <li class="{{ 'is-ok' if analisis }}">Corrige los bloqueos</li>
+        <li class="{{ 'is-ok' if analisis and analisis.ia }}">Genera el plan con IA</li>
+        <li class="{{ 'is-ok' if analisis and analisis.ia }}">Publica en redes</li>
+      </ol>
+    </nav>
+
+    <div class="pbi-kpis pbi-only" role="group" aria-label="Resumen">
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Buscadores</span>
+        <strong class="pbi-kpi-valor">{{ analisis.puntaje if analisis else '—' }}</strong>
+        <span class="pbi-kpi-pie">Promedio de Google, Bing y DuckDuckGo</span>
+      </div>
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Bloqueos</span>
+        <strong class="pbi-kpi-valor">{{ analisis.motores|sum(attribute='errores') if analisis else '—' }}</strong>
+        <span class="pbi-kpi-pie">Errores que impiden posicionar</span>
+      </div>
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Mejoras</span>
+        <strong class="pbi-kpi-valor">{{ analisis.motores|sum(attribute='avisos') if analisis else '—' }}</strong>
+        <span class="pbi-kpi-pie">Avisos por motor</span>
+      </div>
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Redes listas</span>
+        <strong class="pbi-kpi-valor">{{ analisis.redes|selectattr('viabilidad', 'equalto', 'Alta')|list|length if analisis else '—' }}</strong>
+        <span class="pbi-kpi-pie">Viabilidad alta para publicar</span>
+      </div>
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">IA</span>
+        <strong class="pbi-kpi-valor">{{ 'Lista' if ia_lista else 'Sin clave' }}</strong>
+        <span class="pbi-kpi-pie">{% if ia_lista %}Genera el plan paso a paso{% else %}Define IA_CLAVE en el servidor{% endif %}</span>
+      </div>
+    </div>
+
+    <!-- ================= ANALIZAR ================= -->
+    <section class="card card-primary" id="sec-analizar" aria-labelledby="mk-titulo-analizar">
+      <div class="card-header">
+        <div>
+          <h2 id="mk-titulo-analizar">Analizar una página</h2>
+          <p class="card-desc">Elige el contenido del despacho o pega la dirección de cualquier sitio
+            público. La auditoría es local: no se envía nada a terceros.</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin_marketing_analizar') }}" class="mk-form">
+          <div class="form-field">
+            <label for="mk-objetivo">¿Qué analizamos?</label>
+            <select id="mk-objetivo" name="objetivo" data-mk-target>
+              <option value="portada">Portada del sitio</option>
+              {% for a in articulos %}
+              <option value="articulo:{{ a.id }}">Artículo: {{ a.titulo }}</option>
+              {% endfor %}
+              <option value="url">Otra dirección web</option>
+            </select>
+          </div>
+
+          <div class="form-field" data-mk-url hidden>
+            <label for="mk-url">Dirección web</label>
+            <input id="mk-url" type="url" name="url" placeholder="https://www.ejemplo.com/pagina"
+                   inputmode="url" autocomplete="off">
+            <p class="hint">Solo sitios públicos. Las direcciones internas o privadas se rechazan.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="mk-clave">Palabra clave principal <span class="mk-opcional">(opcional)</span></label>
+            <input id="mk-clave" type="text" name="clave" maxlength="80"
+                   placeholder="abogado laboral en Bogotá" autocomplete="off">
+            <p class="hint">Sirve para medir si la página responde a lo que la gente busca.</p>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              Analizar posicionamiento
+            </button>
+            <span class="mk-nota">Google, Bing y DuckDuckGo + LinkedIn, Facebook, Instagram y X</span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    {% if analisis %}
+
+    <!-- ================= BUSCADORES ================= -->
+    <section class="card" id="sec-motores" aria-labelledby="mk-titulo-motores">
+      <div class="card-header">
+        <div>
+          <h2 id="mk-titulo-motores">Posicionamiento en buscadores</h2>
+          <p class="card-desc">
+            <b>{{ analisis.objetivo }}</b> · {{ analisis.url }} · analizado el {{ analisis.creado_el }}
+          </p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="mk-resumen">{{ analisis.resumen }}</p>
+
+        <div class="mk-motores">
+          {% for m in analisis.motores %}
+          <article class="mk-motor">
+            <header>
+              <h3>{{ m.nombre }}</h3>
+              <span class="mk-puntaje mk-puntaje-{{ 'alto' if m.puntaje >= 80 else ('medio' if m.puntaje >= 55 else 'bajo') }}">{{ m.puntaje }}</span>
+            </header>
+            <div class="mk-barra" role="img" aria-label="Puntaje de {{ m.nombre }}: {{ m.puntaje }} de 100">
+              <span style="width: {{ m.puntaje }}%"></span>
+            </div>
+            <p class="mk-motor-pie">{{ m.errores }} errores · {{ m.avisos }} avisos</p>
+            <p class="mk-motor-nota">{{ m.nota }}</p>
+            <details class="mk-detalle">
+              <summary>Ver los {{ m.hallazgos|length }} factores revisados</summary>
+              <ul class="mk-lista">
+                {% for h in m.hallazgos %}
+                <li class="mk-item mk-{{ h.estado }}">
+                  <span class="mk-estado">{{ {'ok': 'Correcto', 'aviso': 'Mejorable', 'error': 'Bloqueo'}[h.estado] }}</span>
+                  <div>
+                    <b>{{ h.titulo }}</b>
+                    <span class="mk-detalle-txt">{{ h.detalle }}</span>
+                    {% if h.consejo %}<span class="mk-consejo">{{ h.consejo }}</span>{% endif %}
+                  </div>
+                </li>
+                {% endfor %}
+              </ul>
+            </details>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REDES ================= -->
+    <section class="card" id="sec-redes" aria-labelledby="mk-titulo-redes">
+      <div class="card-header">
+        <div>
+          <h2 id="mk-titulo-redes">Viabilidad para publicar en redes</h2>
+          <p class="card-desc">Qué tan listo está el contenido para cada red y el borrador de publicación.</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="mk-redes">
+          {% for r in analisis.redes %}
+          <article class="mk-red">
+            <header>
+              <h3>{{ r.nombre }}</h3>
+              <span class="mk-viab mk-viab-{{ r.viabilidad|lower }}">Viabilidad {{ r.viabilidad }}</span>
+            </header>
+            <div class="mk-barra" role="img" aria-label="Viabilidad en {{ r.nombre }}: {{ r.puntaje }} de 100">
+              <span style="width: {{ r.puntaje }}%"></span>
+            </div>
+            <ul class="mk-lista mk-lista-corta">
+              {% for x in r.razones %}
+              <li class="mk-item mk-{{ x.estado }}">
+                <span class="mk-estado">{{ {'ok': 'Listo', 'aviso': 'Mejorable', 'error': 'Bloquea'}[x.estado] }}</span>
+                <div>
+                  <b>{{ x.titulo }}</b>
+                  <span class="mk-detalle-txt">{{ x.detalle }}</span>
+                  {% if x.consejo %}<span class="mk-consejo">{{ x.consejo }}</span>{% endif %}
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+            <div class="mk-borrador">
+              <p class="mk-borrador-titulo">Borrador para {{ r.nombre }}</p>
+              <p class="mk-borrador-formato">{{ r.publicacion.formato }}</p>
+              <textarea class="mk-texto" rows="5" readonly aria-label="Borrador de publicación para {{ r.nombre }}">{{ r.publicacion.texto }}</textarea>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PLAN IA ================= -->
+    <section class="card card-tertiary" id="sec-plan" aria-labelledby="mk-titulo-plan">
+      <div class="card-header">
+        <div>
+          <h2 id="mk-titulo-plan">Plan paso a paso con IA</h2>
+          <p class="card-desc">La auditoría se convierte en una hoja de ruta priorizada: qué hacer,
+            dónde y cómo medirlo.</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin_marketing_plan', analisis_id=analisis.id) }}">
+          <button type="submit" class="btn btn-primary" {% if not ia_lista %}aria-disabled="true" title="Falta configurar IA_CLAVE en el servidor"{% endif %}>
+            {{ 'Regenerar el plan' if analisis.ia else 'Generar plan con IA' }}
+          </button>
+          {% if not ia_lista %}
+          <p class="mk-aviso-ia">La IA no tiene clave en este servidor. El diagnóstico técnico de arriba
+            ya está completo; para el plan narrativo define <code>IA_CLAVE</code> en
+            <code>/etc/derechoson.env</code> y reinicia el servicio.</p>
+          {% endif %}
+        </form>
+        {% if analisis.consejos %}
+        <div class="mk-plan{% if not analisis.ia %} mk-plan-aviso{% endif %}">
+          {% if not analisis.ia %}<p class="mk-plan-titulo">Aviso</p>{% endif %}
+          <pre class="mk-plan-texto">{{ analisis.consejos }}</pre>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    {% else %}
+
+    <section class="card card-tertiary" aria-labelledby="mk-vacio">
+      <div class="card-body">
+        <h2 id="mk-vacio">Todavía no hay un análisis</h2>
+        <p class="card-desc">Empieza por la portada para ver los bloqueos técnicos del sitio
+          (meta description, datos estructurados, sitemap) y después baja artículo por artículo.</p>
+        {% if not ia_lista %}
+        <p class="mk-aviso-ia">La IA no tiene clave en este servidor: el diagnóstico local funciona igual,
+          pero el plan paso a paso necesita <code>IA_CLAVE</code> en <code>/etc/derechoson.env</code>.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    {% endif %}
+
+    <!-- ================= HISTORIAL ================= -->
+    <section class="card card-tertiary" id="sec-historial" aria-labelledby="mk-titulo-historial">
+      <div class="card-header">
+        <div>
+          <h2 id="mk-titulo-historial">Historial</h2>
+          <p class="card-desc">Cada análisis queda guardado con su puntaje para ver la evolución.</p>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if historial %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Objetivo</th><th>Buscadores</th><th>Google</th><th>Mejor red</th><th>Plan IA</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for h in historial %}
+              {% set g = h.motores|selectattr('id', 'equalto', 'google')|list|first %}
+              {% set mejor = h.redes|sort(attribute='puntaje', reverse=true)|first %}
+              <tr{% if analisis and h.id == analisis.id %} class="mk-fila-activa"{% endif %}>
+                <td>{{ h.creado_el[:16] }}</td>
+                <td><a href="{{ url_for('admin_marketing', id=h.id) }}">{{ h.objetivo }}</a></td>
+                <td>{{ h.puntaje }}/100</td>
+                <td>{{ g.puntaje if g else '—' }}</td>
+                <td>{{ mejor.nombre if mejor else '—' }} {{ mejor.puntaje if mejor else '' }}</td>
+                <td>{{ 'Sí' if h.ia else 'No' }}</td>
+                <td>
+                  <form method="post" action="{{ url_for('admin_marketing_eliminar', analisis_id=h.id) }}"
+                        onsubmit="return confirm('¿Eliminar este análisis del historial?')">
+                    <button type="submit" class="btn btn-tertiary btn-sm">Borrar</button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="card-desc">Sin análisis guardados.</p>
+        {% endif %}
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  var sel = document.querySelector('[data-mk-target]');
+  var campoUrl = document.querySelector('[data-mk-url]');
+  if (!sel || !campoUrl) return;
+  function sincronizar() {
+    campoUrl.hidden = sel.value !== 'url';
+  }
+  sel.addEventListener('change', sincronizar);
+  sincronizar();
+})();
+</script>
+{% endblock %}

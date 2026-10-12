@@ -1,0 +1,174 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Actuaciones — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Actuaciones por proceso</h1>
+<p class="sub">Registra las actuaciones realizadas en cada proceso (por fecha). Se reflejarán automáticamente en el portal del cliente.</p>
+
+<div class="panel-form">
+  <h3>Registrar actuación</h3>
+  <form method="post" action="{{ url_for('admin_actuaciones_crear') }}">
+    <div class="form-row">
+      <div class="campo">
+        <label>Proceso *</label>
+        <select name="proceso_id" required>
+          <option value="">— Seleccione proceso —</option>
+          {% for p in procesos %}
+          <option value="{{ p.id }}">{{ p.cliente }} · {{ p.titulo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label>Fecha de la actuación</label>
+        <input type="date" name="fecha">
+      </div>
+      <div class="campo">
+        <label>Fecha máxima para presentarla</label>
+        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+          <input type="date" name="fecha_maxima" id="fecha_maxima">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:.8rem; color:var(--muted); white-space:nowrap">
+            <input type="checkbox" name="fecha_maxima_na" id="fecha_maxima_na" value="1" onchange="toggleFechaMaxima(this)">
+            <span>No aplica</span>
+          </label>
+        </div>
+        <small style="color:var(--muted);font-size:.72rem">El calendario del abogado alertará este vencimiento.</small>
+      </div>
+      <div class="campo" style="flex:2">
+        <label>Descripción de la actuación *</label>
+        <textarea name="descripcion" required placeholder="Ej. Presentación de memorial de pruebas. Radicado N° 2026-00123."></textarea>
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Registrar actuación</button>
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Fecha</th><th>Fecha máxima</th><th>Actuación</th><th>Proceso</th><th>Cliente</th><th>Documentos</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for a in actuaciones %}
+      <tr>
+        <td style="white-space:nowrap"><b>{{ a.fecha }}</b></td>
+        <td style="white-space:nowrap">{{ a.fecha_maxima or '—' }}</td>
+        <td>{{ a.descripcion }}</td>
+        <td>{{ a.proceso }}<br><small style="color:var(--muted)">{{ a.estado }}</small></td>
+        <td>{{ a.cliente }}</td>
+        <td>
+          <div class="acciones" style="gap:6px">
+            {% set adj = documentos|selectattr('actuacion_id', 'equalto', a.id)|list %}
+            {% for d in adj %}
+            <span class="adjunto">
+              <a href="{{ url_for('ver_documento', did=d.id) }}" target="_blank">{{ d.nombre_original[:28] }}{{ '…' if d.nombre_original|length > 28 }}</a>
+              <form method="post" action="{{ url_for('admin_documentos_eliminar', did=d.id) }}" data-confirmar="¿Eliminar este documento?" style="display:inline">
+                <button type="submit" class="adj-x" title="Quitar documento">×</button>
+              </form>
+            </span>
+            {% endfor %}
+            <button class="btn btn-sm btn-outline" data-abre-modal="modal-doc-{{ a.id }}">Subir</button>
+          </div>
+        </td>
+        <td>
+          <div class="acciones">
+            <button class="btn btn-sm btn-outline" data-abre-modal="modal-editar-{{ a.id }}">Editar</button>
+            <form method="post" action="{{ url_for('admin_actuaciones_eliminar', aid=a.id) }}" data-confirmar="¿Eliminar esta actuación?">
+              <button class="btn btn-sm btn-danger" type="submit">Borrar</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="color:var(--muted)">Aún no hay actuaciones registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% for a in actuaciones %}
+<div class="modal" id="modal-doc-{{ a.id }}">
+  <div class="modal-box">
+    <button class="cerrar-modal" type="button">×</button>
+    <h3>Adjuntar documento · {{ a.fecha }}</h3>
+    <p class="sub" style="margin-bottom:14px">{{ a.proceso }} · {{ a.descripcion[:80] }}</p>
+    <form method="post" action="{{ url_for('admin_actuaciones_documento', aid=a.id) }}" enctype="multipart/form-data">
+      <div class="campo">
+        <label>Documento de soporte (PDF, DOC, DOCX, JPG, PNG · máx 16 MB)</label>
+        <input type="file" name="archivo" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+      </div>
+      <div class="modal-acciones">
+        <button type="button" class="btn btn-outline" data-cierra-modal="1">Cancelar</button>
+        <button class="btn btn-navy" type="submit">Subir documento</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{% for a in actuaciones %}
+<div class="modal" id="modal-editar-{{ a.id }}">
+  <div class="modal-box">
+    <button class="cerrar-modal" type="button">×</button>
+    <h3>Editar actuación · {{ a.fecha }}</h3>
+    <form method="post" action="{{ url_for('admin_actuaciones_editar', aid=a.id) }}">
+      <div class="form-row">
+        <div class="campo">
+          <label>Proceso *</label>
+          <select name="proceso_id" required>
+            {% for p in procesos %}
+            <option value="{{ p.id }}" {{ 'selected' if p.id == a.proceso_id }}>{{ p.cliente }} · {{ p.titulo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Fecha</label>
+          <input type="date" name="fecha" value="{{ a.fecha }}">
+        </div>
+        <div class="campo">
+          <label>Fecha máxima para presentarla</label>
+          <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+            <input type="date" name="fecha_maxima" id="fecha_maxima_editar_{{ a.id }}" value="{{ a.fecha_maxima }}">
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:.8rem; color:var(--muted); white-space:nowrap">
+              <input type="checkbox" name="fecha_maxima_na" id="fecha_maxima_na_editar_{{ a.id }}" value="1" {% if not a.fecha_maxima %}checked{% endif %} onchange="toggleFechaMaxima(this)">
+              <span>No aplica</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="campo">
+        <label>Descripción de la actuación *</label>
+        <textarea name="descripcion" required>{{ a.descripcion }}</textarea>
+      </div>
+      <div class="modal-acciones">
+        <button type="button" class="btn btn-outline" data-cierra-modal="1">Cancelar</button>
+        <button class="btn btn-navy" type="submit">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleFechaMaxima(checkbox) {
+  const input = checkbox.closest('div').querySelector('input[type="date"]');
+  if (checkbox.checked) {
+    input.value = '';
+    input.disabled = true;
+    input.style.opacity = '0.5';
+  } else {
+    input.disabled = false;
+    input.style.opacity = '1';
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[name="fecha_maxima_na"]').forEach(cb => {
+    const input = cb.closest('div').querySelector('input[type="date"]');
+    if (cb.checked) {
+      input.value = '';
+      input.disabled = true;
+      input.style.opacity = '0.5';
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% set p = rol_crm %}
+<h1>{{ tarea.titulo }}</h1>
+<p class="sub">
+  <a href="{{ url_for(p ~ '_crm') }}" style="color:var(--blue-700)">← Volver al CRM</a>
+</p>
+
+<div class="panel-form">
+  <div class="proceso-meta" style="display:flex;flex-wrap:wrap;gap:18px">
+    <span>Prioridad: <b>{{ prioridad_txt[tarea.prioridad] }}</b></span>
+    <span>Estado: <b>{{ estado_txt[tarea.estado] }}</b></span>
+    <span>Vence: <b>{{ (tarea.fecha_vencimiento or 'Sin fecha')[:10] }}</b></span>
+    <span>Creada: <b>{{ tarea.creado_el[:10] }}</b></span>
+    {% if tarea.asignado_a_tipo %}<span>Asignada a: <b>{{ tarea.asignado_a_tipo }}{{ ' #' ~ tarea.asignado_a_id if tarea.asignado_a_id }}</b></span>{% endif %}
+  </div>
+  {% if tarea.descripcion %}<p style="margin-top:14px">{{ tarea.descripcion }}</p>{% endif %}
+
+  <form method="post" action="{{ url_for(p ~ '_crm_tarea_estado', tid=tarea.id) }}" style="margin-top:16px">
+    <div class="form-row">
+      <div class="campo" style="flex:0 0 220px">
+        <label>Cambiar estado</label>
+        <select name="estado">
+          {% for e in estados %}
+          <option value="{{ e }}" {{ 'selected' if e == tarea.estado }}>{{ estado_txt[e] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo" style="flex:0 0 auto;align-self:flex-end">
+        <button class="btn btn-navy" type="submit">Actualizar estado</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="panel-form" id="comentarios">
+  <h3>Comentarios y avances</h3>
+  {% if comentarios %}
+  <ol class="timeline">
+    {% for c in comentarios %}
+    <li class="tl-item">
+      <span class="tl-fecha">{{ c.creado_el[:16].replace('T', ' ') }}</span>
+      <div class="tl-body">
+        <span class="tl-desc"><b>{{ c.autor_tipo|capitalize }}:</b> {{ c.comentario }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p style="color:var(--muted)">Todavía no hay comentarios en esta tarea.</p>
+  {% endif %}
+
+  <form method="post" action="{{ url_for(p ~ '_crm_tarea_comentario', tid=tarea.id) }}" style="margin-top:16px">
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Agregar comentario</label>
+        <textarea name="comentario" rows="3" required placeholder="Escribe un avance, observación o instrucción…"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-outline" type="submit">Publicar comentario</button>
+  </form>
+</div>

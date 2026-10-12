@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block titulo %}Registro Persona Jurídica — Derechos On{% endblock %}
+{% block contenido %}
+<div class="auth-wrap">
+  <div class="auth-card" style="max-width:780px">
+    <h1>Registro — Empresa / Persona Jurídica</h1>
+    <p class="sub">Ingrese los datos de la empresa conforme a Cámara de Comercio y RUES.</p>
+
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+    <form method="post">
+      <h3 style="margin:0 0 10px;font-size:1.08rem">Datos de la empresa (Cámara de Comercio)</h3>
+      <div class="campo">
+        <label for="razon_social">Razón Social *</label>
+        <input type="text" id="razon_social" name="razon_social" value="{{ request.form.get('razon_social','') }}" placeholder="NOMBRE DE LA EMPRESA S.A.S." required>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="sigla">Sigla / Nombre comercial</label>
+          <input type="text" id="sigla" name="sigla" value="{{ request.form.get('sigla','') }}" placeholder="Ej. Derechos On">
+        </div>
+        <div class="campo">
+          <label for="nit">NIT *</label>
+          <input type="text" id="nit" name="nit" value="{{ request.form.get('nit','') }}" placeholder="900123456-7" required>
+        </div>
+        <div class="campo">
+          <label for="tipo_sociedad">Tipo de sociedad</label>
+          <select id="tipo_sociedad" name="tipo_sociedad">
+            {% set ts = request.form.get('tipo_sociedad','') %}
+            {% for t in ['','S.A.S.','S.A.','Ltda.','S.C.','E.U.','S.C.A.','Otra'] %}
+            <option value="{{ t }}" {{ 'selected' if ts == t }}>{{ t or 'Seleccione...' }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="matricula_cc">Matrícula Cámara de Comercio *</label>
+          <input type="text" id="matricula_cc" name="matricula_cc" value="{{ request.form.get('matricula_cc','') }}" placeholder="Ej. 123456-12" required>
+        </div>
+        <div class="campo" style="flex:0 0 190px">
+          <label for="fecha_constitucion">Fecha de constitución *</label>
+          <input type="date" id="fecha_constitucion" name="fecha_constitucion" value="{{ request.form.get('fecha_constitucion','') }}" required>
+        </div>
+        <div class="campo" style="flex:0 0 190px">
+          <label for="ultimo_ano_renovado">Último año renovado (CC)</label>
+          <input type="number" id="ultimo_ano_renovado" name="ultimo_ano_renovado" min="1900" max="2100" value="{{ request.form.get('ultimo_ano_renovado','') }}" placeholder="2026">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="direccion_empresa">Dirección de la empresa *</label>
+          <input type="text" id="direccion_empresa" name="direccion_empresa" value="{{ request.form.get('direccion_empresa','') }}" placeholder="Calle 72 # 10-34" required>
+        </div>
+        <div class="campo" style="flex:0 0 220px">
+          <label for="ciudad_empresa">Ciudad / Municipio *</label>
+          <input type="text" id="ciudad_empresa" name="ciudad_empresa" value="{{ request.form.get('ciudad_empresa','') }}" placeholder="Bogotá D.C." required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="telefono_empresa">Teléfono de la empresa *</label>
+          <input type="text" id="telefono_empresa" name="telefono_empresa" value="{{ request.form.get('telefono_empresa','') }}" placeholder="+57 601 000 0000" required>
+        </div>
+        <div class="campo">
+          <label for="email_empresa">Correo electrónico de la empresa *</label>
+          <input type="email" id="email_empresa" name="email_empresa" value="{{ request.form.get('email_empresa','') }}" placeholder="contacto@empresa.com.co" required>
+        </div>
+      </div>
+
+      <h4 style="margin:20px 0 8px;font-size:1rem">Representante Legal</h4>
+      <div class="campo">
+        <label for="rep_legal_nombre">Nombre completo del Representante Legal *</label>
+        <input type="text" id="rep_legal_nombre" name="rep_legal_nombre" value="{{ request.form.get('rep_legal_nombre','') }}" placeholder="Juan Carlos Rodríguez López" required>
+      </div>
+      <div class="form-row">
+        <div class="campo" style="flex:0 0 150px">
+          <label for="rep_legal_tipo_doc">Tipo de documento</label>
+          <select id="rep_legal_tipo_doc" name="rep_legal_tipo_doc">
+            {% set rtd = request.form.get('rep_legal_tipo_doc','CC') %}
+            {% for td in ['CC','CE','PA','NIT'] %}
+            <option value="{{ td }}" {{ 'selected' if rtd == td }}>{{ td }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="rep_legal_documento">Número de documento *</label>
+          <input type="text" id="rep_legal_documento" name="rep_legal_documento" value="{{ request.form.get('rep_legal_documento','') }}" placeholder="1234567890" required>
+        </div>
+        <div class="campo">
+          <label for="rep_legal_cargo">Cargo *</label>
+          <input type="text" id="rep_legal_cargo" name="rep_legal_cargo" value="{{ request.form.get('rep_legal_cargo','') }}" placeholder="Representante Legal / Gerente General" required>
+        </div>
+      </div>
+
+      <h3 style="margin:22px 0 10px;font-size:1.08rem">Datos del RUES</h3>
+      <div class="form-row">
+        <div class="campo">
+          <label for="rues_numero">Número de RUES</label>
+          <input type="text" id="rues_numero" name="rues_numero" value="{{ request.form.get('rues_numero','') }}">
+        </div>
+        <div class="campo" style="flex:0 0 190px">
+          <label for="rues_fecha_inscripcion">Fecha de inscripción en RUES</label>
+          <input type="date" id="rues_fecha_inscripcion" name="rues_fecha_inscripcion" value="{{ request.form.get('rues_fecha_inscripcion','') }}">
+        </div>
+        <div class="campo" style="flex:0 0 190px">
+          <label for="rues_fecha_renovacion">Fecha de renovación RUES</label>
+          <input type="date" id="rues_fecha_renovacion" name="rues_fecha_renovacion" value="{{ request.form.get('rues_fecha_renovacion','') }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="ciiu_principal">Actividad económica principal (CIIU)</label>
+          <input type="text" id="ciiu_principal" name="ciiu_principal" value="{{ request.form.get('ciiu_principal','') }}">
+        </div>
+        <div class="campo">
+          <label for="ciiu_secundarias">Actividades económicas secundarias (CIIU)</label>
+          <input type="text" id="ciiu_secundarias" name="ciiu_secundarias" value="{{ request.form.get('ciiu_secundarias','') }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="campo" style="flex:0 0 220px">
+          <label for="rues_regimen">Régimen</label>
+          <select id="rues_regimen" name="rues_regimen">
+            {% set rr = request.form.get('rues_regimen','') %}
+            {% for r in ['','Régimen Común','Régimen Simplificado','Gran Contribuyente','Autorretenedor','Otro'] %}
+            <option value="{{ r }}" {{ 'selected' if rr == r }}>{{ r or 'Seleccione...' }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="tamano_empresa">Tamaño de la empresa</label>
+          <select id="tamano_empresa" name="tamano_empresa">
+            {% set te = request.form.get('tamano_empresa','') %}
+            {% for t in ['','Microempresa','Pequeña','Mediana','Grande','No aplica'] %}
+            <option value="{{ t }}" {{ 'selected' if te == t }}>{{ t or 'Seleccione...' }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo" style="flex:0 0 220px">
+          <label for="rues_estado">Estado en RUES</label>
+          <input type="text" id="rues_estado" name="rues_estado" value="{{ request.form.get('rues_estado','') }}">
+        </div>
+      </div>
+
+      <h3 style="margin:22px 0 10px;font-size:1.08rem">Datos de acceso</h3>
+      <div class="campo">
+        <label for="tipo_servicio">Tipo de servicio *</label>
+        <select id="tipo_servicio" name="tipo_servicio" required>
+          <option value="">Selecciona el servicio que requieres</option>
+          {% for s in servicios %}
+          <option value="{{ s }}" {{ 'selected' if request.form.get('tipo_servicio') == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="campo">
+          <label for="clave">Contraseña *</label>
+          <input type="password" id="clave" name="clave" placeholder="Mínimo 6 caracteres" required>
+        </div>
+        <div class="campo">
+          <label for="clave2">Confirmar contraseña *</label>
+          <input type="password" id="clave2" name="clave2" placeholder="Repítela" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Crear mi cuenta</button>
+    </form>
+
+    <p class="swap"><a href="{{ url_for('registro') }}">← Volver a selección de tipo de cliente</a></p>
+  </div>
+</div>
+{% endblock %}

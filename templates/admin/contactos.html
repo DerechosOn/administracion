@@ -1,0 +1,44 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Mensajes — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Mensajes de contacto</h1>
+<p class="sub">Solicitudes recibidas desde el formulario de la página pública.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Recibido</th><th>Remitente</th><th>Asunto</th><th>Mensaje</th><th>Leído</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for m in contactos %}
+      <tr class="{{ 'no-leido' if not m.leido }}">
+        <td>{{ m.creado_el }}</td>
+        <td><b>{{ m.nombre }}</b><br><small style="color:var(--muted)">{{ m.correo }}{% if m.telefono %} · {{ m.telefono }}{% endif %}</small></td>
+        <td>{{ m.asunto or 'Consulta general' }}</td>
+        <td style="max-width:320px">{{ m.mensaje }}</td>
+        <td>
+          {% if m.leido %}
+            <span class="badge favor">Leído</span>
+          {% else %}
+            <span class="badge estudio">Nuevo</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if not m.leido %}
+          <form method="post" action="{{ url_for('admin_contactos_estado', cid=m.id) }}" style="display:inline">
+            <input type="hidden" name="leido" value="1">
+            <button class="btn btn-sm btn-outline" type="submit">Marcar leído</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('admin_contactos_eliminar', cid=m.id) }}" data-confirmar="¿Eliminar el mensaje de {{ m.nombre }}?" style="display:inline">
+            <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="color:var(--muted)">No hay mensajes.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

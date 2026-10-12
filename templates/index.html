@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block titulo %}Derechos On — Asesoría Jurídica Moderna{% endblock %}
+{% block contenido %}
+
+<!-- ================= HERO CARRUSEL ================= -->
+<section class="slider" id="inicio">
+  <div class="slide s1 activo" data-slide>
+    <div class="container">
+      <div>
+        <span class="eyebrow">⚖ Abogados · Confianza y resultados</span>
+        <h1>{{ C.get('hero1_titulo', 'Tu defensa jurídica, transparente y siempre a la mano') }}</h1>
+        <p class="lead">{{ C.get('hero1_texto', 'Acompañamos a personas, familias y empresas. Regístrate y consulta en tiempo real el estado de cada uno de tus procesos desde tu página personal.') }}</p>
+        <div class="hero-actions">
+          {% if usuario %}
+            <a class="btn btn-primary" href="{{ url_for('cliente_inicio') }}">Consultar mis procesos</a>
+          {% else %}
+            <a class="btn btn-primary" href="{{ url_for('registro') }}">Registrarme como cliente</a>
+            <a class="btn btn-outline-white" href="{{ url_for('login') }}">Ya soy cliente</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="slide-visual">
+        {% if C.get('hero_slide1_imagen') %}
+        <img class="slide-img" src="{{ url_for('static', filename='img/slides/' ~ C.get('hero_slide1_imagen')) }}" alt="Flyer 1">
+        {% else %}
+        <div class="mono">{{ 'scale'|icono_svg|safe }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="slide s2" data-slide>
+    <div class="container">
+      <div>
+        <span class="eyebrow">Portal del cliente · Seguimiento en línea</span>
+        <h1>{{ C.get('hero2_titulo', 'Consulta el estado de tus procesos en tiempo real') }}</h1>
+        <p class="lead">{{ C.get('hero2_texto', 'Cada cliente tiene su propia página con el estado de cada caso, notas del equipo, expedientes y el abogado asignado. Sin llamadas de espera, sin dudas.') }}</p>
+        <a class="btn btn-primary" href="{{ url_for('login') }}">Ingresar a mi portal</a>
+      </div>
+      <div class="slide-visual">
+        {% if C.get('hero_slide2_imagen') %}
+        <img class="slide-img" src="{{ url_for('static', filename='img/slides/' ~ C.get('hero_slide2_imagen')) }}" alt="Flyer 2">
+        {% else %}
+        <div class="mono">{{ 'users'|icono_svg|safe }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="slide s3" data-slide>
+    <div class="container">
+      <div>
+        <span class="eyebrow">Especialidades · Equipo multidisciplinario</span>
+        <h1>{{ C.get('hero3_titulo', 'Especialistas en derecho de familia, laboral y civil') }}</h1>
+        <p class="lead">{{ C.get('hero3_texto', 'Áreas de atención integrales con abogados colegiados y experiencia comprobada en cada rama del derecho.') }}</p>
+        <a class="btn btn-primary" href="{{ url_for('inicio') }}#areas">Conoce nuestras áreas</a>
+      </div>
+      <div class="slide-visual">
+        {% if C.get('hero_slide3_imagen') %}
+        <img class="slide-img" src="{{ url_for('static', filename='img/slides/' ~ C.get('hero_slide3_imagen')) }}" alt="Flyer 3">
+        {% else %}
+        <div class="mono">{{ 'gavel'|icono_svg|safe }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="slider-nav">
+    <button type="button" class="punto activo" data-punto="0" aria-label="Slide 1"></button>
+    <button type="button" class="punto" data-punto="1" aria-label="Slide 2"></button>
+    <button type="button" class="punto" data-punto="2" aria-label="Slide 3"></button>
+  </div>
+  <div class="slider-flechas">
+    <button type="button" data-anterior aria-label="Anterior">‹</button>
+    <button type="button" data-siguiente aria-label="Siguiente">›</button>
+  </div>
+</section>
+
+<!-- ================= CIFRAS DEL DESPACHO ================= -->
+<section class="stats-band">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat">
+        <b>{{ C.get('stats_anios', '15') }}+</b>
+        <span>Años de experiencia</span>
+      </div>
+      <div class="stat">
+        <b>{{ stats_procesos }}</b>
+        <span>Procesos gestionados</span>
+      </div>
+      <div class="stat">
+        <b>{{ stats_satisfaccion }}%</b>
+        <span>Clientes satisfechos</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ASISTENTE JURÍDICO CON IA ================= -->
+<section class="section" id="jarvis" style="padding-top:0">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Asistente Doctor On</span>
+      <h2>Tu duda jurídica, respondida al instante</h2>
+      <p>Describe tu caso con tus propias palabras y recibe orientación sobre la norma colombiana que aplica,
+         los plazos que tienes y las pruebas que debes reunir. Gratis y sin registro.</p>
+    </div>
+
+    <div class="jv-hero-card">
+      <div class="jv-hero-head">
+        <span class="jv-orb-sm" aria-hidden="true"></span>
+        <div>
+          <b class="jv-texto-marca">Doctor <span class="b-on">On</span></b> · Asistente jurídico
+          <span>Respuestas citadas según la norma colombiana · disponible las 24 horas</span>
+        </div>
+      </div>
+
+      <div class="jv-hero-body">
+        <div class="jv-hero-fila">
+          <span class="jv-ava" aria-hidden="true">D</span>
+          <div class="jv-bur">¿Cuánto me pueden tardar si me despidieron sin carta y sin liquidación?</div>
+        </div>
+
+        <div class="jv-hero-fila mio">
+          <div class="jv-bur">Me despidieron hace dos semanas y no me han pagado.</div>
+        </div>
+
+        <div class="jv-hero-fila">
+          <span class="jv-ava" aria-hidden="true">D</span>
+          <div>
+            <div class="jv-bur">Tienes razón en notar algo: **el despido sin justa causa exige carta escrita**
+              en el momento de la terminación** (art. 206 CST). Sin ese requisito puedes invocar
+              despido en mala forma y reclamar la indemnización del art. 189.</div>
+            <div class="jv-hero-fuentes">
+              <span class="jv-fuente" title="Codigo Sustantivo del Trabajo (Ley 23 de 1991)">CST · art. 206</span>
+              <span class="jv-fuente" title="Codigo Sustantivo del Trabajo (Ley 23 de 1991)">CST · art. 189</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jv-hero-input">
+        <span>Cuéntame tu caso con tus palabras…</span>
+        <button type="button" class="jv-hero-enviar" id="jvHeroAbrir">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          Preguntar ahora
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ACCESO RÁPIDO ================= -->
+<section class="section" style="padding:56px 0 20px">
+  <div class="container">
+    <div class="tiles">
+      <a class="tile" data-busca href="{{ url_for('cliente_inicio') }}"><span class="ico">{{ 'scale'|icono_svg|safe }}</span><b>Mis procesos</b></a>
+      <a class="tile" data-busca href="{{ url_for('inicio') }}#areas"><span class="ico">{{ 'book'|icono_svg|safe }}</span><b>Áreas de atención</b></a>
+      <a class="tile" data-busca href="{{ url_for('inicio') }}#quienes"><span class="ico">{{ 'building'|icono_svg|safe }}</span><b>Quiénes somos</b></a>
+      <div class="tile" data-busca><span class="ico">{{ 'mail'|icono_svg|safe }}</span><b>Artículos</b></div>
+      <a class="tile" data-busca href="{{ url_for('registro') }}"><span class="ico">{{ 'star'|icono_svg|safe }}</span><b>Regístrate</b></a>
+    </div>
+    <p id="busqueda-vacia">Sin resultados para tu búsqueda.</p>
+  </div>
+</section>
+
+<!-- ================= QUÉNES SOMOS ================= -->
+<section class="section soft" id="quienes">
+  <div class="container">
+    <div class="grid-2">
+      <div class="promo-visual">
+        {% if img_quienes %}
+        <img src="{{ url_for('static', filename='img/quienes.' ~ img_quienes) }}" alt="Equipo de abogados de Derechos On">
+        {% else %}
+        <svg viewBox="0 0 460 400" width="100%" style="background:linear-gradient(135deg,#0a2d86,#1358d6)">
+          <defs>
+            <pattern id="red" width="26" height="26" patternUnits="userSpaceOnUse">
+              <circle cx="13" cy="13" r="1.2" fill="rgba(255,255,255,.35)"/>
+            </pattern>
+          </defs>
+          <rect width="460" height="400" fill="url(#red)"/>
+          <g transform="translate(230 130)">
+            <circle r="70" fill="rgba(255,255,255,.10)"/>
+            <circle r="46" fill="#2f80ff"/>
+            <text y="12" text-anchor="middle" font-family="Roboto, sans-serif" font-size="36" fill="#ffffff" font-weight="700">DO</text>
+          </g>
+          <g transform="translate(88 90)">{{ 'scale'|icono_svg|safe }}</g>
+          <text x="230" y="310" text-anchor="middle" fill="#cfe0ff" font-size="20" font-family="Roboto, sans-serif" font-weight="700">Derechos On</text>
+          <text x="230" y="338" text-anchor="middle" fill="#dbe7fa" font-size="12" font-family="Roboto, sans-serif">Justicia cercana y al día</text>
+        </svg>
+        {% endif %}
+      </div>
+      <div class="promo-copy">
+        <span class="kicker">Quiénes somos</span>
+        <h2>{{ C.get('quienes_titulo', 'Un despacho que entiende que la justicia también puede ser digital') }}</h2>
+        <p>{{ C.get('quienes_texto', 'Derechos On nació para acercar la justicia a las personas. Nuestro equipo combina más de dos décadas de litigio con tecnología moderna para que cada cliente sepa, en todo momento, qué está pasando con su caso.') }}</p>
+        <p>{{ C.get('quienes_texto2', 'Comunicación clara, honorarios transparentes y seguimiento permanente. Por eso cada cliente tiene su propia página para consultar el estado de sus procesos.') }}</p>
+        <ul class="seg-list">
+          <li><span class="chk">✓</span>Equipo disciplinario de abogados y consultores</li>
+          <li><span class="chk">✓</span>Seguimiento y comunicación permanente</li>
+          <li><span class="chk">✓</span>Honorarios claros desde el primer día</li>
+          <li><span class="chk">✓</span>Información digital y confidencial de tu caso</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ÁREAS DE ATENCIÓN ================= -->
+<section class="section" id="areas">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Áreas de atención</span>
+      <h2>{{ C.get('areas_titulo', 'Especialidades jurídicas') }}</h2>
+      <p>{{ C.get('areas_sub', 'Contamos con un equipo multidisciplinario para atender cada necesidad legal con precisión.') }}</p>
+    </div>
+    <div class="grid-3">
+      {% for area in areas %}
+      <article class="card" data-busca>
+        <div class="icono">{{ area.icono|icono_svg|safe }}</div>
+        <h3>{{ area.nombre }}</h3>
+        <p>{{ area.descripcion }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ================= BANDAS PROMOCIONALES ================= -->
+<section class="section" style="padding-top:0">
+  <div class="container">
+    <div class="bandas">
+      <div class="banda b1">
+        <div class="contenido">
+          <h3>Todo tu caso, en un solo lugar</h3>
+          <p>Procesos, expedientes, notas del equipo y estado actualizado desde tu portal personal.</p>
+          <a class="btn btn-outline-white btn-sm" href="{{ url_for('login') }}">Ir a mi portal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TESTIMONIOS ================= -->
+{% if testimonios %}
+<section class="section soft" id="testimonios">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Testimonios</span>
+      <h2>{{ C.get('testimonios_titulo', 'Lo que dicen nuestros clientes') }}</h2>
+      <p>{{ C.get('testimonios_sub', 'Experiencias reales de quienes han confiado en Derechos On.') }}</p>
+    </div>
+    <div class="t-grid">
+      {% for t in testimonios %}
+      <article class="t-card" data-busca>
+        <div class="t-estrellas" title="{{ t.calificacion }} de 5 estrellas">
+          {% for _ in range(t.calificacion) %}★{% endfor %}<span>{% for _ in range(5 - t.calificacion) %}☆{% endfor %}</span>
+        </div>
+        <p class="t-texto">"{{ t.texto }}"</p>
+        <b class="t-nombre">{{ t.cliente_nombre }}</b>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ================= DERECHOS ON DIGITAL ================= -->
+<section class="section soft" id="digital">
+  <div class="container">
+    <div class="digital">
+      <div>
+        <span class="kicker" style="color:#cfe0ff">Derechos On Digital</span>
+        <h2>{{ C.get('digital_titulo', 'Todo tu caso desde tu dispositivo') }}</h2>
+        <p>{{ C.get('digital_texto', 'Consulta el estado de tus procesos, lee las notas de tu abogado y revisa los expedientes de tu caso desde cualquier lugar, a cualquier hora.') }}</p>
+        <div class="burbuja">Portal personal seguro y confidencial</div>
+        <div class="burbuja">Actualizaciones automáticas de cada etapa</div>
+        <div class="burbuja">Atención digital y presencial</div>
+        <div class="digital-ctas" style="margin-top:22px">
+          {% if usuario %}
+            <a class="btn btn-primary" href="{{ url_for('cliente_inicio') }}">Entrar a mi portal</a>
+          {% else %}
+            <a class="btn btn-primary" href="{{ url_for('registro') }}">Crea tu cuenta gratis</a>
+          {% endif %}
+          <span class="btn btn-prox" aria-disabled="true">App m&oacute;vil &middot; Pr&oacute;ximamente</span>
+        </div>
+      </div>
+      <div class="movil-wrap">
+        <span class="movil-chip">Pr&oacute;ximamente</span>
+        <div class="movil" role="img" aria-label="Vista de la aplicaci&oacute;n m&oacute;vil de Derechos On: pantalla de inicio del portal de cliente con saludo, resumen de procesos y estado de cuenta.">
+          <div class="notch" aria-hidden="true"></div>
+          <div class="pantalla">
+            <div class="statusbar" aria-hidden="true"><span>9:41</span><i class="sb"></i></div>
+            <div class="app-bar" aria-hidden="true">
+              <span class="app-logo">DO</span>
+              <span class="app-name">Derechos On</span>
+              <span class="app-avatar">A</span>
+            </div>
+            <div class="app-body" aria-hidden="true">
+              <p class="app-hola">Hola, Ana</p>
+              <div class="app-stats">
+                <div class="app-stat"><b>2</b><span>Activos</span></div>
+                <div class="app-stat"><b>1</b><span>Resueltos</span></div>
+              </div>
+              <div class="app-card">
+                <span class="app-chip">En estudio</span>
+                <b class="app-t">Reclamaci&oacute;n laboral</b>
+                <span class="app-s">&Uacute;ltima actuaci&oacute;n &middot; Contestaci&oacute;n de demanda</span>
+                <div class="app-barra"><i style="width:60%"></i></div>
+                <span class="app-f">60% &middot; Tu abogado est&aacute; trabajando en tu caso</span>
+              </div>
+              <div class="app-card">
+                <div class="app-row">
+                  <b class="app-t">Estado de cuenta</b>
+                  <span class="app-chip ok">Al d&iacute;a</span>
+                </div>
+                <div class="app-row">
+                  <span class="app-s">Saldo pendiente</span>
+                  <b class="app-saldo">$ 480.000</b>
+                </div>
+              </div>
+              <span class="app-cta">Ver mi expediente</span>
+            </div>
+            <div class="app-nav" aria-hidden="true">
+              <span class="on">Inicio</span><span>Procesos</span><span>Cuenta</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SECCIONES DINÁMICAS ================= -->
+{% if secciones %}
+<section class="section" id="secciones">
+  <div class="container">
+    {% for s in secciones %}
+    <div class="home-seccion">
+      <div class="head">
+        <span class="ico">{{ s.icono|icono_svg|safe }}</span>
+        <div>
+          <h3>{{ s.titulo }}</h3>
+          {% if s.subtitulo %}<span class="sub">{{ s.subtitulo }}</span>{% endif %}
+        </div>
+      </div>
+      {% if s.contenido %}
+      <div class="cuerpo">
+        {% for parrafo in s.contenido.split('\n') %}
+        {% if parrafo.strip() %}<p>{{ parrafo }}</p>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- ================= NOTICIAS ================= -->
+<section class="section" id="noticias">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Actualidad jurídica</span>
+      <h2>{{ C.get('noticias_titulo', 'Artículos jurídicos') }}</h2>
+      <p>{{ C.get('noticias_sub', 'Información legal relevante para que estés al día con los cambios que te afectan.') }}</p>
+    </div>
+    <div class="news-grid">
+      {% for noticia in noticias %}
+      <a class="news-card" data-busca href="{{ url_for('articulo', aid=noticia.id) }}">
+        <div class="banner">
+          {% if noticia.imagen %}
+          <img src="{{ url_for('static', filename='img/articulos/' ~ noticia.imagen) }}" alt="{{ noticia.titulo }}">
+          {% else %}
+          <span>⚖</span>
+          {% endif %}
+        </div>
+        <div class="body">
+          <span class="tag">{{ noticia.etiqueta }}</span>
+          <h3>{{ noticia.titulo }}</h3>
+          <p>{{ noticia.resumen or noticia.contenido[:120] }}</p>
+          <span class="fecha">{{ noticia.creado_el[:10] }}</span>
+        </div>
+      </a>
+      {% else %}
+      <p style="color:var(--muted)">Próximamente publicaremos artículos jurídicos.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACTO ================= -->
+<section class="section soft" id="contacto">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Habla con nosotros</span>
+      <h2>{{ C.get('contacto_titulo', 'Canales de atención') }}</h2>
+      <p>{{ C.get('contacto_sub', 'Estamos disponibles para resolver tus dudas y agendar tu primera consulta.') }}</p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-card"><span class="ico">{{ 'mail'|icono_svg|safe }}</span><b>Correo</b><p>{{ C.get('contacto_correo', 'contacto@derechoson.co') }}</p></div>
+      <div class="contact-card"><span class="ico">{{ 'phone'|icono_svg|safe }}</span><b>Teléfono</b><p>{{ C.get('contacto_telefono', '+57 300 123 4567') }}</p></div>
+      <div class="contact-card"><span class="ico">{{ 'building'|icono_svg|safe }}</span><b>Oficina</b><p>{{ C.get('contacto_direccion', 'Carrera 15 # 80-40, Bogotá') }}</p></div>
+      <div class="contact-card"><span class="ico">{{ 'star'|icono_svg|safe }}</span><b>Horario</b><p>{{ C.get('contacto_horario', 'Lun a Vie · 8:00 am – 6:00 pm') }}</p></div>
+    </div>
+
+    <div class="contact-2col">
+      <div class="panel">
+        <h3>{{ C.get('contacto_form_titulo', 'Escríbenos') }}</h3>
+        <p style="color:#64748b;margin-bottom:16px">{{ C.get('contacto_form_sub', 'Cuéntanos tu caso y te contactaremos en menos de 24 horas hábiles.') }}</p>
+        <form method="post" action="{{ url_for('contacto_publico') }}" class="form-grid">
+          <div class="form-field">
+            <label for="c-nombre">Nombre *</label>
+            <input type="text" id="c-nombre" name="nombre" required>
+          </div>
+          <div class="form-field">
+            <label for="c-correo">Correo *</label>
+            <input type="email" id="c-correo" name="correo" required>
+          </div>
+          <div class="form-field">
+            <label for="c-telefono">Teléfono</label>
+            <input type="tel" id="c-telefono" name="telefono">
+          </div>
+          <div class="form-field">
+            <label for="c-asunto">Asunto</label>
+            <select id="c-asunto" name="asunto">
+              <option value="">Selecciona</option>
+              <option>Consulta general</option>
+              <option>Derecho de familia</option>
+              <option>Derecho laboral</option>
+              <option>Derecho civil</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-field" style="grid-column:1 / -1">
+            <label for="c-mensaje">Mensaje *</label>
+            <textarea id="c-mensaje" name="mensaje" rows="4" required></textarea>
+          </div>
+          <div class="form-field" style="grid-column:1 / -1">
+            <button type="submit" class="btn btn-primary">Enviar mensaje</button>
+          </div>
+        </form>
+      </div>
+      <div class="panel">
+        <h3>{{ C.get('agendar_titulo', 'Agenda tu primera consulta') }}</h3>
+        <p style="color:#64748b;margin-bottom:16px">Reserva un espacio con uno de nuestros abogados. Elige fecha y hora; un miembro del equipo te confirmará la cita por correo.</p>
+        <a class="btn btn-primary" href="{{ url_for('agendar_cita') }}">Agendar cita</a>
+        <div class="burbuja" style="margin-top:18px">Atención presencial y virtual</div>
+        <div class="burbuja">Confirmación por correo en la jornada siguiente</div>
+        <div class="burbuja">Información confidencial (Ley 1581)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PREGUNTAS FRECUENTES ================= -->
+<section class="section" id="faq">
+  <div class="container" style="max-width:840px">
+    <div class="section-head">
+      <span class="kicker">Aclaramos tus dudas</span>
+      <h2>{{ C.get('faq_titulo', 'Preguntas frecuentes') }}</h2>
+      <p>{{ C.get('faq_sub', 'Resolvemos las dudas más comunes antes de iniciar tu trámite.') }}</p>
+    </div>
+    <div class="faq">
+      {% for i in range(1, 6) %}
+      {% set p = C.get('faq' ~ i ~ '_p') %}
+      {% set r = C.get('faq' ~ i ~ '_r') %}
+      {% if p %}
+      <details class="faq-item" data-faq>
+        <summary>{{ p }}</summary>
+        <div>{{ r }}</div>
+      </details>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

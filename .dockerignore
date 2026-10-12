@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+public_html/
+estatico_extra/
+*.zip
+derechos_backup_before_cleanup.db
+.git/
+.gitignore

@@ -1,0 +1,454 @@
+/* ==========================================================================
+   Jarvis — asistente jurídico con IA
+   Estética de chat de herramienta (sin burbujas), streaming token a token.
+   ========================================================================== */
+
+.jv-rail {
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: var(--blue-tint);
+  min-height: 0; flex: 1;
+}
+
+.jv-rail-top { padding: 12px 12px 10px; }
+
+.jv-nueva {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 12px; border-radius: 10px; cursor: pointer;
+  font: inherit; font-size: 13.5px; font-weight: 600;
+  color: #fff; border: 0;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
+  transition: opacity .14s;
+}
+.jv-nueva:hover { opacity: .92; }
+.jv-nueva svg { width: 15px; height: 15px; }
+
+.jv-hist-label {
+  padding: 13px 14px 6px; font-size: 10.5px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+}
+
+.jv-hist { flex: 1; overflow-y: auto; padding: 0 8px 8px; min-height: 0; }
+.jv-hist-item {
+  width: 100%; text-align: left; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px; border: 0; border-radius: 8px; background: transparent;
+  font: inherit; font-size: 13px; color: var(--ink); transition: background .13s;
+}
+.jv-hist-item:hover { background: rgba(30, 109, 240, .09); }
+.jv-hist-item svg { width: 14px; height: 14px; flex: none; opacity: .5; }
+.jv-hist-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.jv-rail-foot {
+  padding: 9px 12px; border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11.5px; color: var(--muted);
+}
+.jv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); flex: none; }
+.jv-dot.off { background: #9aa4b4; }
+
+/* ---------- columna ---------- */
+.jv-col { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; flex: 1; }
+
+.jv-topbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, .93);
+}
+.jv-topbar h2 { font-size: 14.5px; font-weight: 700; }
+.jv-topbar .jv-sub { font-size: 11.8px; color: var(--muted); }
+.jv-topbar-acciones { margin-left: auto; display: flex; gap: 4px; }
+
+.jv-ibtn {
+  width: 30px; height: 30px; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid transparent; border-radius: 8px; background: transparent;
+  color: var(--muted); transition: background .13s, color .13s;
+}
+.jv-ibtn:hover { background: var(--blue-soft); color: var(--blue-700); }
+.jv-ibtn svg { width: 16px; height: 16px; }
+
+/* ---------- orbe ---------- */
+.jv-orb-sm {
+  position: relative; width: 30px; height: 30px; border-radius: 50%; flex: none;
+  background: conic-gradient(from 0deg, #0a2d86, #1e6df0, #35c4f0, #1e6df0, #0a2d86);
+  display: grid; place-items: center;
+  animation: jvGiro 9s linear infinite;
+}
+.jv-orb-sm::after {
+  content: ""; width: 11px; height: 11px; border-radius: 50%;
+  background: radial-gradient(circle, #d6f0ff, #6fb6ff);
+  box-shadow: 0 0 8px rgba(110, 180, 255, .95);
+}
+
+.jv-orb-big {
+  position: relative; width: 62px; height: 62px; border-radius: 50%;
+  background: conic-gradient(from 0deg, #0a2d86, #1e6df0, #35c4f0, #1e6df0, #0a2d86);
+  display: grid; place-items: center; margin: 0 auto 14px;
+  box-shadow: 0 6px 22px rgba(30, 109, 240, .3);
+  animation: jvGiro 9s linear infinite;
+}
+.jv-orb-big::after {
+  content: ""; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle, #dff2ff, #74bcff 60%, #1e6df0);
+  box-shadow: 0 0 18px rgba(120, 190, 255, .9);
+}
+
+/* ---------- hilo ---------- */
+.jv-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+.jv-thread { padding: 18px 18px 10px; display: flex; flex-direction: column; gap: 20px; }
+
+.jv-vacio { padding: 26px 4px 6px; text-align: center; }
+.jv-vacio h3 { font-size: 21px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 7px; }
+.jv-vacio p { color: var(--muted); font-size: 13.8px; line-height: 1.6; margin-bottom: 18px; }
+
+.jv-sug { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+.jv-sug button {
+  font: inherit; font-size: 12.8px; cursor: pointer; text-align: left;
+  padding: 8px 13px; border-radius: 999px;
+  background: #fff; color: var(--ink);
+  border: 1px solid var(--line); transition: border-color .14s, background .14s;
+}
+.jv-sug button:hover { border-color: var(--blue-500); background: var(--blue-tint); }
+.jv-sug button i { font-style: normal; margin-right: 5px; }
+
+/* ---------- mensajes ---------- */
+.jv-msg { display: flex; flex-direction: column; }
+.jv-msg.user { align-items: flex-end; }
+.jv-msg-bur {
+  max-width: 84%; padding: 9px 13px; border-radius: 13px;
+  background: var(--blue-soft); color: var(--blue-900);
+  font-size: 14px; line-height: 1.55; white-space: pre-wrap; word-wrap: break-word;
+  border-bottom-right-radius: 4px;
+}
+
+.jv-msg.bot { align-items: stretch; }
+.jv-msg-head { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.jv-msg-head b { font-size: 12.8px; font-weight: 700; }
+.jv-msg-head .jv-time { font-size: 11px; color: var(--muted); }
+.jv-pensando {
+  font-size: 10.8px; font-weight: 600; color: var(--blue-700);
+  background: var(--blue-soft); padding: 2px 8px; border-radius: 999px;
+}
+
+/* ---------- markdown ---------- */
+.jv-md { font-size: 14.4px; line-height: 1.66; color: #222b3b; word-wrap: break-word; }
+.jv-md > * + * { margin-top: 11px; }
+.jv-md h2 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; margin-top: 18px; }
+.jv-md h3 { font-size: 14.6px; font-weight: 700; margin-top: 15px; }
+.jv-md p { margin: 0; }
+.jv-md strong { font-weight: 700; color: #101827; }
+.jv-md ul, .jv-md ol { padding-left: 20px; }
+.jv-md li { margin: 4px 0; }
+.jv-md li::marker { color: var(--blue-600); }
+.jv-md hr { border: 0; border-top: 1px solid var(--line); margin: 15px 0; }
+.jv-md code {
+  font-family: Consolas, "Courier New", monospace; font-size: 12.6px;
+  background: var(--bg-soft); padding: 1px 5px; border-radius: 4px;
+  border: 1px solid var(--line);
+}
+.jv-md blockquote {
+  border-left: 3px solid var(--blue-500); background: var(--blue-tint);
+  padding: 9px 13px; border-radius: 0 8px 8px 0; color: #34405a;
+}
+
+.jv-caret {
+  display: inline-block; width: 3px; height: 1em; margin-left: 2px;
+  vertical-align: text-bottom; border-radius: 2px;
+  background: var(--blue-600); animation: jvParpadeo 1s steps(1) infinite;
+}
+
+/* ---------- error ---------- */
+.jv-error {
+  display: flex; gap: 9px; align-items: flex-start; margin-top: 10px;
+  padding: 10px 13px; border-radius: 10px;
+  border: 1px solid #f0c9c9; background: #fdf3f3; color: #8a2b2b;
+  font-size: 13px; line-height: 1.5;
+}
+.jv-error svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--rojo); }
+
+/* ---------- fuentes ---------- */
+.jv-fuentes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; }
+.jv-fuente {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 999px; cursor: help;
+  font-size: 11.6px; font-weight: 600;
+  background: #fff; color: var(--blue-800);
+  border: 1px solid var(--blue-soft);
+}
+.jv-fuente:hover { border-color: var(--blue-500); }
+/* Cita con URL al texto oficial consultado. */
+.jv-fuente--enlace { cursor: pointer; text-decoration: none; }
+.jv-fuente--enlace:hover { background: var(--blue-500); color: #fff; }
+.jv-fuente--enlace::after { content: "↗"; font-size: 10px; opacity: .65; }
+
+/* ---------- acciones ---------- */
+.jv-acts { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 10px; }
+.jv-act {
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+  font: inherit; font-size: 11.5px; font-weight: 600; color: var(--muted);
+  padding: 4px 8px; border-radius: 7px;
+  background: transparent; border: 1px solid transparent;
+  transition: background .13s, color .13s;
+}
+.jv-act:hover { background: var(--blue-tint); color: var(--blue-700); }
+.jv-act svg { width: 13px; height: 13px; }
+.jv-act.hecho { color: var(--verde); }
+
+/* ---------- panel de cita ---------- */
+.jv-cita {
+  margin-top: 14px; border: 1px solid var(--line); border-radius: 12px;
+  background: #fff; overflow: hidden;
+}
+.jv-cita-head {
+  padding: 11px 14px; background: var(--blue-tint); border-bottom: 1px solid var(--line);
+}
+.jv-cita-head b { font-size: 13.4px; color: var(--blue-900); }
+.jv-cita-head span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.jv-cita-body { padding: 13px 14px; }
+.jv-cita-body h4 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 7px; }
+.jv-cita-body h4:not(:first-child) { margin-top: 14px; }
+
+.jv-fechas, .jv-horas { display: flex; flex-wrap: wrap; gap: 6px; }
+.jv-ficha {
+  font: inherit; font-size: 12.4px; cursor: pointer;
+  padding: 7px 12px; border-radius: 9px;
+  background: #fff; color: var(--ink); border: 1px solid var(--line);
+  transition: border-color .13s, background .13s;
+}
+.jv-ficha:hover { border-color: var(--blue-500); }
+.jv-ficha[aria-pressed="true"] {
+  background: var(--blue-600); color: #fff; border-color: var(--blue-600); font-weight: 600;
+}
+
+.jv-campo { margin-top: 11px; }
+.jv-campo label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.jv-campo input {
+  width: 100%; font: inherit; font-size: 13.4px; padding: 8px 11px;
+  border: 1px solid var(--line); border-radius: 8px; outline: 0; color: var(--ink);
+}
+.jv-campo input:focus { border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(30,109,240,.12); }
+.jv-dos { display: flex; gap: 9px; }
+.jv-dos > * { flex: 1; }
+
+.jv-enviar-cita {
+  width: 100%; margin-top: 13px; cursor: pointer;
+  font: inherit; font-size: 13.6px; font-weight: 600;
+  padding: 10px; border: 0; border-radius: 9px; color: #fff;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
+}
+.jv-enviar-cita:disabled { opacity: .5; cursor: not-allowed; }
+.jv-cita-msg { margin-top: 9px; font-size: 12.4px; text-align: center; }
+.jv-cita-msg.ok { color: var(--verde); }
+.jv-cita-msg.err { color: var(--rojo); }
+.jv-cita-cierra {
+  margin-top: 8px; background: transparent; color: var(--muted);
+  font-size: 12px; text-decoration: underline; cursor: pointer;
+}
+
+/* ---------- jump ---------- */
+.jv-jump {
+  position: absolute; left: 50%; bottom: 116px; transform: translateX(-50%);
+  z-index: 30; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border-radius: 999px; color: #fff;
+  background: var(--blue-900); border: 0;
+}
+.jv-jump svg { width: 13px; height: 13px; }
+
+/* ---------- compositor ---------- */
+.jv-composer-wrap { border-top: 1px solid var(--line); background: #fff; }
+.jv-composer-inner { padding: 11px 18px 7px; }
+
+.jv-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.jv-chip {
+  font: inherit; font-size: 12px; cursor: pointer;
+  padding: 5px 11px; border-radius: 999px; color: var(--blue-800);
+  background: var(--blue-tint); border: 1px solid var(--blue-soft);
+  transition: background .13s;
+}
+.jv-chip:hover { background: var(--blue-soft); }
+.jv-chip[disabled], .jv-sug button[disabled] { opacity: .5; cursor: not-allowed; }
+
+.jv-composer {
+  display: flex; align-items: flex-end; gap: 7px;
+  padding: 8px 8px 8px 13px;
+  border: 1px solid var(--line); border-radius: 17px; background: #fff;
+  transition: border-color .15s, box-shadow .15s;
+}
+.jv-composer:focus-within { border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(30,109,240,.12); }
+.jv-composer textarea {
+  flex: 1; border: 0; outline: 0; resize: none;
+  font: inherit; font-size: 14px; line-height: 1.5; color: var(--ink);
+  background: transparent; max-height: 130px; padding: 5px 0;
+}
+.jv-composer textarea::placeholder { color: #9aa4b4; }
+
+.jv-enviar {
+  width: 33px; height: 33px; flex: none; display: grid; place-items: center;
+  border-radius: 50%; border: 0; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
+  transition: opacity .14s;
+}
+.jv-enviar svg { width: 15px; height: 15px; }
+.jv-enviar:disabled { opacity: .35; cursor: not-allowed; }
+.jv-enviar.parando { background: var(--ink); }
+
+.jv-nota {
+  padding: 7px 2px 9px; font-size: 11px; color: var(--muted); line-height: 1.45;
+}
+
+/* ---------- contenedor ---------- */
+.jv-wrap {
+  position: fixed; inset: 0; z-index: 1250;
+  display: grid; place-items: center; padding: 24px;
+  background: rgba(16, 24, 39, .46);
+}
+.jv-wrap[hidden] { display: none; }
+
+.jv-shell {
+  width: min(1060px, 100%); height: min(750px, 100%);
+  display: flex; background: #fff; overflow: hidden;
+  border-radius: 16px; box-shadow: 0 24px 70px rgba(0, 0, 0, .32);
+}
+
+/* ---------- launcher flotante ---------- */
+.jv-launch {
+  position: fixed; right: 20px; bottom: 20px; z-index: 1200;
+  cursor: pointer; border: 0; padding: 0; background: transparent;
+  display: inline-flex; align-items: center; gap: 9px;
+}
+.jv-launch-bur {
+  display: none;
+  align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 999px;
+  background: #fff; border: 1px solid var(--line);
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--blue-900);
+  white-space: nowrap;
+}
+.jv-launch:hover .jv-launch-bur,
+.jv-launch:focus-visible .jv-launch-bur {
+  display: inline-flex;
+  animation: jv-pan .16s ease;
+}
+@keyframes jv-pan {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.jv-launch-orb {
+  width: 54px; height: 54px; border-radius: 50%; flex: none;
+  box-shadow: 0 6px 20px rgba(30, 109, 240, .34);
+}
+
+/* nombre del chat con las letras de la marca */
+.jv-texto-marca {
+  font-weight: 900; letter-spacing: -.01em; color: var(--blue-900);
+}
+.jv-topbar h2.jv-texto-marca { font-size: 15px; }
+.jv-texto-marca .b-on { color: var(--blue-600); }
+
+/* sube el chat flotante mientras está visible el aviso de cookies */
+.jv-launch { transition: bottom .2s ease; }
+body.cookies-visible .jv-launch { bottom: 96px; }
+
+/* ---------- modal de correo ---------- */
+.jv-modal {
+  position: fixed; inset: 0; z-index: 1300;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(16, 24, 39, .5);
+}
+.jv-modal[hidden] { display: none; }
+.jv-modal-box {
+  position: relative; width: min(400px, 100%);
+  background: #fff; border-radius: 14px; padding: 24px 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .3);
+}
+.jv-modal-box h3 { font-size: 17px; margin-bottom: 7px; }
+.jv-modal-box p { font-size: 13.4px; color: var(--muted); margin-bottom: 15px; }
+.jv-modal-box input {
+  width: 100%; font: inherit; font-size: 14px; padding: 10px 13px;
+  border: 1px solid var(--line); border-radius: 9px; outline: 0;
+}
+.jv-modal-box input:focus { border-color: var(--blue-500); }
+.jv-modal-ok {
+  width: 100%; margin-top: 12px; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 600;
+  padding: 11px; border: 0; border-radius: 9px; color: #fff;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
+}
+.jv-modal-x {
+  position: absolute; top: 10px; right: 12px;
+  background: transparent; border: 0; font-size: 21px; line-height: 1;
+  color: var(--muted); cursor: pointer;
+}
+.jv-modal-msg { margin-top: 9px; font-size: 12.6px; text-align: center; }
+.jv-modal-msg.ok { color: var(--verde); }
+.jv-modal-msg.err { color: var(--rojo); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 780px) {
+  .jv-rail { display: none; }
+  .jv-launch-bur { display: none; }
+  body.cookies-visible .jv-launch { bottom: 128px; }
+  .jv-wrap { padding: 0; }
+  .jv-shell { width: 100%; height: 100%; border-radius: 0; }
+}
+@media (max-width: 520px) {
+  .jv-thread { padding: 14px 13px 8px; }
+  .jv-composer-inner { padding: 10px 13px 6px; }
+  .jv-msg-bur { max-width: 92%; }
+  .jv-jump { bottom: 122px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jv-orb-sm, .jv-orb-big { animation: none; }
+  .jv-caret { animation: none; opacity: 1; }
+  .jv-scroll { scroll-behavior: auto; }
+}
+
+@keyframes jvGiro { to { transform: rotate(360deg); } }
+@keyframes jvParpadeo { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/* ==========================================================================
+   Bloque HERO de la portada
+   ========================================================================== */
+.jv-hero-card {
+  max-width: 540px; margin: 0 auto;
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  box-shadow: var(--shadow-lg); overflow: hidden;
+}
+.jv-hero-head {
+  display: flex; align-items: center; gap: 11px;
+  padding: 13px 17px; background: var(--blue-tint); border-bottom: 1px solid var(--line);
+}
+.jv-hero-head b { font-size: 14.5px; display: block; }
+.jv-hero-head span { font-size: 12.2px; color: var(--muted); }
+
+.jv-hero-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.jv-hero-fila { display: flex; gap: 9px; }
+.jv-hero-fila.mio { justify-content: flex-end; }
+.jv-hero-fila .jv-bur {
+  max-width: 86%; font-size: 13.8px; line-height: 1.6;
+  padding: 10px 13px; border-radius: 12px;
+  background: var(--bg-soft); white-space: pre-wrap;
+}
+.jv-hero-fila.mio .jv-bur { background: var(--blue-soft); color: var(--blue-900); border-bottom-right-radius: 4px; }
+.jv-hero-fila .jv-ava {
+  width: 27px; height: 27px; flex: none; border-radius: 50%;
+  background: linear-gradient(140deg, var(--blue-700), var(--blue-900));
+  display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700;
+}
+.jv-hero-fuentes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
+
+.jv-hero-input {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 17px; background: var(--blue-tint);
+  border-top: 1px solid var(--line); color: var(--muted); font-size: 13.8px;
+}
+.jv-hero-enviar {
+  margin-left: auto; cursor: pointer; border: 0;
+  display: inline-flex; align-items: center; gap: 7px;
+  font: inherit; font-size: 13.4px; font-weight: 600;
+  padding: 8px 15px; border-radius: 9px; color: #fff;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
+}
+.jv-hero-enviar svg { width: 15px; height: 15px; }

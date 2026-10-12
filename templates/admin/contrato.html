@@ -1,0 +1,403 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Gestión de Contratos — Administración Derechos On{% endblock %}
+{% block contenido %}
+<div class="contracts-shell">
+  <header class="contracts-header">
+    <div class="header-left">
+      <h1>Gestión de Contratos</h1>
+      <p class="subtitle">Plantilla maestra, firma autorizada y aplicación masiva a clientes</p>
+    </div>
+    <div class="header-right">
+      <div class="vista-switch" role="group" aria-label="Estilo de la pantalla">
+        <span class="vista-switch-label">Vista</span>
+        <button type="button" class="vista-opt is-on" id="vista-pbi" data-vista="pbi"
+                aria-pressed="true">Dashboard</button>
+        <button type="button" class="vista-opt" id="vista-clasica" data-vista="clasica"
+                aria-pressed="false">Clásica</button>
+      </div>
+      <span class="badge badge-primary" id="contract-count">{{ total_contratos }} contratos activos</span>
+    </div>
+  </header>
+
+  <div class="contracts-grid">
+    <nav class="pbi-rail pbi-only" aria-label="Secciones">
+      <p class="pbi-rail-titulo">Secciones</p>
+      <button type="button" class="pbi-rail-item is-on" data-ir="sec-plantilla">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Plantilla</span>
+      </button>
+      <button type="button" class="pbi-rail-item" data-ir="sec-firma">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17c3-1 5-8 8-8s3 5 5 5 3-2 5-3"/><path d="M3 21h18"/></svg>
+        <span>Firma</span>
+      </button>
+      <button type="button" class="pbi-rail-item" data-ir="sec-vista">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Vista previa</span>
+      </button>
+      <p class="pbi-rail-titulo pbi-rail-titulo-sep">El flujo</p>
+      <ol class="pbi-flujo">
+        <li class="{{ 'is-ok' if es_borrador or C.get('contrato_plantilla') }}">Cargar la plantilla .docx</li>
+        <li>Revisar la vista previa</li>
+        <li class="{{ 'is-ok' if es_borrador or C.get('contrato_plantilla') }}">Aplicar a los {{ contratos_sin_firmar }} sin firmar</li>
+        <li class="{{ 'is-ok' if C.get('contrato_firma_archivo') }}">Cargar la firma</li>
+      </ol>
+    </nav>
+
+    <ol class="pbi-steps pbi-only" aria-label="Pasos">
+      <li class="pbi-step is-on"><span class="pbi-step-n">1</span><span><b>Plantilla maestra</b><small>Carga el documento que rigen los contratos</small></span></li>
+      <li class="pbi-step"><span class="pbi-step-n">2</span><span><b>Vista previa</b><small>Revisa cómo queda con datos de un cliente</small></span></li>
+    </ol>
+
+    <div class="pbi-kpis pbi-only" role="group" aria-label="Resumen">
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Contratos activos</span>
+        <strong class="pbi-kpi-valor">{{ total_contratos }}</strong>
+        <span class="pbi-kpi-pie">Registrados en el despacho</span>
+      </div>
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Plantilla</span>
+        <strong class="pbi-kpi-valor">{{ 'Cargada' if es_borrador or C.get('contrato_plantilla') else 'Por defecto' }}</strong>
+        <span class="pbi-kpi-pie">{{ 'Fuente .docx del despacho' if es_borrador or C.get('contrato_plantilla') else 'Texto base del sistema' }}</span>
+      </div>
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Sin firmar</span>
+        <strong class="pbi-kpi-valor">{{ contratos_sin_firmar }}</strong>
+        <span class="pbi-kpi-pie">Si reciben la plantilla</span>
+      </div>
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Firmados</span>
+        <strong class="pbi-kpi-valor">{{ contratos_firmados }}</strong>
+        <span class="pbi-kpi-pie">No se pueden modificar</span>
+      </div>
+      <div class="pbi-kpi">
+        <span class="pbi-kpi-label">Firma</span>
+        <strong class="pbi-kpi-valor">{{ 'Cargada' if C.get('contrato_firma_archivo') else 'Sin firma' }}</strong>
+        <span class="pbi-kpi-pie">{{ 'Se inserta al suscribir' if C.get('contrato_firma_archivo') else 'Falta cargarla' }}</span>
+      </div>
+    </div>
+
+    <section class="card card-primary" id="sec-plantilla" aria-labelledby="template-title">
+      <header class="card-header">
+        <h2 id="template-title">Plantilla Maestra del Contrato</h2>
+        <p class="card-desc">Sube un documento Word (.docx). El sistema extrae el contenido, aplica el membrete corporativo DERECHOS ON y normaliza las variables al formato interno <code>%(variable)s</code>.</p>
+      </header>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin_contrato') }}" enctype="multipart/form-data" class="upload-form" id="upload-form">
+          <input type="hidden" name="accion" value="subir_plantilla">
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="plantilla_docx" name="plantilla_docx" accept=".docx" required hidden>
+            <div class="drop-zone-content">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <h3>Arrastra tu archivo .docx aquí</h3>
+              <p>o haz clic para seleccionar</p>
+              <span class="file-types">Solo .docx · máx. 10 MB</span>
+            </div>
+            <div class="drop-zone-preview hidden" id="drop-preview">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <div class="preview-info">
+                <strong id="preview-name">documento.docx</strong>
+                <span id="preview-size">0 KB</span>
+              </div>
+              <button type="button" class="btn-remove" id="remove-file" aria-label="Quitar archivo">×</button>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="btn-process" disabled>
+              <span class="btn-text">Procesar y guardar plantilla</span>
+              <span class="btn-loader hidden" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+
+        {% if plantilla %}
+        <div class="divider" aria-hidden="true"></div>
+        <div class="template-preview" id="template-preview">
+          <div class="preview-header">
+            <h3>Plantilla actual procesada</h3>
+            <div class="preview-meta">
+              <span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Plantilla activa</strong>
+            </div>
+          </div>
+          <div class="preview-content" id="preview-content">
+            {{ plantilla | safe }}
+          </div>
+          <div class="preview-actions">
+            <button type="button" class="btn btn-secondary" id="preview-abrir">Ver vista previa con datos</button>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="plantilla-acciones">
+          <p class="plantilla-acciones-titulo">Aplicar la plantilla</p>
+          <form method="post" action="{{ url_for('admin_contrato_contenido') }}" id="form-contrato" class="actions-form">
+            <input type="hidden" name="plantilla" id="plantilla-input" value="{{ plantilla | e }}">
+            <div class="action-buttons">
+              <button type="submit" name="accion" value="aplicar" class="btn btn-primary"
+                      title="Solo actualiza los contratos que el cliente todavia no ha firmado">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span>Aplicar a los contratos sin firmar</span>
+              </button>
+              <button type="submit" name="accion" value="restaurar" class="btn btn-tertiary" onclick="return confirm('¿Restaurar la plantilla por defecto del sistema? Se perderán los cambios actuales.')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>Restaurar por defecto</span>
+              </button>
+            </div>
+            <p class="hint"><strong>Alcance:</strong> solo se actualizan los contratos <strong>sin firmar</strong>. Los {{ contratos_firmados }} que ya tienen firma no se tocan nunca, porque ese texto se aceptó con la firma y no puede cambiar.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-tertiary" id="sec-firma" aria-labelledby="signature-title">
+      <header class="card-header">
+        <h2 id="signature-title">Firma Autorizada del Despacho</h2>
+        <p class="card-desc">Esta firma se inserta automáticamente en la cláusula de suscripción de cada contrato generado.</p>
+      </header>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('admin_contrato') }}" enctype="multipart/form-data" class="signature-form">
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="firmante_nombre">Nombre del firmante</label>
+              <input type="text" id="firmante_nombre" name="firmante_nombre" value="{{ C.get('contrato_firmante_nombre', '') }}" placeholder="Ej. Juan Pérez López">
+            </div>
+            <div class="form-field">
+              <label for="firmante_cargo">Cargo</label>
+              <input type="text" id="firmante_cargo" name="firmante_cargo" value="{{ C.get('contrato_firmante_cargo', '') }}" placeholder="Ej. Socio Director">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="firma">Imagen de la firma (JPG, PNG, WEBP, GIF · máx. 2 MB)</label>
+            <div class="file-input-wrapper">
+              <input type="file" id="firma" name="firma" accept="image/*" onchange="updateFileLabel(this)">
+              <label for="firma" class="file-input-label" id="firma-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span id="firma-text">Seleccionar imagen</span>
+              </label>
+            </div>
+            {% if C.get('contrato_firma_archivo') %}
+            <div class="current-signature">
+              <span>Firma actual:</span>
+              <img src="{{ url_for('static', filename='img/' ~ C.get('contrato_firma_archivo')) }}" alt="Firma actual" style="max-height:48px">
+            </div>
+            {% endif %}
+          </div>
+          <button type="submit" class="btn btn-primary">Guardar firma</button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  {% if vista_previa_html %}
+  <section class="preview-section" id="sec-vista" aria-labelledby="preview-title">
+    <button type="button" class="preview-toggle" id="preview-toggle"
+            aria-expanded="false" aria-controls="preview-cuerpo">
+      <span class="preview-toggle-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </span>
+      <span class="preview-toggle-txt">
+        <strong id="preview-title">Vista previa con datos de ejemplo</strong>
+        <small>Se genera con un cliente de muestra, sin afectar los contratos reales.</small>
+      </span>
+      <span class="preview-toggle-estado" id="preview-estado" aria-hidden="true">Mostrar</span>
+    </button>
+    <div class="preview-cuerpo" id="preview-cuerpo" hidden>
+      <div class="preview-cuerpo-barra">
+        <a href="{{ url_for('admin_contrato') }}?vista=previa"
+           class="btn btn-secondary" target="_blank" rel="noopener">Abrir en página completa</a>
+        <button type="button" class="btn btn-tertiary" id="preview-cerrar">Ocultar</button>
+      </div>
+      <div class="ct-preview-pag">
+        {{ vista_previa_html | safe }}
+      </div>
+      {% if desconocido %}
+      <div class="alert alert-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <strong>Variables sin dato en la base:</strong> {{ desconocido | join(', ') }}. Se mostrarán tal cual en el documento final.
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+  'use strict';
+
+  // Vista previa opcional: se despliega en esta misma pagina
+  const prevCuerpo = document.getElementById('preview-cuerpo');
+  const prevToggle = document.getElementById('preview-toggle');
+  const prevEstado = document.getElementById('preview-estado');
+  const prevCerrar = document.getElementById('preview-cerrar');
+
+  function mostrarPreview(abrir) {
+    if (!prevCuerpo) return;
+    prevCuerpo.hidden = !abrir;
+    if (prevToggle) {
+      prevToggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+      prevToggle.classList.toggle('is-open', abrir);
+    }
+    if (prevEstado) prevEstado.textContent = abrir ? 'Ocultar' : 'Mostrar';
+    const seccion = document.getElementById('sec-vista');
+    if (seccion) seccion.classList.toggle('is-open', abrir);
+    if (abrir) {
+      const r = prevCuerpo.getBoundingClientRect();
+      if (r.bottom > window.innerHeight || r.top < 0) {
+        prevCuerpo.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }
+
+  if (prevToggle) prevToggle.addEventListener('click', function() { mostrarPreview(prevCuerpo.hidden); });
+  if (prevCerrar) prevCerrar.addEventListener('click', function() { mostrarPreview(false); });
+  ['preview-abrir', 'preview-abrir-2'].forEach(function(id) {
+    const b = document.getElementById(id);
+    if (b) b.addEventListener('click', function() { mostrarPreview(true); });
+  });
+  // ?vista=previa abre el panel al llegar (enlace "Abrir en página completa")
+  if (prevCuerpo) {
+    const pedir = new URLSearchParams(window.location.search).get('vista');
+    if (pedir === 'previa') mostrarPreview(true);
+  }
+
+  // Interruptor de diseño: dashboard estilo Power BI o el clásico
+  const shell = document.querySelector('.contracts-shell');
+  const botonesVista = document.querySelectorAll('.vista-opt');
+
+  function aplicarVista(vista) {
+    if (!shell) return;
+    shell.classList.toggle('pbi', vista === 'pbi');
+    shell.classList.toggle('clasica', vista !== 'pbi');
+    botonesVista.forEach(function(b) {
+      const on = b.dataset.vista === vista;
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  if (shell) {
+    let guardada = null;
+    try { guardada = localStorage.getItem('contrato_vista'); } catch (e) { guardada = null; }
+    aplicarVista(guardada === 'clasica' ? 'clasica' : 'pbi');
+    botonesVista.forEach(function(b) {
+      b.addEventListener('click', function() {
+        aplicarVista(b.dataset.vista);
+        try { localStorage.setItem('contrato_vista', b.dataset.vista); } catch (e) { /* sin memoria */ }
+      });
+    });
+  }
+
+  // Barra lateral: lleva a cada panel y lo marca como seleccionado
+  const itemsRail = document.querySelectorAll('.pbi-rail-item');
+  itemsRail.forEach(function(item) {
+    item.addEventListener('click', function() {
+      const destino = document.getElementById(item.dataset.ir);
+      if (!destino) return;
+      if (item.dataset.ir === 'sec-vista') mostrarPreview(true);
+      itemsRail.forEach(function(x) { x.classList.toggle('is-on', x === item); });
+      document.querySelectorAll('.contracts-grid > .card').forEach(function(c) { c.classList.remove('is-focus'); });
+      if (destino.classList.contains('card')) destino.classList.add('is-focus');
+      destino.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Drop zone handling
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('plantilla_docx');
+  const dropPreview = document.getElementById('drop-preview');
+  const dropContent = dropZone.querySelector('.drop-zone-content');
+  const previewName = document.getElementById('preview-name');
+  const previewSize = document.getElementById('preview-size');
+  const removeBtn = document.getElementById('remove-file');
+  const btnProcess = document.getElementById('btn-process');
+  const uploadForm = document.getElementById('upload-form');
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function showPreview(file) {
+    previewName.textContent = file.name;
+    previewSize.textContent = formatBytes(file.size);
+    dropContent.classList.add('hidden');
+    dropPreview.classList.remove('hidden');
+    btnProcess.disabled = false;
+  }
+
+  function resetDropZone() {
+    fileInput.value = '';
+    dropContent.classList.remove('hidden');
+    dropPreview.classList.add('hidden');
+    btnProcess.disabled = true;
+  }
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); });
+  });
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, () => dropZone.classList.add('drag-over'));
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'));
+  });
+
+  dropZone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.docx')) {
+      fileInput.files = e.dataTransfer.files;
+      showPreview(file);
+    }
+  });
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) showPreview(e.target.files[0]);
+  });
+
+  removeBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    resetDropZone();
+  });
+
+  uploadForm.addEventListener('submit', () => {
+    btnProcess.disabled = true;
+    btnProcess.querySelector('.btn-text').textContent = 'Procesando…';
+    btnProcess.querySelector('.btn-loader').classList.remove('hidden');
+  });
+
+  // Signature file label update
+  const firmaInput = document.getElementById('firma');
+  const firmaText = document.getElementById('firma-text');
+  if (firmaInput && firmaText) {
+    firmaInput.addEventListener('change', () => {
+      firmaText.textContent = firmaInput.files[0] ? firmaInput.files[0].name : 'Seleccionar imagen';
+    });
+  }
+
+  // Auto-hide flash messages
+  document.querySelectorAll('.alert').forEach(alert => {
+    setTimeout(() => {
+      alert.style.transition = 'opacity .5s, transform .5s';
+      alert.style.opacity = '0';
+      alert.style.transform = 'translateY(-10px)';
+      setTimeout(() => alert.remove(), 500);
+    }, 5000);
+  });
+
+  // Keyboard shortcut: Ctrl+S to submit active form
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      const activeForm = document.querySelector('form:hover, form:focus-within') || document.getElementById('form-contrato');
+      if (activeForm && activeForm.requestSubmit) activeForm.requestSubmit();
+    }
+  });
+})();
+</script>
+{% endblock %}
