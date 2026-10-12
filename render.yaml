@@ -1,0 +1,35 @@
+# Render Blueprint — Derechos On
+# Render lee este archivo si creas el servicio con "New + → Blueprint".
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: derechos-on
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./deploy/Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      # Render genera y guarda una clave secreta de sesión.
+      - key: SECRET_KEY
+        generateValue: true
+      # Clave de Anthropic para la IA (la pones en el panel de Render).
+      - key: IA_CLAVE
+        sync: false
+      # Sin registro automático de redes en el plan gratis.
+      - key: REDES_AUTO
+        value: "0"
+      - key: IA_MODELO
+        value: claude-3-5-sonnet-20241022
+
+    # Para CONSERVAR datos (clientes, expedientes, comprobantes) se necesita un
+    # disco persistente (solo planes de pago) y que la app lea la ruta desde una
+    # variable. Dime y agrego el soporte DATA_DIR para usar, por ejemplo:
+    # disk:
+    #   name: derechos-datos
+    #   mountPath: /var/datos
+    #   sizeGB: 1
+    #   (envVar: DATA_DIR=/var/datos)
