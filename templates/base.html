@@ -21,6 +21,7 @@
       <div class="top-links">
         <a href="{{ url_for('inicio') }}#quienes">¿Quiénes somos?</a>
         <a href="{{ url_for('inicio') }}#contacto">Contacto</a>
+        <a href="/admin">Panel administrativo</a>
         {% if C.get('contacto_telefono') %}
         <a href="tel:{{ C.get('contacto_telefono')|replace(' ', '') }}">{{ C.get('contacto_telefono') }}</a>
         {% endif %}
