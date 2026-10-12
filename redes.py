@@ -14,8 +14,13 @@ import requests
 from requests_oauthlib import OAuth1Session
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RUTA_CONFIG = os.path.join(BASE_DIR, "redes.json")
-RUTA_LOCK = os.path.join(BASE_DIR, ".redes_sync.lock")
+DATA_DIR = (os.environ.get("DATA_DIR") or BASE_DIR).strip() or BASE_DIR
+try:
+    os.makedirs(DATA_DIR, exist_ok=True)
+except Exception:
+    pass
+RUTA_CONFIG = os.path.join(DATA_DIR, "redes.json")
+RUTA_LOCK = os.path.join(DATA_DIR, ".redes_sync.lock")
 
 URL_BASE_DEFECTO = "http://127.0.0.1:5000/"
 

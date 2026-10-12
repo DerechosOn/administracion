@@ -24,12 +24,14 @@ services:
         value: "0"
       - key: IA_MODELO
         value: claude-3-5-sonnet-20241022
+      # Carpeta de datos (base de datos y subidas). Con un disco montado aquí,
+      # la información persiste entre despliegues.
+      - key: DATA_DIR
+        value: /var/datos
 
-    # Para CONSERVAR datos (clientes, expedientes, comprobantes) se necesita un
-    # disco persistente (solo planes de pago) y que la app lea la ruta desde una
-    # variable. Dime y agrego el soporte DATA_DIR para usar, por ejemplo:
+    # Para CONSERVAR datos (clientes, expedientes, comprobantes) activa un disco
+    # persistente (solo planes de pago) montándolo en la misma ruta:
     # disk:
     #   name: derechos-datos
     #   mountPath: /var/datos
     #   sizeGB: 1
-    #   (envVar: DATA_DIR=/var/datos)

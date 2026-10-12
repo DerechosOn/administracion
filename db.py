@@ -9,7 +9,14 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "derechos.db")
+# Carpeta de datos. Si se define DATA_DIR (p. ej. un disco persistente),
+# la base de datos vive ahí; si no, junto al código.
+DATA_DIR = (os.environ.get("DATA_DIR") or BASE_DIR).strip() or BASE_DIR
+try:
+    os.makedirs(DATA_DIR, exist_ok=True)
+except Exception:
+    pass
+DB_PATH = os.path.join(DATA_DIR, "derechos.db")
 
 ESTADOS_PROCESO = [
     "Trámite inicial",

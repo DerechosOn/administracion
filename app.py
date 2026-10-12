@@ -51,7 +51,10 @@ import numeracion_tarifario
 MARCA_DERECHOS_ON = numeracion_tarifario.MARCA_DERECHOS_ON
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+# Carpeta de datos. Con DATA_DIR (p. ej. disco persistente) las subidas y la
+# base de datos viven ahí; sin ella, junto al código.
+DATA_DIR = (os.environ.get("DATA_DIR") or BASE_DIR).strip() or BASE_DIR
+UPLOAD_DIR = os.path.join(DATA_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 ARTICULOS_IMG_DIR = os.path.join(BASE_DIR, "static", "img", "articulos")
 os.makedirs(ARTICULOS_IMG_DIR, exist_ok=True)

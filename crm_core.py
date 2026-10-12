@@ -6,7 +6,12 @@ import sqlite3
 from datetime import datetime, date, timedelta
 
 RAIZ = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(RAIZ, "crm.db")
+DATA_DIR = (os.environ.get("DATA_DIR") or RAIZ).strip() or RAIZ
+try:
+    os.makedirs(DATA_DIR, exist_ok=True)
+except Exception:
+    pass
+DB_PATH = os.path.join(DATA_DIR, "crm.db")
 
 
 def _db():
