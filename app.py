@@ -1833,6 +1833,14 @@ def abogado_correo_quitar():
 
 
 # ---------------------------------------------------------------- admin
+@app.route("/panel")
+def panel_redirect():
+    usuario = getattr(g, "usuario", None)
+    if usuario and usuario.get("rol") == "admin":
+        return redirect(url_for("panel_admin"))
+    return redirect(url_for("login"))
+
+
 @app.route("/admin")
 @requiere_admin
 def panel_admin():
@@ -2310,6 +2318,9 @@ def _area_busca(m):
         "administrativo": ["administrativo", "nulidad", "entidades publicas", " entidad "],
         "civil": ["civil", "contratos", "sucesiones", "herencia", "inmueble", "arriendo",
                   "arrendamiento", "desalojo", "responsabilidad civil", "indemnizacion"],
+        "recicladores": ["reciclador", "reciclaje", "residuos", "residuo", "aprovechamiento",
+                         "asociacion", "asociación", "iat", "basura", "oficio",
+                         "recicladores", "organizacion de recicladores"],
         "comercial": ["comercial", "sociedad", "emprendimiento", "empresa", "mercantil", "insolvencia", "constituir"],
         "laboral": ["laboral", "trabajo", "despido", "despid", "despedid", "liquidacion", "pension", "riesgos laborales", "salario", "contrato laboral", "vacaciones"],
         "penal": ["penal", "defensa", "delito", "denuncia", "victima"],
@@ -2411,6 +2422,19 @@ def _soluciones_juridicas(area, m):
             opciones.append("• Reclamar frente a la entidad por vía contractual administrativa y, si hay negativa, acudir a la jurisdicción de lo contencioso.")
         if not opciones:
             opciones.append("• Frente a actos de entidades públicas: petición, recursos en sede administrativa y luego la acción correspondiente del CPACA.")
+    elif area == "recicladores":
+        if _contiene(m, ("constituir", "constitucion", "constitución", "personeria", "personería", "asociacion", "asociación")):
+            opciones.append("• Constitución de la asociación y reconocimiento de personería jurídica ante la Cámara de Comercio (Ley 22 de 1987).")
+        if _contiene(m, ("laboral", "trabajo", "salario", "despido", "contrato")):
+            opciones.append("• Relación laboral de los recicladores: contrato de trabajo o de prestación de servicios, afiliación a seguridad social (salud, pensión, ARL) y prestaciones.")
+        if _contiene(m, ("seguridad", "salud", "pension", "pensión", "arl", "eps")):
+            opciones.append("• Afiliación y cotización al Sistema de Seguridad Social Integral y protección frente a riesgos laborales.")
+        if _contiene(m, ("contratacion", "contratación", "licitacion", "licitación", "publica", "pública", "alcaldia", "alcaldía")):
+            opciones.append("• Participación en procesos de contratación pública y convenios con la administración, incluido el IAT (Ley 1753 de 2015).")
+        if _contiene(m, ("iat", "aprovechamiento", "residuos")):
+            opciones.append("• Incentivo al Aprovechamiento de Residuos (IAT): radicación del proyecto ante la alcaldía, evaluación y seguimiento (Derechos On cuenta con el Agente IAT).")
+        if not opciones:
+            opciones.append("• Para asociaciones de recicladores de oficio: constitución y personería jurídica, laboral y seguridad social, contratación pública e IAT; podemos orientarte en cada etapa.")
     return base + "\n".join(opciones) if opciones else ""
 
 

@@ -460,6 +460,20 @@ def migrar(conn):
     if cols and "datos" not in cols:
         cur.execute("ALTER TABLE iat_solicitudes ADD COLUMN datos TEXT DEFAULT ''")
 
+    # Área de atención para asociaciones de recicladores de oficio (migración idempotente).
+    try:
+        n = cur.execute("SELECT COUNT(*) FROM areas WHERE nombre = ?",
+                        ("Asociaciones de Recicladores de Oficio",)).fetchone()[0]
+        if not n:
+            cur.execute("INSERT INTO areas (nombre, descripcion, icono) VALUES (?, ?, ?)",
+                        ("Asociaciones de Recicladores de Oficio",
+                         "Constitución y personería jurídica, laboral, seguridad social, "
+                         "contratación pública e incentivo al aprovechamiento de residuos (IAT).",
+                         "users"))
+            conn.commit()
+    except Exception:
+        pass
+
     cur.execute(
         "UPDATE contenido SET valor = ? WHERE clave = 'noticias_titulo' AND (valor = ? OR valor = '')",
         ("Artículos jurídicos", "Noticias y novedades"))
@@ -674,6 +688,10 @@ def semilla(conn):
                  "chart"),
                 ("Derecho Administrativo", "Actuaciones frente a entidades públicas y nulidades.",
                  "building"),
+                 ("Asociaciones de Recicladores de Oficio",
+                  "Constitución y personería jurídica, laboral, seguridad social, "
+                  "contratación pública e incentivo al aprovechamiento de residuos (IAT).",
+                  "users"),
             ],
         )
 
