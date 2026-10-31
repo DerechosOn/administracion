@@ -9,12 +9,12 @@
   <link rel="canonical" href="{{ request.url }}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Derechos On">
-  <meta property="og:title" content="{% block og_title %}{% block titulo %}Derechos On{% endblock %}{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}{{ self.titulo() }}{% endblock %}">
   <meta property="og:description" content="{% block og_description %}Despacho de abogados en Colombia. Asesoría jurídica civil, laboral, familia, penal, comercial y administrativo. Agenda tu cita.{% endblock %}">
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:locale" content="es_CO">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{% block twitter_title %}{% block titulo %}Derechos On{% endblock %}{% endblock %}">
+  <meta name="twitter:title" content="{% block twitter_title %}{{ self.titulo() }}{% endblock %}">
   <meta name="twitter:description" content="{% block twitter_description %}Despacho de abogados en Colombia. Asesoría jurídica integral y acompañamiento procesal.{% endblock %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
