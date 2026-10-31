@@ -3,13 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block titulo %}Derechos On{% endblock %}</title>
+  <title>{% block titulo %}Derechos On - Asesoría Jurídica en Colombia{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Derechos On: despacho de abogados en Colombia. Asesoría jurídica en derecho civil, laboral, familia, penal, comercial y administrativo. Agenda tu cita y consulta el estado de tus procesos en línea.{% endblock %}">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="{{ request.url }}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Derechos On">
+  <meta property="og:title" content="{% block og_title %}{% block titulo %}Derechos On{% endblock %}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Despacho de abogados en Colombia. Asesoría jurídica civil, laboral, familia, penal, comercial y administrativo. Agenda tu cita.{% endblock %}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:locale" content="es_CO">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% block twitter_title %}{% block titulo %}Derechos On{% endblock %}{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}Despacho de abogados en Colombia. Asesoría jurídica integral y acompañamiento procesal.{% endblock %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/jarvis.css') }}">
   {% block estilos %}{% endblock %}
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a2d86'/><circle cx='50' cy='50' r='16' fill='%232f80ff'/></svg>">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LegalService",
+    "name": "Derechos On",
+    "url": "https://derechoson.online/",
+    "description": "Despacho de abogados en Colombia: asesoría jurídica en derecho civil, laboral, familia, penal, comercial y administrativo.",
+    "areaServed": "Colombia",
+    "inLanguage": "es-CO"
+  }
+  </script>
 </head>
 <body>
   {% if not hide_header %}

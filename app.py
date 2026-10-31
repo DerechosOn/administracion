@@ -7386,6 +7386,51 @@ def abogado_base_catalogo_cargar():
     return redirect(url_for("abogado_base"))
 
 
+@app.route("/robots.txt")
+def robots_txt():
+    cuerpo = ("User-agent: *\n"
+              "Allow: /\n"
+              "Disallow: /admin/\n"
+              "Disallow: /cliente/\n"
+              "Disallow: /abogado/\n"
+              "Disallow: /api/\n"
+              "Sitemap: https://derechoson.online/sitemap.xml\n")
+    resp = Response(cuerpo, mimetype="text/plain")
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    from datetime import date
+    hoy = date.today().isoformat()
+    urls = [
+        ("https://derechoson.online/", "1.0", "weekly"),
+        ("https://derechoson.online/registro", "0.9", "monthly"),
+        ("https://derechoson.online/login", "0.5", "monthly"),
+        ("https://derechoson.online/agendar", "0.8", "monthly"),
+        ("https://derechoson.online/privacidad", "0.3", "yearly"),
+    ]
+    # Articulos publicados
+    try:
+        for n in (db.noticias_lista(limite=50) or []):
+            slug = n.get("slug") or n.get("id")
+            if slug is not None:
+                urls.append(("https://derechoson.online/articulo/%s" % slug, "0.7", "monthly"))
+    except Exception:
+        pass
+    partes = ['<?xml version="1.0" encoding="UTF-8"?>',
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for u, prio, freq in urls:
+        partes.append("  <url><loc>%s</loc><lastmod>%s</lastmod>"
+                      "<changefreq>%s</changefreq><priority>%s</priority></url>"
+                      % (u, hoy, freq, prio))
+    partes.append("</urlset>")
+    resp = Response("\n".join(partes), mimetype="application/xml")
+    resp.headers["Cache-Control"] = "public, max-age=3600"
+    return resp
+
+
 if __name__ == "__main__":
     db.iniciar()
     # al arrancar solo se sincronizan los contratos sin firmar; los firmados
