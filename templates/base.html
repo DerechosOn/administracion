@@ -31,7 +31,7 @@
     "url": "https://derechoson.online/",
     "description": "Despacho de abogados en Colombia: asesoría jurídica en derecho civil, laboral, familia, penal, comercial y administrativo.",
     "areaServed": "Colombia",
-    "inLanguage": "es-CO"
+    "inLanguage": "es-CO"{% set _extras = [] %}{% if C.get('contacto_telefono') %}{% set _ = _extras.append('"telephone": "%s"' % C.get('contacto_telefono')) %}{% endif %}{% if C.get('contacto_correo') %}{% set _ = _extras.append('"email": "%s"' % C.get('contacto_correo')) %}{% endif %}{% if C.get('contacto_direccion') %}{% set _ = _extras.append('"address": {"@type": "PostalAddress", "streetAddress": "%s", "addressCountry": "CO"}' % C.get('contacto_direccion')) %}{% endif %}{% if C.get('contacto_horario') %}{% set _ = _extras.append('"openingHours": "%s"' % C.get('contacto_horario')) %}{% endif %}{% if _extras %}, {{ _extras|join(', ')|safe }}{% endif %}
   }
   </script>
 </head>
