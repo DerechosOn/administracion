@@ -6,9 +6,15 @@ vencimiento, comentarios y miembros del equipo. Se apoya en la misma base de
 datos SQLite que el resto de la aplicación (db.py).
 """
 
+import os
 from datetime import date, datetime, timedelta
 
 import db
+
+# Columnas de proyecto_adjuntos sin el contenido: así el detalle de la tarea
+# no arrastra los archivos completos a memoria.
+_COLUMNAS_ADJUNTO = ("id, tarea_id, nombre, archivo, tamano, "
+                     "autor_tipo, autor_id, creado_el")
 
 ESTADOS = ("pendiente", "en_curso", "en_revision", "completada")
 ESTADO_TXT = {
@@ -111,6 +117,7 @@ def inicializar():
                 nombre TEXT NOT NULL,
                 archivo TEXT NOT NULL,
                 tamano INTEGER NOT NULL DEFAULT 0,
+                contenido BLOB DEFAULT NULL,
                 autor_tipo TEXT DEFAULT '',
                 autor_id INTEGER DEFAULT NULL,
                 creado_el TEXT NOT NULL,
@@ -127,6 +134,13 @@ def inicializar():
                 ON proyecto_adjuntos (tarea_id);
             """
         )
+        # Bases creadas antes de guardar los adjuntos dentro del archivo:
+        # se añade la columna sin perder lo que ya existe.
+        columnas = [f[1] for f in
+                    conn.execute("PRAGMA table_info(proyecto_adjuntos)").fetchall()]
+        if "contenido" not in columnas:
+            conn.execute("ALTER TABLE proyecto_adjuntos "
+                         "ADD COLUMN contenido BLOB DEFAULT NULL")
         conn.commit()
     finally:
         conn.close()
@@ -479,19 +493,34 @@ def progreso_subtareas(tid):
 # ------------------------------------------------------------------ adjuntos
 def adjuntos(tid):
     return db.consultar(
-        "SELECT * FROM proyecto_adjuntos WHERE tarea_id = ? ORDER BY id", (tid,))
+        "SELECT %s FROM proyecto_adjuntos WHERE tarea_id = ? ORDER BY id"
+        % _COLUMNAS_ADJUNTO, (tid,))
 
 
 def obtener_adjunto(aid):
-    filas = db.consultar("SELECT * FROM proyecto_adjuntos WHERE id = ?", (aid,))
+    filas = db.consultar(
+        "SELECT %s FROM proyecto_adjuntos WHERE id = ?" % _COLUMNAS_ADJUNTO,
+        (aid,))
     return filas[0] if filas else None
 
 
-def agregar_adjunto(tid, nombre, archivo, tamano, autor_tipo="", autor_id=None):
+def contenido_adjunto(aid):
+    """Bytes del adjunto. None si el registro no existe o no tiene contenido."""
+    filas = db.consultar(
+        "SELECT contenido FROM proyecto_adjuntos WHERE id = ?", (aid,))
+    if not filas:
+        return None
+    return filas[0]["contenido"]
+
+
+def agregar_adjunto(tid, nombre, archivo, tamano, autor_tipo="", autor_id=None,
+                    contenido=None):
     return db.ejecutar(
         "INSERT INTO proyecto_adjuntos (tarea_id, nombre, archivo, tamano, "
-        "autor_tipo, autor_id, creado_el) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (tid, nombre, archivo, int(tamano or 0), autor_tipo, autor_id, _ahora()))
+        "contenido, autor_tipo, autor_id, creado_el) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (tid, nombre, archivo, int(tamano or 0), contenido, autor_tipo,
+         autor_id, _ahora()))
 
 
 def eliminar_adjunto(aid):
@@ -499,6 +528,31 @@ def eliminar_adjunto(aid):
     if a:
         db.ejecutar("DELETE FROM proyecto_adjuntos WHERE id = ?", (aid,))
     return a
+
+
+def migrar_adjuntos_a_bd(carpeta):
+    """Pasa a la base los adjuntos que todavía viven como archivo en disco.
+
+    Devuelve cuántos se migraron. Los archivos originales no se borran: si algo
+    falla, el adjunto sigue descargándose desde el disco.
+    """
+    if not carpeta or not os.path.isdir(carpeta):
+        return 0
+    movidos = 0
+    for fila in db.consultar(
+            "SELECT id, archivo FROM proyecto_adjuntos "
+            "WHERE contenido IS NULL AND archivo IS NOT NULL AND archivo <> ''"):
+        ruta = os.path.join(carpeta, os.path.basename(fila["archivo"]))
+        try:
+            with open(ruta, "rb") as fh:
+                datos = fh.read()
+        except OSError:
+            continue
+        db.ejecutar(
+            "UPDATE proyecto_adjuntos SET contenido = ?, tamano = ? WHERE id = ?",
+            (datos, len(datos), fila["id"]))
+        movidos += 1
+    return movidos
 
 
 def archivos_de_tarea(tid):

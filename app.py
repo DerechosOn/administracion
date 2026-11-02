@@ -12,6 +12,9 @@ import math
 import time
 import json
 import base64
+import shutil
+import tempfile
+import mimetypes
 import threading
 import html as html_mod
 import uuid
@@ -22,7 +25,8 @@ from functools import wraps
 from io import BytesIO, StringIO
 
 from flask import (Flask, Response, abort, flash, g, jsonify, redirect, render_template, request,
-                   send_file, send_from_directory, session, url_for, stream_with_context)
+                   send_file, send_from_directory, session, url_for, stream_with_context,
+                   after_this_request)
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import requests as _requests
@@ -37,6 +41,7 @@ import conocimiento_juridico
 import motor_normativo
 import crm_core
 import proyectos_core
+import respaldo_core
 try:
     from agentes import agente_jarvis
 except Exception:
@@ -71,6 +76,11 @@ EXTENSIONES_PROYECTO = EXTENSIONES_PERMITIDAS | {
     ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv", ".zip", ".rar", ".7z"}
 PROYECTOS_UPLOAD_DIR = os.path.join(UPLOAD_DIR, "proyectos")
 os.makedirs(PROYECTOS_UPLOAD_DIR, exist_ok=True)
+# Los adjuntos que quedaron como archivo en disco pasan a la base de datos.
+try:
+    proyectos_core.migrar_adjuntos_a_bd(PROYECTOS_UPLOAD_DIR)
+except Exception:
+    pass
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "derechos-on-clave-segura-de-sesion")
@@ -5598,6 +5608,68 @@ def admin_cuenta():
     return render_template("admin/cuenta.html", usuario=g.usuario)
 
 
+# ------- respaldo y restauración
+@app.route("/admin/respaldo")
+@requiere_admin
+def admin_respaldo():
+    return render_template("admin/respaldo.html", usuario=g.usuario,
+                           **respaldo_core.estadisticas(UPLOAD_DIR))
+
+
+@app.route("/admin/respaldo/descargar")
+@requiere_admin
+def admin_respaldo_descargar():
+    carpeta = tempfile.mkdtemp(prefix="respaldo-")
+    try:
+        destino = os.path.join(carpeta, "respaldo.zip")
+        respaldo_core.crear_respaldo(destino, UPLOAD_DIR)
+    except Exception as exc:
+        shutil.rmtree(carpeta, ignore_errors=True)
+        flash("No se pudo crear el respaldo: %s" % exc, "error")
+        return redirect(url_for("admin_respaldo"))
+
+    @after_this_request
+    def _limpiar(respuesta):
+        shutil.rmtree(carpeta, ignore_errors=True)
+        return respuesta
+
+    nombre = "respaldo-derechoson-%s.zip" % datetime.now().strftime("%Y%m%d-%H%M")
+    return send_file(destino, as_attachment=True, download_name=nombre,
+                     mimetype="application/zip")
+
+
+@app.route("/admin/respaldo/restaurar", methods=["POST"])
+@requiere_admin
+def admin_respaldo_restaurar():
+    # Un respaldo con muchos archivos puede superar el límite normal de subida.
+    request.max_content_length = 512 * 1024 * 1024
+    archivo = request.files.get("respaldo")
+    if not archivo or not archivo.filename:
+        flash("Selecciona el archivo ZIP del respaldo.", "error")
+        return redirect(url_for("admin_respaldo"))
+    if not archivo.filename.lower().endswith(".zip"):
+        flash("El respaldo debe ser el archivo .zip que descarga esta página.",
+              "error")
+        return redirect(url_for("admin_respaldo"))
+    carpeta = tempfile.mkdtemp(prefix="restaurar-")
+    ruta = os.path.join(carpeta, "respaldo.zip")
+    try:
+        archivo.save(ruta)
+        respaldo_core.restaurar(ruta, db.DB_PATH, UPLOAD_DIR)
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("admin_respaldo"))
+    except Exception as exc:
+        flash("No se pudo restaurar el respaldo: %s" % exc, "error")
+        return redirect(url_for("admin_respaldo"))
+    finally:
+        shutil.rmtree(carpeta, ignore_errors=True)
+    datos = respaldo_core.estadisticas(UPLOAD_DIR)
+    flash("Respaldo restaurado: %d usuarios, %d procesos y %d proyectos."
+          % (datos["usuarios"], datos["procesos"], datos["proyectos"]), "exito")
+    return redirect(url_for("admin_respaldo"))
+
+
 # ------- notificaciones por correo
 @app.route("/admin/notificaciones", methods=["GET", "POST"])
 @requiere_admin
@@ -6922,11 +6994,12 @@ def _guardar_adjunto_proyecto(tid, autor_tipo, autor_id):
         return ("Formato no permitido. Usa PDF, Word, Excel, PowerPoint, "
                 "imágenes, TXT, CSV o ZIP.")
     nombre_guardado = uuid.uuid4().hex + ext
-    destino = os.path.join(PROYECTOS_UPLOAD_DIR, nombre_guardado)
-    archivo.save(destino)
+    datos = archivo.read()
+    if not datos:
+        return "El archivo está vacío."
     proyectos_core.agregar_adjunto(tid, original, nombre_guardado,
-                                   os.path.getsize(destino),
-                                   autor_tipo, autor_id)
+                                   len(datos), autor_tipo, autor_id,
+                                   contenido=datos)
     return None
 
 
@@ -6944,6 +7017,19 @@ def _borrar_archivo_proyecto(nombre):
 def _borrar_archivos_proyecto(nombres):
     for nombre in nombres or []:
         _borrar_archivo_proyecto(nombre)
+
+
+def _servir_adjunto_proyecto(adjunto):
+    """Entrega el adjunto desde la base; si es de los antiguos, desde el disco."""
+    datos = proyectos_core.contenido_adjunto(adjunto["id"])
+    if datos is not None:
+        tipo = (mimetypes.guess_type(adjunto["nombre"])[0]
+                or "application/octet-stream")
+        return send_file(BytesIO(datos), mimetype=tipo, as_attachment=True,
+                         download_name=adjunto["nombre"])
+    return send_from_directory(PROYECTOS_UPLOAD_DIR, adjunto["archivo"],
+                               as_attachment=True,
+                               download_name=adjunto["nombre"])
 
 
 # ---- proyectos · administración
@@ -7169,9 +7255,7 @@ def admin_proyecto_adjunto_descargar(pid, tid, aid):
     adjunto = proyectos_core.obtener_adjunto(aid)
     if not adjunto or adjunto["tarea_id"] != tid:
         abort(404)
-    return send_from_directory(PROYECTOS_UPLOAD_DIR, adjunto["archivo"],
-                               as_attachment=True,
-                               download_name=adjunto["nombre"])
+    return _servir_adjunto_proyecto(adjunto)
 
 
 @app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/adjunto/<int:aid>/eliminar",
@@ -7437,9 +7521,7 @@ def abogado_proyecto_adjunto_descargar(pid, tid, aid):
     adjunto = proyectos_core.obtener_adjunto(aid)
     if not adjunto or adjunto["tarea_id"] != tid:
         abort(404)
-    return send_from_directory(PROYECTOS_UPLOAD_DIR, adjunto["archivo"],
-                               as_attachment=True,
-                               download_name=adjunto["nombre"])
+    return _servir_adjunto_proyecto(adjunto)
 
 
 @app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/adjunto/<int:aid>/eliminar",

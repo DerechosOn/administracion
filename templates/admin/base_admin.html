@@ -43,6 +43,7 @@
       <a href="{{ url_for('admin_redes') }}" class="{{ 'activo' if request.endpoint == 'admin_redes' }}">Redes</a>
       <a href="{{ url_for('admin_notificaciones') }}" class="{{ 'activo' if request.endpoint == 'admin_notificaciones' }}">Notificaciones</a>
       <a href="{{ url_for('admin_cuenta') }}" class="{{ 'activo' if request.endpoint == 'admin_cuenta' }}">Mi cuenta</a>
+<a href="{{ url_for('admin_respaldo') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('admin_respaldo') }}">Respaldo</a>
       <a href="{{ url_for('inicio') }}">Ver sitio</a>
       <a href="{{ url_for('salir') }}">Cerrar sesión</a>
     </nav>

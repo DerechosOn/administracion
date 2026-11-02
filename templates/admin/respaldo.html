@@ -1,0 +1,48 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Respaldo — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Respaldo de la información</h1>
+<p class="sub">Descarga en un solo archivo la base de datos (clientes, procesos, proyectos, tareas y adjuntos) y los documentos subidos. Guárdalo en tu computador o en la nube.</p>
+
+<div class="panel-form" style="max-width:760px;margin-bottom:20px">
+  <h3>Contenido actual</h3>
+  <table class="pm-lista" style="margin-top:10px">
+    <tbody>
+      <tr><td>Base de datos</td><td style="text-align:right"><strong>{{ (db_bytes / 1024)|round|int }} KB</strong>{% if db_fecha %} · última modificación {{ db_fecha }}{% endif %}</td></tr>
+      <tr><td>Usuarios</td><td style="text-align:right">{{ usuarios }}</td></tr>
+      <tr><td>Abogados</td><td style="text-align:right">{{ abogados }}</td></tr>
+      <tr><td>Procesos</td><td style="text-align:right">{{ procesos }}</td></tr>
+      <tr><td>Proyectos</td><td style="text-align:right">{{ proyectos }}</td></tr>
+      <tr><td>Tareas de proyectos</td><td style="text-align:right">{{ tareas }}</td></tr>
+      <tr><td>Adjuntos de tareas (dentro de la base)</td><td style="text-align:right">{{ adjuntos }} · {{ (adjuntos_bytes / 1024 / 1024)|round(2) }} MB</td></tr>
+      <tr><td>Documentos y comprobantes (carpeta uploads)</td><td style="text-align:right">{{ uploads_archivos }} archivos · {{ (uploads_bytes / 1024 / 1024)|round(2) }} MB</td></tr>
+      <tr><td><strong>Tamaño aproximado del respaldo</strong></td><td style="text-align:right"><strong>{{ (total_bytes / 1024 / 1024)|round(2) }} MB</strong></td></tr>
+    </tbody>
+  </table>
+  <a class="btn btn-navy" style="margin-top:16px;display:inline-block" href="{{ url_for('admin_respaldo_descargar') }}">Descargar respaldo (.zip)</a>
+</div>
+
+<div class="panel-form" style="max-width:760px">
+  <h3>Restaurar un respaldo</h3>
+  <p style="color:var(--muted);font-size:.86rem;margin-top:6px">
+    Sube un archivo <code>.zip</code> descargado desde esta página. Se reemplaza la base de datos actual y se mezclan los documentos.
+    Antes de reemplazar se guarda una copia de la base actual junto al archivo original
+    (<code>derechos.db.antes-restaurar-…</code>).
+  </p>
+  <form method="post" action="{{ url_for('admin_respaldo_restaurar') }}" enctype="multipart/form-data"
+        onsubmit="return confirm('¿Restaurar este respaldo? La base de datos actual será reemplazada.');">
+    <div class="form-row">
+      <div class="campo">
+        <label>Archivo de respaldo (.zip) *</label>
+        <input type="file" name="respaldo" accept=".zip,application/zip" required>
+      </div>
+    </div>
+    <button class="btn btn-outline" type="submit">Restaurar respaldo</button>
+  </form>
+  <p style="margin-top:16px;padding:10px 12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;color:#9a3412;font-size:.82rem">
+    <strong>Importante:</strong> en Render (plan gratuito) la información vive dentro del contenedor.
+    Si restauras un respaldo y luego se publica un cambio nuevo, ese despliegue vuelve a borrar los datos.
+    Para que todo quede fijo hay que activar un disco persistente en Render montado en <code>/var/datos</code>.
+  </p>
+</div>
+{% endblock %}
