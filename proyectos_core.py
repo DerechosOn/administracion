@@ -6,7 +6,7 @@ vencimiento, comentarios y miembros del equipo. Se apoya en la misma base de
 datos SQLite que el resto de la aplicación (db.py).
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import db
 
@@ -95,10 +95,36 @@ def inicializar():
                 FOREIGN KEY (tarea_id) REFERENCES proyecto_tareas (id) ON DELETE CASCADE
             );
 
+            CREATE TABLE IF NOT EXISTS proyecto_subtareas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tarea_id INTEGER NOT NULL,
+                titulo TEXT NOT NULL,
+                hecho INTEGER NOT NULL DEFAULT 0,
+                orden INTEGER NOT NULL DEFAULT 0,
+                creado_el TEXT NOT NULL,
+                FOREIGN KEY (tarea_id) REFERENCES proyecto_tareas (id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS proyecto_adjuntos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tarea_id INTEGER NOT NULL,
+                nombre TEXT NOT NULL,
+                archivo TEXT NOT NULL,
+                tamano INTEGER NOT NULL DEFAULT 0,
+                autor_tipo TEXT DEFAULT '',
+                autor_id INTEGER DEFAULT NULL,
+                creado_el TEXT NOT NULL,
+                FOREIGN KEY (tarea_id) REFERENCES proyecto_tareas (id) ON DELETE CASCADE
+            );
+
             CREATE INDEX IF NOT EXISTS ix_proyecto_tareas_proyecto
                 ON proyecto_tareas (proyecto_id, estado);
             CREATE INDEX IF NOT EXISTS ix_proyecto_miembros_proyecto
                 ON proyecto_miembros (proyecto_id);
+            CREATE INDEX IF NOT EXISTS ix_proyecto_subtareas_tarea
+                ON proyecto_subtareas (tarea_id);
+            CREATE INDEX IF NOT EXISTS ix_proyecto_adjuntos_tarea
+                ON proyecto_adjuntos (tarea_id);
             """
         )
         conn.commit()
@@ -242,6 +268,10 @@ def actualizar_proyecto(pid, **campos):
 def eliminar_proyecto(pid):
     db.ejecutar("DELETE FROM proyecto_comentarios WHERE tarea_id IN "
                 "(SELECT id FROM proyecto_tareas WHERE proyecto_id = ?)", (pid,))
+    db.ejecutar("DELETE FROM proyecto_subtareas WHERE tarea_id IN "
+                "(SELECT id FROM proyecto_tareas WHERE proyecto_id = ?)", (pid,))
+    db.ejecutar("DELETE FROM proyecto_adjuntos WHERE tarea_id IN "
+                "(SELECT id FROM proyecto_tareas WHERE proyecto_id = ?)", (pid,))
     db.ejecutar("DELETE FROM proyecto_tareas WHERE proyecto_id = ?", (pid,))
     db.ejecutar("DELETE FROM proyecto_miembros WHERE proyecto_id = ?", (pid,))
     db.ejecutar("DELETE FROM proyectos WHERE id = ?", (pid,))
@@ -276,15 +306,22 @@ def quitar_miembro(pid, tipo, oid):
 
 # -------------------------------------------------------------------- tareas
 def tareas_de(pid, prioridad=None, asignado_tipo=None, asignado_id=None):
-    sql = "SELECT * FROM proyecto_tareas WHERE proyecto_id = ?"
+    sql = ("SELECT t.*, "
+           " (SELECT COUNT(*) FROM proyecto_subtareas s "
+           "   WHERE s.tarea_id = t.id) AS subtareas_total, "
+           " (SELECT COUNT(*) FROM proyecto_subtareas s "
+           "   WHERE s.tarea_id = t.id AND s.hecho = 1) AS subtareas_hechas, "
+           " (SELECT COUNT(*) FROM proyecto_adjuntos a "
+           "   WHERE a.tarea_id = t.id) AS adjuntos_n "
+           "FROM proyecto_tareas t WHERE t.proyecto_id = ?")
     params = [pid]
     if prioridad in PRIORIDADES:
-        sql += " AND prioridad = ?"
+        sql += " AND t.prioridad = ?"
         params.append(prioridad)
     if asignado_tipo and asignado_id:
-        sql += " AND asignado_tipo = ? AND asignado_id = ?"
+        sql += " AND t.asignado_tipo = ? AND t.asignado_id = ?"
         params.extend([asignado_tipo, asignado_id])
-    sql += " ORDER BY orden, id"
+    sql += " ORDER BY t.orden, t.id"
     filas = db.consultar(sql, tuple(params))
     hoy = date.today().isoformat()
     for t in filas:
@@ -333,7 +370,15 @@ def crear_tarea(pid, titulo, descripcion="", estado="pendiente",
 
 
 def obtener_tarea(tid):
-    filas = db.consultar("SELECT * FROM proyecto_tareas WHERE id = ?", (tid,))
+    filas = db.consultar(
+        "SELECT t.*, "
+        " (SELECT COUNT(*) FROM proyecto_subtareas s "
+        "   WHERE s.tarea_id = t.id) AS subtareas_total, "
+        " (SELECT COUNT(*) FROM proyecto_subtareas s "
+        "   WHERE s.tarea_id = t.id AND s.hecho = 1) AS subtareas_hechas, "
+        " (SELECT COUNT(*) FROM proyecto_adjuntos a "
+        "   WHERE a.tarea_id = t.id) AS adjuntos_n "
+        "FROM proyecto_tareas t WHERE t.id = ?", (tid,))
     if not filas:
         return None
     t = filas[0]
@@ -374,7 +419,166 @@ def cambiar_estado(tid, estado):
 
 def eliminar_tarea(tid):
     db.ejecutar("DELETE FROM proyecto_comentarios WHERE tarea_id = ?", (tid,))
+    db.ejecutar("DELETE FROM proyecto_subtareas WHERE tarea_id = ?", (tid,))
+    db.ejecutar("DELETE FROM proyecto_adjuntos WHERE tarea_id = ?", (tid,))
     db.ejecutar("DELETE FROM proyecto_tareas WHERE id = ?", (tid,))
+
+
+# ------------------------------------------------------------------ subtareas
+def subtareas(tid):
+    return db.consultar(
+        "SELECT * FROM proyecto_subtareas WHERE tarea_id = ? ORDER BY orden, id",
+        (tid,))
+
+
+def obtener_subtarea(sid):
+    filas = db.consultar("SELECT * FROM proyecto_subtareas WHERE id = ?", (sid,))
+    return filas[0] if filas else None
+
+
+def agregar_subtarea(tid, titulo):
+    titulo = (titulo or "").strip()
+    if not titulo:
+        return None
+    orden = 0
+    try:
+        filas = db.consultar(
+            "SELECT COALESCE(MAX(orden), 0) + 1 AS n FROM proyecto_subtareas "
+            "WHERE tarea_id = ?", (tid,))
+        orden = filas[0]["n"] if filas else 0
+    except Exception:
+        pass
+    return db.ejecutar(
+        "INSERT INTO proyecto_subtareas (tarea_id, titulo, hecho, orden, creado_el) "
+        "VALUES (?, ?, 0, ?, ?)", (tid, titulo, orden, _ahora()))
+
+
+def alternar_subtarea(sid):
+    s = obtener_subtarea(sid)
+    if not s:
+        return None
+    nuevo = 0 if s["hecho"] else 1
+    db.ejecutar("UPDATE proyecto_subtareas SET hecho = ? WHERE id = ?",
+                (nuevo, sid))
+    return nuevo
+
+
+def eliminar_subtarea(sid):
+    db.ejecutar("DELETE FROM proyecto_subtareas WHERE id = ?", (sid,))
+
+
+def progreso_subtareas(tid):
+    filas = db.consultar(
+        "SELECT COUNT(*) AS total, COALESCE(SUM(hecho), 0) AS hechas "
+        "FROM proyecto_subtareas WHERE tarea_id = ?", (tid,))
+    if not filas:
+        return 0, 0
+    return filas[0]["hechas"] or 0, filas[0]["total"] or 0
+
+
+# ------------------------------------------------------------------ adjuntos
+def adjuntos(tid):
+    return db.consultar(
+        "SELECT * FROM proyecto_adjuntos WHERE tarea_id = ? ORDER BY id", (tid,))
+
+
+def obtener_adjunto(aid):
+    filas = db.consultar("SELECT * FROM proyecto_adjuntos WHERE id = ?", (aid,))
+    return filas[0] if filas else None
+
+
+def agregar_adjunto(tid, nombre, archivo, tamano, autor_tipo="", autor_id=None):
+    return db.ejecutar(
+        "INSERT INTO proyecto_adjuntos (tarea_id, nombre, archivo, tamano, "
+        "autor_tipo, autor_id, creado_el) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (tid, nombre, archivo, int(tamano or 0), autor_tipo, autor_id, _ahora()))
+
+
+def eliminar_adjunto(aid):
+    a = obtener_adjunto(aid)
+    if a:
+        db.ejecutar("DELETE FROM proyecto_adjuntos WHERE id = ?", (aid,))
+    return a
+
+
+def archivos_de_tarea(tid):
+    return [a["archivo"] for a in db.consultar(
+        "SELECT archivo FROM proyecto_adjuntos WHERE tarea_id = ?", (tid,))]
+
+
+def archivos_de_proyecto(pid):
+    return [a["archivo"] for a in db.consultar(
+        "SELECT a.archivo FROM proyecto_adjuntos a "
+        "JOIN proyecto_tareas t ON t.id = a.tarea_id WHERE t.proyecto_id = ?",
+        (pid,))]
+
+
+# --------------------------------------------------- calendario y cronograma
+def _a_fecha(valor):
+    try:
+        return datetime.strptime((valor or "")[:10], "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return None
+
+
+def tareas_por_dia(tareas, anio, mes):
+    """Agrupa las tareas por fecha de vencimiento dentro del mes indicado."""
+    prefijo = "%04d-%02d" % (anio, mes)
+    por_dia = {}
+    sin_fecha = []
+    for t in tareas:
+        clave = (t.get("fecha_vencimiento") or "")[:10]
+        if not clave:
+            sin_fecha.append(t)
+        elif clave.startswith(prefijo):
+            por_dia.setdefault(clave, []).append(t)
+    return por_dia, sin_fecha
+
+
+def gantt(proyecto, tareas, hoy=None):
+    """Calcula las barras del cronograma (Gantt) en porcentajes."""
+    hoy = hoy or date.today()
+    filas = []
+    fechas = []
+    inicio_proyecto = _a_fecha(proyecto.get("fecha_inicio"))
+    fin_proyecto = _a_fecha(proyecto.get("fecha_fin"))
+    for f in (inicio_proyecto, fin_proyecto):
+        if f:
+            fechas.append(f)
+    for t in tareas:
+        ini = _a_fecha(t.get("creado_el")) or inicio_proyecto or hoy
+        fin = _a_fecha(t.get("fecha_vencimiento"))
+        if not fin:
+            fin = ini + timedelta(days=3)
+        if fin < ini:
+            fin = ini
+        filas.append({"tarea": t, "inicio": ini, "fin": fin})
+        fechas.extend([ini, fin])
+    if not fechas:
+        fechas = [hoy, hoy + timedelta(days=14)]
+    desde = min(fechas)
+    hasta = max(fechas + [hoy])
+    if hasta <= desde:
+        hasta = desde + timedelta(days=7)
+    total = (hasta - desde).days + 1
+    for f in filas:
+        f["izq"] = round(100.0 * (f["inicio"] - desde).days / total, 2)
+        f["ancho"] = round(
+            100.0 * ((f["fin"] - f["inicio"]).days + 1) / total, 2)
+    paso = 7 if total <= 120 else (14 if total <= 240 else 30)
+    marcas = []
+    cursor = desde
+    while cursor <= hasta and len(marcas) < 14:
+        marcas.append({
+            "pct": round(100.0 * (cursor - desde).days / total, 2),
+            "label": cursor.strftime("%d/%m"),
+        })
+        cursor += timedelta(days=paso)
+    hoy_pct = None
+    if desde <= hoy <= hasta:
+        hoy_pct = round(100.0 * (hoy - desde).days / total, 2)
+    return {"filas": filas, "desde": desde, "hasta": hasta,
+            "total_dias": total, "marcas": marcas, "hoy_pct": hoy_pct}
 
 
 # --------------------------------------------------------------- comentarios

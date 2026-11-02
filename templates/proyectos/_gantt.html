@@ -1,0 +1,50 @@
+{% set p = rol %}
+<div class="pm-head" style="margin-bottom:14px;align-items:center">
+  <div>
+    <h2 style="margin:0;font-size:1.1rem;color:var(--blue-900)">Cronograma del proyecto</h2>
+    <p style="margin:4px 0 0;color:var(--muted);font-size:.84rem">
+      Del {{ gantt.desde.strftime('%d/%m/%Y') }} al {{ gantt.hasta.strftime('%d/%m/%Y') }} · {{ gantt.total_dias }} días
+    </p>
+  </div>
+  <div class="pm-acciones">
+    <span class="pm-chip pm-suave">● Pendiente</span>
+    <span class="pm-chip prio-alta">● En curso</span>
+    <span class="pm-chip" style="background:#ede9fe;color:#6d28d9">● En revisión</span>
+    <span class="pm-chip" style="background:#dcfce7;color:#15803d">● Completada</span>
+  </div>
+</div>
+
+<div class="pm-gantt">
+  <div class="pm-gantt-grid pm-gantt-cab">
+    <div>Tarea</div>
+    <div class="pm-gantt-cab-tl">
+      {% for m in gantt.marcas %}
+      <span style="left:{{ m.pct }}%">{{ m.label }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% for f in gantt.filas %}
+  <div class="pm-gantt-grid pm-gantt-row">
+    <div class="pm-gantt-nombre">
+      <a href="{{ url_for(p ~ '_proyecto_tarea', pid=proyecto.id, tid=f.tarea.id) }}">{{ f.tarea.titulo }}</a>
+      <span class="pm-chip prio-{{ f.tarea.prioridad }}">{{ prioridad_txt[f.tarea.prioridad] }}</span>
+      {% if f.tarea.asignado_nombre %}<span class="pm-avatar" title="{{ f.tarea.asignado_nombre }}">{{ f.tarea.asignado_nombre[:1] }}</span>{% endif %}
+    </div>
+    <div class="pm-gantt-lane">
+      {% if gantt.hoy_pct is not none %}<div class="pm-gantt-hoy" style="left:{{ gantt.hoy_pct }}%" title="Hoy"></div>{% endif %}
+      <a class="pm-gantt-bar {{ f.tarea.estado }} {{ 'vencida' if f.tarea.vencida }}"
+         style="left:{{ f.izq }}%;width:{{ f.ancho }}%"
+         href="{{ url_for(p ~ '_proyecto_tarea', pid=proyecto.id, tid=f.tarea.id) }}"
+         title="{{ f.tarea.titulo }} · {{ f.inicio.strftime('%d/%m/%Y') }} → {{ f.fin.strftime('%d/%m/%Y') }}">{{ f.tarea.titulo }}</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="pm-vacio" style="margin-top:10px">No hay tareas para mostrar en el cronograma.</div>
+  {% endfor %}
+</div>
+
+<p class="pm-gantt-pie">
+  La barra va desde la fecha de creación de la tarea hasta su vencimiento (si no tiene fecha, se muestran 3 días).
+  La línea roja marca el día de hoy.
+</p>

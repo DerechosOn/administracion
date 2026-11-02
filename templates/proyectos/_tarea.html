@@ -30,6 +30,66 @@
       {% endif %}
     </div>
 
+    <div class="panel-form" id="subtareas" style="margin-bottom:20px">
+      <h3>Subtareas
+        <span class="pm-chip pm-suave" style="font-weight:700">{{ tarea.subtareas_hechas or 0 }}/{{ tarea.subtareas_total or 0 }}</span>
+      </h3>
+      {% if tarea.subtareas_total %}
+      <div class="pm-progreso" style="margin:10px 0 14px"><span style="width:{{ (100 * (tarea.subtareas_hechas or 0) / tarea.subtareas_total)|round|int }}%"></span></div>
+      {% endif %}
+      <ul class="pm-checklist">
+        {% for s in subtareas %}
+        <li class="pm-check-item {{ 'hecha' if s.hecho }}">
+          <form method="post" action="{{ url_for(p ~ '_proyecto_subtarea_alternar', pid=proyecto.id, tid=tarea.id, sid=s.id) }}">
+            <button type="submit" class="pm-check {{ 'marcada' if s.hecho }}" title="{{ 'Marcar pendiente' if s.hecho else 'Marcar hecha' }}">{{ '✓' if s.hecho else '' }}</button>
+          </form>
+          <span class="pm-check-txt">{{ s.titulo }}</span>
+          <form method="post" action="{{ url_for(p ~ '_proyecto_subtarea_eliminar', pid=proyecto.id, tid=tarea.id, sid=s.id) }}">
+            <button type="submit" class="pm-check-del" title="Eliminar subtarea">×</button>
+          </form>
+        </li>
+        {% else %}
+        <li class="pm-check-vacio">Sin subtareas todavía.</li>
+        {% endfor %}
+      </ul>
+      <form method="post" action="{{ url_for(p ~ '_proyecto_subtarea_crear', pid=proyecto.id, tid=tarea.id) }}" class="pm-acciones" style="margin-top:12px">
+        <input name="titulo" required maxlength="160" placeholder="Añadir subtarea…" style="flex:1;min-width:180px;padding:9px 11px;border:1px solid var(--line);border-radius:8px">
+        <button class="btn btn-outline btn-sm" type="submit">Añadir</button>
+      </form>
+    </div>
+
+    <div class="panel-form" id="adjuntos" style="margin-bottom:20px">
+      <h3>Adjuntos ({{ adjuntos|length }})</h3>
+      {% if adjuntos %}
+      <ul class="pm-adjuntos">
+        {% for a in adjuntos %}
+        <li class="pm-adjunto">
+          <span class="pm-adjunto-ico">{{ '🖼' if a.nombre.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')) else '📄' }}</span>
+          <div class="pm-adjunto-info">
+            <a href="{{ url_for(p ~ '_proyecto_adjunto_descargar', pid=proyecto.id, tid=tarea.id, aid=a.id) }}">{{ a.nombre }}</a>
+            <span>{{ (a.tamano / 1024)|round|int }} KB · {{ a.creado_el }}</span>
+          </div>
+          <form method="post" action="{{ url_for(p ~ '_proyecto_adjunto_eliminar', pid=proyecto.id, tid=tarea.id, aid=a.id) }}"
+                onsubmit="return confirm('¿Eliminar este adjunto?');">
+            <button type="submit" class="pm-check-del" title="Eliminar adjunto">×</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p style="color:var(--muted);font-size:.86rem">Todavía no hay archivos adjuntos.</p>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data"
+            action="{{ url_for(p ~ '_proyecto_adjunto_subir', pid=proyecto.id, tid=tarea.id) }}"
+            class="pm-acciones" style="margin-top:12px">
+        <input type="file" name="archivo" required
+               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip,.rar,.7z"
+               style="flex:1;min-width:200px">
+        <button class="btn btn-outline btn-sm" type="submit">Subir archivo</button>
+      </form>
+      <small style="color:var(--muted);font-size:.74rem">Máximo 16 MB por archivo.</small>
+    </div>
+
     <div class="panel-form" id="comentarios">
       <h3>Comentarios ({{ comentarios|length }})</h3>
       {% if comentarios %}

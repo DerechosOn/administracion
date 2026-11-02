@@ -1,0 +1,63 @@
+{% set p = rol %}
+<div class="pm-head" style="margin-bottom:14px;align-items:center">
+  <div class="gc-nav pm-acciones">
+    <a class="btn btn-outline btn-sm" href="{{ cal_prev_url }}">‹ Anterior</a>
+    <a class="btn btn-outline btn-sm" href="{{ cal_hoy_url }}">Hoy</a>
+    <a class="btn btn-outline btn-sm" href="{{ cal_next_url }}">Siguiente ›</a>
+    <h2 style="margin:0 0 0 6px;font-size:1.1rem;color:var(--blue-900)">{{ titulo_periodo }}</h2>
+  </div>
+  <span class="pm-chip pm-suave">{{ tareas|length }} tarea{{ 's' if tareas|length != 1 }}</span>
+</div>
+
+<div class="gc-mes pm-cal">
+  <div class="gc-mes-cab">
+    {% for nombre in ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] %}<div class="gc-cab-slot">{{ nombre }}</div>{% endfor %}
+  </div>
+  {% for semana in semanas %}
+    {% for dia in semana %}
+      {% if dia == 0 %}
+      <div class="gc-mes-dia vacio"></div>
+      {% else %}
+      {% set clave = "%04d-%02d-%02d" % (anio, mes, dia) %}
+      {% set evs = por_dia.get(clave, []) %}
+      <div class="gc-mes-dia {{ 'hoy' if hoy_iso == clave }}">
+        <span class="gc-num {{ 'gc-num-hoy' if hoy_iso == clave }}">{{ dia }}</span>
+        {% for t in evs[:3] %}
+        <a class="pm-cal-chip {{ t.estado }} {{ 'vencida' if t.vencida }}"
+           href="{{ url_for(p ~ '_proyecto_tarea', pid=proyecto.id, tid=t.id) }}"
+           title="{{ t.titulo }} · {{ estado_txt[t.estado] }} · {{ prioridad_txt[t.prioridad] }}">
+          <span class="gc-chip-txt">{{ t.titulo }}</span>
+        </a>
+        {% endfor %}
+        {% if evs|length > 3 %}
+        <a class="gc-mas" href="{{ url_for(p ~ '_proyecto', pid=proyecto.id, vista='lista') }}">+{{ evs|length - 3 }} más</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+</div>
+
+{% if sin_fecha %}
+<div class="panel-form" style="margin-top:20px">
+  <h3>Tareas sin fecha de vencimiento ({{ sin_fecha|length }})</h3>
+  <table class="pm-lista">
+    <thead><tr><th>Tarea</th><th>Estado</th><th>Prioridad</th><th>Responsable</th><th></th></tr></thead>
+    <tbody>
+      {% for t in sin_fecha %}
+      <tr>
+        <td><a href="{{ url_for(p ~ '_proyecto_tarea', pid=proyecto.id, tid=t.id) }}">{{ t.titulo }}</a></td>
+        <td>{{ estado_txt[t.estado] }}</td>
+        <td><span class="pm-chip prio-{{ t.prioridad }}">{{ prioridad_txt[t.prioridad] }}</span></td>
+        <td>{{ t.asignado_nombre or '—' }}</td>
+        <td><a class="btn btn-outline btn-sm" href="{{ url_for(p ~ '_proyecto_tarea', pid=proyecto.id, tid=t.id) }}">Abrir</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<p style="color:var(--muted);font-size:.8rem;margin-top:14px">
+  Cada tarea aparece en el día de su fecha de vencimiento. Puedes cambiarla desde el detalle de la tarea.
+</p>

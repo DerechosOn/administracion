@@ -66,6 +66,11 @@ os.makedirs(SLIDES_DIR, exist_ok=True)
 
 EXTENSIONES_PERMITIDAS = {".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"}
 EXTENSIONES_IMAGEN = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+# Adjuntos de proyectos: documentos de trabajo del equipo.
+EXTENSIONES_PROYECTO = EXTENSIONES_PERMITIDAS | {
+    ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv", ".zip", ".rar", ".7z"}
+PROYECTOS_UPLOAD_DIR = os.path.join(UPLOAD_DIR, "proyectos")
+os.makedirs(PROYECTOS_UPLOAD_DIR, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "derechos-on-clave-segura-de-sesion")
@@ -6782,6 +6787,9 @@ def _proyectos_es_propietario(proyecto, tipo, oid):
             and proyecto.get("propietario_id") == oid)
 
 
+VISTAS_PROYECTO = ("tablero", "lista", "calendario", "gantt")
+
+
 def _proyecto_ctx(rol, pid, usuario):
     tipo, oid = _proyectos_identidad(rol)
     proyecto = proyectos_core.proyecto_visible(pid, tipo, oid)
@@ -6793,13 +6801,18 @@ def _proyecto_ctx(rol, pid, usuario):
     if ":" in asignado:
         a_tipo, _, a_id = asignado.partition(":")
         a_id = _int_o_none(a_id)
+    vista = (request.args.get("vista") or "tablero").strip()
+    if vista not in VISTAS_PROYECTO:
+        vista = "tablero"
+    tareas = proyectos_core.tareas_de(pid, prioridad=prioridad or None,
+                                      asignado_tipo=a_tipo,
+                                      asignado_id=a_id)
+    hoy = date.today()
     ctx = {
         "rol": rol,
         "usuario": usuario,
         "proyecto": proyecto,
-        "tareas": proyectos_core.tareas_de(pid, prioridad=prioridad or None,
-                                           asignado_tipo=a_tipo,
-                                           asignado_id=a_id),
+        "tareas": tareas,
         "resumen": proyectos_core.resumen(pid),
         "miembros": proyectos_core.miembros(pid),
         "personas": proyectos_core.personas(),
@@ -6810,13 +6823,43 @@ def _proyecto_ctx(rol, pid, usuario):
         "estados_proyecto": proyectos_core.ESTADOS_PROYECTO,
         "estado_proyecto_txt": proyectos_core.ESTADO_PROYECTO_TXT,
         "colores": proyectos_core.COLORES,
-        "vista": "lista" if (request.args.get("vista") == "lista") else "tablero",
+        "vista": vista,
         "filtro_prioridad": prioridad,
         "filtro_asignado": asignado,
         "puede_editar": (rol == "admin"
                          or _proyectos_es_propietario(proyecto, tipo, oid)),
-        "hoy": date.today().isoformat(),
+        "hoy": hoy.isoformat(),
     }
+    if vista == "calendario":
+        anio = request.args.get("anio", type=int, default=hoy.year)
+        mes = request.args.get("mes", type=int, default=hoy.month)
+        if not anio or anio < 2000 or anio > 2100:
+            anio = hoy.year
+        if not mes or mes < 1 or mes > 12:
+            mes = hoy.month
+        por_dia, sin_fecha = proyectos_core.tareas_por_dia(tareas, anio, mes)
+        mes_anterior = 12 if mes == 1 else mes - 1
+        anio_anterior = anio - 1 if mes == 1 else anio
+        mes_siguiente = 1 if mes == 12 else mes + 1
+        anio_siguiente = anio + 1 if mes == 12 else anio
+        endpoint = "%s_proyecto" % rol
+        ctx.update({
+            "anio": anio,
+            "mes": mes,
+            "titulo_periodo": "%s de %d" % (MESES_ES[mes - 1].capitalize(), anio),
+            "por_dia": por_dia,
+            "sin_fecha": sin_fecha,
+            "semanas": calendario_py.monthcalendar(anio, mes),
+            "hoy_iso": hoy.isoformat(),
+            "cal_prev_url": url_for(endpoint, pid=pid, vista="calendario",
+                                    anio=anio_anterior, mes=mes_anterior),
+            "cal_next_url": url_for(endpoint, pid=pid, vista="calendario",
+                                    anio=anio_siguiente, mes=mes_siguiente),
+            "cal_hoy_url": url_for(endpoint, pid=pid, vista="calendario",
+                                   anio=hoy.year, mes=hoy.month),
+        })
+    elif vista == "gantt":
+        ctx["gantt"] = proyectos_core.gantt(proyecto, tareas, hoy)
     if rol == "abogado":
         ctx["abogado"] = g.abogado
     return ctx
@@ -6868,6 +6911,41 @@ def _proyecto_asignado(datos):
             _int_o_none(datos.get("asignado_id")))
 
 
+def _guardar_adjunto_proyecto(tid, autor_tipo, autor_id):
+    """Guarda el archivo enviado en el formulario. Devuelve mensaje de error o None."""
+    archivo = request.files.get("archivo")
+    if not archivo or not archivo.filename:
+        return "Selecciona un archivo para adjuntar."
+    original = os.path.basename(archivo.filename.replace("\\", "/")).strip()
+    ext = os.path.splitext(original)[1].lower()
+    if ext not in EXTENSIONES_PROYECTO:
+        return ("Formato no permitido. Usa PDF, Word, Excel, PowerPoint, "
+                "imágenes, TXT, CSV o ZIP.")
+    nombre_guardado = uuid.uuid4().hex + ext
+    destino = os.path.join(PROYECTOS_UPLOAD_DIR, nombre_guardado)
+    archivo.save(destino)
+    proyectos_core.agregar_adjunto(tid, original, nombre_guardado,
+                                   os.path.getsize(destino),
+                                   autor_tipo, autor_id)
+    return None
+
+
+def _borrar_archivo_proyecto(nombre):
+    if not nombre:
+        return
+    ruta = os.path.join(PROYECTOS_UPLOAD_DIR, os.path.basename(nombre))
+    try:
+        if os.path.exists(ruta):
+            os.remove(ruta)
+    except OSError:
+        pass
+
+
+def _borrar_archivos_proyecto(nombres):
+    for nombre in nombres or []:
+        _borrar_archivo_proyecto(nombre)
+
+
 # ---- proyectos · administración
 @app.route("/admin/proyectos")
 @requiere_admin
@@ -6912,6 +6990,7 @@ def admin_proyecto_editar(pid):
 @app.route("/admin/proyectos/<int:pid>/eliminar", methods=["POST"])
 @requiere_admin
 def admin_proyecto_eliminar(pid):
+    _borrar_archivos_proyecto(proyectos_core.archivos_de_proyecto(pid))
     proyectos_core.eliminar_proyecto(pid)
     flash("Proyecto eliminado.", "exito")
     return redirect(url_for("admin_proyectos"))
@@ -6970,6 +7049,8 @@ def admin_proyecto_tarea(pid, tid):
         abort(404)
     ctx["tarea"] = tarea
     ctx["comentarios"] = proyectos_core.comentarios(tid)
+    ctx["subtareas"] = proyectos_core.subtareas(tid)
+    ctx["adjuntos"] = proyectos_core.adjuntos(tid)
     return render_template("admin/proyecto_tarea.html", **ctx)
 
 
@@ -7020,9 +7101,92 @@ def admin_proyecto_tarea_comentario(pid, tid):
 def admin_proyecto_tarea_eliminar(pid, tid):
     if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
         abort(404)
+    _borrar_archivos_proyecto(proyectos_core.archivos_de_tarea(tid))
     proyectos_core.eliminar_tarea(tid)
     flash("Tarea eliminada.", "exito")
     return redirect(url_for("admin_proyecto", pid=pid))
+
+
+# ---- proyectos · subtareas y adjuntos (administración)
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/subtarea", methods=["POST"])
+@requiere_admin
+def admin_proyecto_subtarea_crear(pid, tid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    if not proyectos_core.agregar_subtarea(tid, request.form.get("titulo")):
+        flash("La subtarea necesita un título.", "error")
+    return redirect(url_for("admin_proyecto_tarea", pid=pid, tid=tid) + "#subtareas")
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/subtarea/<int:sid>/alternar",
+           methods=["POST"])
+@requiere_admin
+def admin_proyecto_subtarea_alternar(pid, tid, sid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    sub = proyectos_core.obtener_subtarea(sid)
+    if not sub or sub["tarea_id"] != tid:
+        abort(404)
+    nuevo = proyectos_core.alternar_subtarea(sid)
+    hechas, total = proyectos_core.progreso_subtareas(tid)
+    if request.is_json:
+        return jsonify({"ok": True, "hecho": nuevo, "hechas": hechas,
+                        "total": total})
+    return redirect(url_for("admin_proyecto_tarea", pid=pid, tid=tid) + "#subtareas")
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/subtarea/<int:sid>/eliminar",
+           methods=["POST"])
+@requiere_admin
+def admin_proyecto_subtarea_eliminar(pid, tid, sid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    sub = proyectos_core.obtener_subtarea(sid)
+    if not sub or sub["tarea_id"] != tid:
+        abort(404)
+    proyectos_core.eliminar_subtarea(sid)
+    return redirect(url_for("admin_proyecto_tarea", pid=pid, tid=tid) + "#subtareas")
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/adjunto", methods=["POST"])
+@requiere_admin
+def admin_proyecto_adjunto_subir(pid, tid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    error = _guardar_adjunto_proyecto(tid, "admin", g.usuario["id"])
+    if error:
+        flash(error, "error")
+    else:
+        flash("Archivo adjuntado.", "exito")
+    return redirect(url_for("admin_proyecto_tarea", pid=pid, tid=tid) + "#adjuntos")
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/adjunto/<int:aid>")
+@requiere_admin
+def admin_proyecto_adjunto_descargar(pid, tid, aid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    adjunto = proyectos_core.obtener_adjunto(aid)
+    if not adjunto or adjunto["tarea_id"] != tid:
+        abort(404)
+    return send_from_directory(PROYECTOS_UPLOAD_DIR, adjunto["archivo"],
+                               as_attachment=True,
+                               download_name=adjunto["nombre"])
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/adjunto/<int:aid>/eliminar",
+           methods=["POST"])
+@requiere_admin
+def admin_proyecto_adjunto_eliminar(pid, tid, aid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    adjunto = proyectos_core.obtener_adjunto(aid)
+    if not adjunto or adjunto["tarea_id"] != tid:
+        abort(404)
+    proyectos_core.eliminar_adjunto(aid)
+    _borrar_archivo_proyecto(adjunto["archivo"])
+    flash("Adjunto eliminado.", "exito")
+    return redirect(url_for("admin_proyecto_tarea", pid=pid, tid=tid) + "#adjuntos")
 
 
 # ---- proyectos · abogado
@@ -7075,6 +7239,7 @@ def abogado_proyecto_eliminar(pid):
     proyecto = proyectos_core.proyecto_visible(pid, tipo, oid)
     if not proyecto or not _proyectos_es_propietario(proyecto, tipo, oid):
         abort(403)
+    _borrar_archivos_proyecto(proyectos_core.archivos_de_proyecto(pid))
     proyectos_core.eliminar_proyecto(pid)
     flash("Proyecto eliminado.", "exito")
     return redirect(url_for("abogado_proyectos"))
@@ -7143,6 +7308,8 @@ def abogado_proyecto_tarea(pid, tid):
         abort(404)
     ctx["tarea"] = tarea
     ctx["comentarios"] = proyectos_core.comentarios(tid)
+    ctx["subtareas"] = proyectos_core.subtareas(tid)
+    ctx["adjuntos"] = proyectos_core.adjuntos(tid)
     return render_template("abogado/proyecto_tarea.html", **ctx)
 
 
@@ -7197,9 +7364,98 @@ def abogado_proyecto_tarea_eliminar(pid, tid):
     tipo, oid = _proyectos_identidad("abogado")
     if not proyectos_core.tarea_visible(tid, tipo, oid):
         abort(404)
+    _borrar_archivos_proyecto(proyectos_core.archivos_de_tarea(tid))
     proyectos_core.eliminar_tarea(tid)
     flash("Tarea eliminada.", "exito")
     return redirect(url_for("abogado_proyecto", pid=pid))
+
+
+# ---- proyectos · subtareas y adjuntos (abogado)
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/subtarea", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_subtarea_crear(pid, tid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    if not proyectos_core.agregar_subtarea(tid, request.form.get("titulo")):
+        flash("La subtarea necesita un título.", "error")
+    return redirect(url_for("abogado_proyecto_tarea", pid=pid, tid=tid) + "#subtareas")
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/subtarea/<int:sid>/alternar",
+           methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_subtarea_alternar(pid, tid, sid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    sub = proyectos_core.obtener_subtarea(sid)
+    if not sub or sub["tarea_id"] != tid:
+        abort(404)
+    nuevo = proyectos_core.alternar_subtarea(sid)
+    hechas, total = proyectos_core.progreso_subtareas(tid)
+    if request.is_json:
+        return jsonify({"ok": True, "hecho": nuevo, "hechas": hechas,
+                        "total": total})
+    return redirect(url_for("abogado_proyecto_tarea", pid=pid, tid=tid) + "#subtareas")
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/subtarea/<int:sid>/eliminar",
+           methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_subtarea_eliminar(pid, tid, sid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    sub = proyectos_core.obtener_subtarea(sid)
+    if not sub or sub["tarea_id"] != tid:
+        abort(404)
+    proyectos_core.eliminar_subtarea(sid)
+    return redirect(url_for("abogado_proyecto_tarea", pid=pid, tid=tid) + "#subtareas")
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/adjunto", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_adjunto_subir(pid, tid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    error = _guardar_adjunto_proyecto(tid, "abogado", g.abogado["id"])
+    if error:
+        flash(error, "error")
+    else:
+        flash("Archivo adjuntado.", "exito")
+    return redirect(url_for("abogado_proyecto_tarea", pid=pid, tid=tid) + "#adjuntos")
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/adjunto/<int:aid>")
+@requiere_abogado
+def abogado_proyecto_adjunto_descargar(pid, tid, aid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    adjunto = proyectos_core.obtener_adjunto(aid)
+    if not adjunto or adjunto["tarea_id"] != tid:
+        abort(404)
+    return send_from_directory(PROYECTOS_UPLOAD_DIR, adjunto["archivo"],
+                               as_attachment=True,
+                               download_name=adjunto["nombre"])
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/adjunto/<int:aid>/eliminar",
+           methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_adjunto_eliminar(pid, tid, aid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    adjunto = proyectos_core.obtener_adjunto(aid)
+    if not adjunto or adjunto["tarea_id"] != tid:
+        abort(404)
+    proyectos_core.eliminar_adjunto(aid)
+    _borrar_archivo_proyecto(adjunto["archivo"])
+    flash("Adjunto eliminado.", "exito")
+    return redirect(url_for("abogado_proyecto_tarea", pid=pid, tid=tid) + "#adjuntos")
 
 
 # ------------------------------------------------- portal de asociaciones
