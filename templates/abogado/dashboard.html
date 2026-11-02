@@ -10,6 +10,29 @@
 </div>
 
 <div class="panel-form">
+  <h3>Tareas de proyectos</h3>
+  {% if tareas_proyecto %}
+  <table>
+    <thead><tr><th>Tarea</th><th>Proyecto</th><th>Estado</th><th>Prioridad</th><th>Vence</th></tr></thead>
+    <tbody>
+      {% for t in tareas_proyecto %}
+      <tr>
+        <td><a href="{{ url_for('abogado_proyecto_tarea', pid=t.proyecto_id, tid=t.id) }}" style="color:var(--blue-700)">{{ t.titulo }}</a></td>
+        <td><a href="{{ url_for('abogado_proyecto', pid=t.proyecto_id) }}" style="color:var(--blue-700)">{{ t.proyecto_nombre }}</a></td>
+        <td>{{ estado_txt.get(t.estado, t.estado) }}</td>
+        <td><span class="pm-chip prio-{{ t.prioridad }}">{{ prioridad_txt.get(t.prioridad, t.prioridad) }}</span></td>
+        <td>{% if t.fecha_vencimiento %}<span class="{{ 'pm-chip pm-vencida' if t.vencida else '' }}">{{ t.fecha_vencimiento[:10] }}</span>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted)">No tienes tareas de proyectos pendientes.</p>
+  {% endif %}
+  <a class="btn btn-outline btn-sm" href="{{ url_for('abogado_proyectos') }}">Ir a Proyectos</a>
+</div>
+
+<div class="panel-form">
   <h3>Próximas actuaciones y fechas máximas</h3>
   {% if proximas %}
   <table>

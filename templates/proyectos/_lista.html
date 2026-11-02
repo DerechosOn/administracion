@@ -1,0 +1,103 @@
+{% set p = rol %}
+<div class="pm-head">
+  <div>
+    <h1>Proyectos</h1>
+    <p class="sub">Organiza el trabajo del equipo en tableros tipo ClickUp: proyectos, tareas, responsables, prioridades y fechas límite.</p>
+  </div>
+  <div class="pm-acciones">
+    <a class="btn btn-outline btn-sm" href="#nuevo-proyecto">+ Nuevo proyecto</a>
+  </div>
+</div>
+
+<details class="panel-form" id="nuevo-proyecto" style="margin-bottom:26px">
+  <summary style="cursor:pointer;font-weight:700;color:var(--blue-900)">Crear proyecto</summary>
+  <form method="post" action="{{ url_for(p ~ '_proyecto_crear') }}" style="margin-top:16px">
+    <div class="form-row">
+      <div class="campo" style="flex:2">
+        <label>Nombre del proyecto *</label>
+        <input name="nombre" required maxlength="120" placeholder="Ej. Demanda laboral · Grupo Andina">
+      </div>
+      <div class="campo" style="flex:0 0 150px">
+        <label>Color</label>
+        <select name="color">
+          {% for c in colores %}
+          <option value="{{ c }}" {{ 'selected' if c == 'azul' }}>{{ c|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo" style="flex:0 0 150px">
+        <label>Estado</label>
+        <select name="estado">
+          {% for e in estados_proyecto %}
+          <option value="{{ e }}" {{ 'selected' if e == 'activo' }}>{{ estado_proyecto_txt[e] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Descripción</label>
+        <textarea name="descripcion" rows="2" placeholder="Objetivo del proyecto, alcance, cliente relacionado…"></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:0 0 190px">
+        <label>Fecha de inicio</label>
+        <input type="date" name="fecha_inicio">
+      </div>
+      <div class="campo" style="flex:0 0 190px">
+        <label>Fecha límite</label>
+        <input type="date" name="fecha_fin">
+      </div>
+      <div class="campo" style="flex:1">
+        <label>Equipo (opcional)</label>
+        <select name="miembros" multiple size="4" style="width:100%">
+          {% for persona in personas %}
+          <option value="{{ persona.tipo }}:{{ persona.id }}">{{ persona.nombre }} — {{ persona.detalle }}</option>
+          {% endfor %}
+        </select>
+        <small style="color:var(--muted);font-size:.74rem">Ctrl/Cmd + clic para elegir varios.</small>
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Crear proyecto</button>
+  </form>
+</details>
+
+{% if proyectos %}
+<div class="pm-grid">
+  {% for proyecto in proyectos %}
+  <a class="pm-card pm-color-{{ proyecto.color }}" href="{{ url_for(p ~ '_proyecto', pid=proyecto.id) }}">
+    <h3>{{ proyecto.nombre }}</h3>
+    {% if proyecto.descripcion %}
+    <p>{{ proyecto.descripcion[:120] }}{{ '…' if proyecto.descripcion|length > 120 }}</p>
+    {% endif %}
+    <div class="pm-progreso"><span style="width:{{ proyecto.avance }}%"></span></div>
+    <div class="pm-card-meta">
+      <span>{{ proyecto.hechas or 0 }}/{{ proyecto.total or 0 }} tareas · {{ proyecto.avance }}%</span>
+      <span class="pm-chip {{ 'prio-alta' if proyecto.estado == 'activo' else 'pm-suave' }}">{{ estado_proyecto_txt.get(proyecto.estado, proyecto.estado) }}</span>
+    </div>
+    <div class="pm-card-meta" style="margin-top:8px">
+      <span>{{ proyecto.miembros_n }} miembro{{ 's' if proyecto.miembros_n != 1 }}</span>
+      {% if proyecto.fecha_fin %}<span>Límite: {{ proyecto.fecha_fin }}</span>{% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="panel-form" style="text-align:center;padding:46px 24px">
+  <h3 style="margin-bottom:8px">Aún no hay proyectos</h3>
+  <p style="color:var(--muted);margin:0 0 18px">Crea tu primer proyecto para empezar a organizar tareas, responsables y fechas.</p>
+  <a class="btn btn-navy" href="#nuevo-proyecto">Crear mi primer proyecto</a>
+</div>
+{% endif %}
+
+<script>
+(function () {
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var destino = document.querySelector(a.getAttribute('href'));
+      if (destino && destino.tagName === 'DETAILS') destino.open = true;
+    });
+  });
+})();
+</script>

@@ -1,0 +1,5 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}{{ proyecto.nombre }} — Proyectos{% endblock %}
+{% block contenido %}
+{% include "proyectos/_tablero.html" %}
+{% endblock %}

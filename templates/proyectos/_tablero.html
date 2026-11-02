@@ -1,0 +1,330 @@
+{% set p = rol %}
+<div class="pm-migas">
+  <a href="{{ url_for(p ~ '_proyectos') }}">Proyectos</a> / {{ proyecto.nombre }}
+</div>
+
+<div class="pm-head">
+  <div>
+    <h1 style="display:flex;align-items:center;gap:10px">
+      <span class="pm-color-{{ proyecto.color }}" style="width:12px;height:12px;border-radius:50%;background:var(--pm-color);display:inline-block"></span>
+      {{ proyecto.nombre }}
+    </h1>
+    <p class="sub">
+      {% if proyecto.descripcion %}{{ proyecto.descripcion }}{% else %}Sin descripción.{% endif %}
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <span class="pm-chip {{ 'prio-alta' if proyecto.estado == 'activo' else 'pm-suave' }}">{{ estado_proyecto_txt.get(proyecto.estado, proyecto.estado) }}</span>
+      {% if proyecto.fecha_inicio %}<span class="pm-chip pm-suave">Inicio: {{ proyecto.fecha_inicio }}</span>{% endif %}
+      {% if proyecto.fecha_fin %}<span class="pm-chip pm-suave">Límite: {{ proyecto.fecha_fin }}</span>{% endif %}
+      <span class="pm-chip pm-suave">{{ miembros|length }} miembro{{ 's' if miembros|length != 1 }}</span>
+    </div>
+  </div>
+  <div class="pm-acciones">
+    <a class="btn btn-outline btn-sm" href="#nueva-tarea">+ Nueva tarea</a>
+    {% if puede_editar %}
+    <a class="btn btn-outline btn-sm" href="#editar-proyecto">Editar</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stat-cards" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card"><b>{{ resumen.avance }}%</b><span>Avance</span></div>
+  <div class="stat-card"><b>{{ resumen.total }}</b><span>Tareas</span></div>
+  <div class="stat-card"><b>{{ resumen.completada }}</b><span>Completadas</span></div>
+  <div class="stat-card"><b>{{ resumen.pendiente + resumen.en_curso + resumen.en_revision }}</b><span>Abiertas</span></div>
+</div>
+
+<details class="panel-form" id="nueva-tarea" style="margin-bottom:24px">
+  <summary style="cursor:pointer;font-weight:700;color:var(--blue-900)">Nueva tarea</summary>
+  <form method="post" action="{{ url_for(p ~ '_proyecto_tarea_crear', pid=proyecto.id) }}" style="margin-top:16px">
+    <div class="form-row">
+      <div class="campo" style="flex:2">
+        <label>Título *</label>
+        <input name="titulo" required maxlength="160" placeholder="Ej. Radicar demanda en el juzgado">
+      </div>
+      <div class="campo" style="flex:0 0 150px">
+        <label>Estado</label>
+        <select name="estado">
+          {% for e in estados %}<option value="{{ e }}">{{ estado_txt[e] }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="campo" style="flex:0 0 140px">
+        <label>Prioridad</label>
+        <select name="prioridad">
+          {% for pr in prioridades %}
+          <option value="{{ pr }}" {{ 'selected' if pr == 'media' }}>{{ prioridad_txt[pr] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Descripción</label>
+        <textarea name="descripcion" rows="2" placeholder="Detalle, pasos a seguir, documentos…"></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Responsable</label>
+        <select name="asignado">
+          <option value="">— Sin asignar —</option>
+          {% for persona in personas %}
+          <option value="{{ persona.tipo }}:{{ persona.id }}">{{ persona.nombre }} — {{ persona.detalle }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo" style="flex:0 0 200px">
+        <label>Vence</label>
+        <input type="date" name="fecha_vencimiento">
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Crear tarea</button>
+  </form>
+</details>
+
+{% if puede_editar %}
+<details class="panel-form" id="editar-proyecto" style="margin-bottom:24px">
+  <summary style="cursor:pointer;font-weight:700;color:var(--blue-900)">Editar proyecto</summary>
+  <form method="post" action="{{ url_for(p ~ '_proyecto_editar', pid=proyecto.id) }}" style="margin-top:16px">
+    <div class="form-row">
+      <div class="campo" style="flex:2">
+        <label>Nombre *</label>
+        <input name="nombre" required maxlength="120" value="{{ proyecto.nombre }}">
+      </div>
+      <div class="campo" style="flex:0 0 150px">
+        <label>Color</label>
+        <select name="color">
+          {% for c in colores %}
+          <option value="{{ c }}" {{ 'selected' if c == proyecto.color }}>{{ c|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo" style="flex:0 0 150px">
+        <label>Estado</label>
+        <select name="estado">
+          {% for e in estados_proyecto %}
+          <option value="{{ e }}" {{ 'selected' if e == proyecto.estado }}>{{ estado_proyecto_txt[e] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:1">
+        <label>Descripción</label>
+        <textarea name="descripcion" rows="2">{{ proyecto.descripcion }}</textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="campo" style="flex:0 0 190px">
+        <label>Fecha de inicio</label>
+        <input type="date" name="fecha_inicio" value="{{ proyecto.fecha_inicio }}">
+      </div>
+      <div class="campo" style="flex:0 0 190px">
+        <label>Fecha límite</label>
+        <input type="date" name="fecha_fin" value="{{ proyecto.fecha_fin }}">
+      </div>
+    </div>
+    <button class="btn btn-navy" type="submit">Guardar cambios</button>
+  </form>
+  <form method="post" action="{{ url_for(p ~ '_proyecto_eliminar', pid=proyecto.id) }}"
+        onsubmit="return confirm('¿Eliminar el proyecto y todas sus tareas? Esta acción no se puede deshacer.');"
+        style="margin-top:14px">
+    <button class="btn btn-danger" type="submit">Eliminar proyecto</button>
+  </form>
+</details>
+{% endif %}
+
+<div class="pm-head" style="margin-bottom:14px;align-items:center">
+  <div class="pm-acciones">
+    <a class="btn btn-sm {{ 'btn-navy' if vista == 'tablero' else 'btn-outline' }}"
+       href="{{ url_for(p ~ '_proyecto', pid=proyecto.id, vista='tablero', prioridad=filtro_prioridad, asignado=filtro_asignado) }}">Tablero</a>
+    <a class="btn btn-sm {{ 'btn-navy' if vista == 'lista' else 'btn-outline' }}"
+       href="{{ url_for(p ~ '_proyecto', pid=proyecto.id, vista='lista', prioridad=filtro_prioridad, asignado=filtro_asignado) }}">Lista</a>
+  </div>
+  <form method="get" action="{{ url_for(p ~ '_proyecto', pid=proyecto.id) }}" class="pm-acciones">
+    <input type="hidden" name="vista" value="{{ vista }}">
+    <select name="prioridad" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+      <option value="">Todas las prioridades</option>
+      {% for pr in prioridades %}
+      <option value="{{ pr }}" {{ 'selected' if filtro_prioridad == pr }}>{{ prioridad_txt[pr] }}</option>
+      {% endfor %}
+    </select>
+    <select name="asignado" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px">
+      <option value="">Todos los responsables</option>
+      {% for persona in personas %}
+      <option value="{{ persona.tipo }}:{{ persona.id }}" {{ 'selected' if filtro_asignado == persona.tipo ~ ':' ~ persona.id }}>{{ persona.nombre }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-outline btn-sm" type="submit">Filtrar</button>
+    {% if filtro_prioridad or filtro_asignado %}
+    <a class="btn btn-outline btn-sm" href="{{ url_for(p ~ '_proyecto', pid=proyecto.id, vista=vista) }}">Limpiar</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if vista == 'tablero' %}
+<div class="pm-board" id="pm-board">
+  {% for estado in estados %}
+  <div class="pm-col" data-estado="{{ estado }}">
+    <div class="pm-col-head">
+      <span>{{ estado_txt[estado] }}</span>
+      <span class="pm-n">{{ tareas|selectattr('estado', 'equalto', estado)|list|length }}</span>
+    </div>
+    {% for t in tareas if t.estado == estado %}
+    <a class="pm-tarea" draggable="true" href="{{ url_for(p ~ '_proyecto_tarea', pid=proyecto.id, tid=t.id) }}"
+       data-tid="{{ t.id }}"
+       data-url="{{ url_for(p ~ '_proyecto_tarea_estado', pid=proyecto.id, tid=t.id) }}">
+      <div class="pm-tarea-titulo">{{ t.titulo }}</div>
+      {% if t.descripcion %}<div class="pm-tarea-desc">{{ t.descripcion }}</div>{% endif %}
+      <div class="pm-tarea-meta">
+        <span class="pm-chip prio-{{ t.prioridad }}">{{ prioridad_txt[t.prioridad] }}</span>
+        {% if t.fecha_vencimiento %}
+        <span class="pm-chip {{ 'pm-vencida' if t.vencida else 'pm-suave' }}">{{ t.fecha_vencimiento[:10] }}</span>
+        {% endif %}
+        {% if t.asignado_nombre %}
+        <span title="{{ t.asignado_nombre }}"><span class="pm-avatar">{{ t.asignado_nombre[:1] }}</span></span>
+        {% endif %}
+        {% if t.comentarios_n %}<span>💬 {{ t.comentarios_n }}</span>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+    {% set en_columna = tareas|selectattr('estado', 'equalto', estado)|list %}
+    <div class="pm-vacio"{% if en_columna %} style="display:none"{% endif %}>Arrastra tareas aquí</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<table class="pm-lista">
+  <thead>
+    <tr><th>Tarea</th><th>Estado</th><th>Prioridad</th><th>Responsable</th><th>Vence</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for t in tareas %}
+    <tr>
+      <td>
+        <a href="{{ url_for(p ~ '_proyecto_tarea', pid=proyecto.id, tid=t.id) }}">{{ t.titulo }}</a>
+        {% if t.descripcion %}<div style="color:var(--muted);font-size:.78rem">{{ t.descripcion[:80] }}{{ '…' if t.descripcion|length > 80 }}</div>{% endif %}
+      </td>
+      <td><span class="pm-chip {{ 'prio-media' if t.estado == 'en_curso' else ('pm-suave' if t.estado != 'completada' else 'prio-baja') }}">{{ estado_txt[t.estado] }}</span></td>
+      <td><span class="pm-chip prio-{{ t.prioridad }}">{{ prioridad_txt[t.prioridad] }}</span></td>
+      <td>{{ t.asignado_nombre or '—' }}</td>
+      <td>{% if t.fecha_vencimiento %}<span class="{{ 'pm-chip pm-vencida' if t.vencida else '' }}">{{ t.fecha_vencimiento[:10] }}</span>{% else %}—{% endif %}</td>
+      <td><a class="btn btn-outline btn-sm" href="{{ url_for(p ~ '_proyecto_tarea', pid=proyecto.id, tid=t.id) }}">Abrir</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:26px">No hay tareas con estos filtros.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<div class="panel-form" id="miembros" style="margin-top:26px">
+  <h3>Equipo del proyecto</h3>
+  <div class="pm-miembros">
+    {% for m in miembros %}
+    <span class="pm-miembro">
+      <span class="pm-avatar">{{ m.nombre[:1] }}</span>
+      {{ m.nombre }}
+      {% if puede_editar and not (m.tipo == proyecto.propietario_tipo and m.oid == proyecto.propietario_id) %}
+      <form method="post" action="{{ url_for(p ~ '_proyecto_miembro_quitar', pid=proyecto.id) }}">
+        <input type="hidden" name="tipo" value="{{ m.tipo }}">
+        <input type="hidden" name="oid" value="{{ m.oid }}">
+        <button type="submit" title="Quitar del proyecto">×</button>
+      </form>
+      {% endif %}
+    </span>
+    {% else %}
+    <span style="color:var(--muted);font-size:.85rem">Sin miembros todavía.</span>
+    {% endfor %}
+  </div>
+  {% if puede_editar %}
+  <form method="post" action="{{ url_for(p ~ '_proyecto_miembro', pid=proyecto.id) }}" class="pm-acciones">
+    <select name="persona" style="padding:9px 11px;border:1px solid var(--line);border-radius:8px">
+      <option value="">Añadir persona…</option>
+      {% for persona in personas %}
+      <option value="{{ persona.tipo }}:{{ persona.id }}">{{ persona.nombre }} — {{ persona.detalle }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-outline btn-sm" type="submit">Añadir al equipo</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if vista == 'tablero' %}
+<script>
+(function () {
+  var board = document.getElementById('pm-board');
+  if (!board) return;
+  var arrastrando = null;
+
+  function refrescarVacio(col) {
+    var vacio = col.querySelector('.pm-vacio');
+    if (!vacio) return;
+    vacio.style.display = col.querySelectorAll('.pm-tarea').length ? 'none' : '';
+  }
+
+  function refrescarContadores() {
+    board.querySelectorAll('.pm-col').forEach(function (col) {
+      var n = col.querySelector('.pm-n');
+      if (n) n.textContent = col.querySelectorAll('.pm-tarea').length;
+      refrescarVacio(col);
+    });
+  }
+
+  board.querySelectorAll('.pm-tarea').forEach(function (tarjeta) {
+    tarjeta.addEventListener('dragstart', function (e) {
+      arrastrando = tarjeta;
+      tarjeta.classList.add('dragging');
+      try { e.dataTransfer.setData('text/plain', tarjeta.dataset.tid); } catch (err) {}
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    tarjeta.addEventListener('dragend', function () {
+      tarjeta.classList.remove('dragging');
+      arrastrando = null;
+    });
+  });
+
+  board.querySelectorAll('.pm-col').forEach(function (col) {
+    col.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      col.classList.add('over');
+    });
+    col.addEventListener('dragleave', function () {
+      col.classList.remove('over');
+    });
+    col.addEventListener('drop', function (e) {
+      e.preventDefault();
+      col.classList.remove('over');
+      if (!arrastrando) return;
+      var tarjeta = arrastrando;
+      var destino = col.dataset.estado;
+      var origen = tarjeta.closest('.pm-col');
+      if (origen === col) return;
+      col.appendChild(tarjeta);
+      refrescarContadores();
+      fetch(tarjeta.dataset.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: destino })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d.ok) throw new Error('no');
+      }).catch(function () {
+        if (origen) origen.appendChild(tarjeta);
+        refrescarContadores();
+      });
+    });
+  });
+})();
+</script>
+{% endif %}
+
+<script>
+(function () {
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function () {
+      var destino = document.querySelector(a.getAttribute('href'));
+      if (destino && destino.tagName === 'DETAILS') destino.open = true;
+    });
+  });
+})();
+</script>

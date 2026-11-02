@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/proyectos.css') }}">{% endblock %}
 {% block titulo %}Portal del abogado — Derechos On{% endblock %}
 {% block contenido %}
 <div class="p-portal">
@@ -22,6 +23,7 @@
       <a href="{{ url_for('abogado_inicio') }}" class="{{ 'activo' if request.endpoint == 'abogado_inicio' }}">Inicio</a>
       <a href="{{ url_for('abogado_calendario') }}" class="{{ 'activo' if request.endpoint == 'abogado_calendario' }}">Calendario</a>
       <a href="{{ url_for('abogado_crm') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_crm') }}">Tareas</a>
+      <a href="{{ url_for('abogado_proyectos') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_proyecto') }}">Proyectos</a>
       <a href="{{ url_for('abogado_procesos') }}" class="{{ 'activo' if request.endpoint in ['abogado_procesos', 'abogado_proceso'] }}">Procesos</a>
       <a href="{{ url_for('abogado_archivos') }}" class="{{ 'activo' if request.endpoint == 'abogado_archivos' }}">Archivos</a>
       <a href="{{ url_for('abogado_correo') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_correo') }}">Correo</a>

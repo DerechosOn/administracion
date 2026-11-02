@@ -36,6 +36,7 @@ import ia_juridica
 import conocimiento_juridico
 import motor_normativo
 import crm_core
+import proyectos_core
 try:
     from agentes import agente_jarvis
 except Exception:
@@ -1257,11 +1258,15 @@ def abogado_inicio():
                                  "proceso": a["proceso"], "cliente": a["cliente"],
                                  "descripcion": a["descripcion"], "pid": a["proceso_id"]})
     proximas.sort(key=lambda x: x["dia"])
+    tareas_proyecto = proyectos_core.tareas_abiertas_de("abogado", g.abogado["id"], limite=6)
     return render_template("abogado/dashboard.html", usuario=g.usuario, abogado=g.abogado,
                            procesos=datos["procesos"],
                            num_procesos=len(datos["procesos"]),
                            num_actuaciones=len(datos["actuaciones"]),
-                           proximas=proximas[:14], del_mes=vencimientos(hoy, datos["actuaciones"]))
+                           proximas=proximas[:14], del_mes=vencimientos(hoy, datos["actuaciones"]),
+                           tareas_proyecto=tareas_proyecto,
+                           prioridad_txt=proyectos_core.PRIORIDAD_TXT,
+                           estado_txt=proyectos_core.ESTADO_TXT)
 
 
 def vencimientos(hoy, actuaciones):
@@ -6762,6 +6767,439 @@ def abogado_crm_recordatorio_crear():
 def abogado_crm_recordatorio_hecho(rid):
     crm_core.marcar_recordatorio_enviado(rid)
     return redirect(url_for("abogado_crm"))
+
+
+# ------------------------------------------------- gestión de proyectos
+def _proyectos_identidad(rol):
+    """Devuelve (tipo, id) de quien está usando el módulo de proyectos."""
+    if rol == "admin":
+        return "admin", g.usuario["id"]
+    return "abogado", g.abogado["id"]
+
+
+def _proyectos_es_propietario(proyecto, tipo, oid):
+    return (proyecto.get("propietario_tipo") == tipo
+            and proyecto.get("propietario_id") == oid)
+
+
+def _proyecto_ctx(rol, pid, usuario):
+    tipo, oid = _proyectos_identidad(rol)
+    proyecto = proyectos_core.proyecto_visible(pid, tipo, oid)
+    if not proyecto:
+        return None
+    prioridad = (request.args.get("prioridad") or "").strip()
+    asignado = (request.args.get("asignado") or "").strip()
+    a_tipo, a_id = None, None
+    if ":" in asignado:
+        a_tipo, _, a_id = asignado.partition(":")
+        a_id = _int_o_none(a_id)
+    ctx = {
+        "rol": rol,
+        "usuario": usuario,
+        "proyecto": proyecto,
+        "tareas": proyectos_core.tareas_de(pid, prioridad=prioridad or None,
+                                           asignado_tipo=a_tipo,
+                                           asignado_id=a_id),
+        "resumen": proyectos_core.resumen(pid),
+        "miembros": proyectos_core.miembros(pid),
+        "personas": proyectos_core.personas(),
+        "estados": proyectos_core.ESTADOS,
+        "estado_txt": proyectos_core.ESTADO_TXT,
+        "prioridades": proyectos_core.PRIORIDADES,
+        "prioridad_txt": proyectos_core.PRIORIDAD_TXT,
+        "estados_proyecto": proyectos_core.ESTADOS_PROYECTO,
+        "estado_proyecto_txt": proyectos_core.ESTADO_PROYECTO_TXT,
+        "colores": proyectos_core.COLORES,
+        "vista": "lista" if (request.args.get("vista") == "lista") else "tablero",
+        "filtro_prioridad": prioridad,
+        "filtro_asignado": asignado,
+        "puede_editar": (rol == "admin"
+                         or _proyectos_es_propietario(proyecto, tipo, oid)),
+        "hoy": date.today().isoformat(),
+    }
+    if rol == "abogado":
+        ctx["abogado"] = g.abogado
+    return ctx
+
+
+def _proyecto_lista_ctx(rol, usuario):
+    tipo, oid = _proyectos_identidad(rol)
+    ctx = {
+        "rol": rol,
+        "usuario": usuario,
+        "proyectos": proyectos_core.listar_proyectos(tipo, oid),
+        "personas": proyectos_core.personas(),
+        "colores": proyectos_core.COLORES,
+        "estados_proyecto": proyectos_core.ESTADOS_PROYECTO,
+        "estado_proyecto_txt": proyectos_core.ESTADO_PROYECTO_TXT,
+    }
+    if rol == "abogado":
+        ctx["abogado"] = g.abogado
+    return ctx
+
+
+def _proyecto_miembros_form(pid, datos):
+    for valor in datos.getlist("miembros"):
+        tipo, _, oid = valor.partition(":")
+        oid = _int_o_none(oid)
+        if tipo in ("admin", "abogado") and oid:
+            proyectos_core.agregar_miembro(pid, tipo, oid)
+
+
+def _proyecto_datos_form(datos):
+    return {
+        "nombre": (datos.get("nombre") or "").strip(),
+        "descripcion": (datos.get("descripcion") or "").strip(),
+        "color": datos.get("color") if datos.get("color") in proyectos_core.COLORES else "azul",
+        "estado": datos.get("estado") if datos.get("estado") in proyectos_core.ESTADOS_PROYECTO else "activo",
+        "fecha_inicio": (datos.get("fecha_inicio") or "").strip(),
+        "fecha_fin": (datos.get("fecha_fin") or "").strip(),
+    }
+
+
+def _proyecto_asignado(datos):
+    """Lee el responsable desde 'asignado' («tipo:id») o de los campos separados."""
+    valor = (datos.get("asignado") or "").strip()
+    if ":" in valor:
+        tipo, _, oid = valor.partition(":")
+        if tipo in ("admin", "abogado"):
+            return tipo, _int_o_none(oid)
+    return ((datos.get("asignado_tipo") or None),
+            _int_o_none(datos.get("asignado_id")))
+
+
+# ---- proyectos · administración
+@app.route("/admin/proyectos")
+@requiere_admin
+def admin_proyectos():
+    return render_template("admin/proyectos.html",
+                           **_proyecto_lista_ctx("admin", g.usuario))
+
+
+@app.route("/admin/proyectos/crear", methods=["POST"])
+@requiere_admin
+def admin_proyecto_crear():
+    datos = _proyecto_datos_form(request.form)
+    if not datos["nombre"]:
+        flash("El proyecto necesita un nombre.", "error")
+        return redirect(url_for("admin_proyectos"))
+    pid = proyectos_core.crear_proyecto(
+        propietario_tipo="admin", propietario_id=g.usuario["id"], **datos)
+    _proyecto_miembros_form(pid, request.form)
+    flash("Proyecto creado.", "exito")
+    return redirect(url_for("admin_proyecto", pid=pid))
+
+
+@app.route("/admin/proyectos/<int:pid>")
+@requiere_admin
+def admin_proyecto(pid):
+    ctx = _proyecto_ctx("admin", pid, g.usuario)
+    if not ctx:
+        abort(404)
+    return render_template("admin/proyecto.html", **ctx)
+
+
+@app.route("/admin/proyectos/<int:pid>/editar", methods=["POST"])
+@requiere_admin
+def admin_proyecto_editar(pid):
+    if not proyectos_core.proyecto_visible(pid, "admin", g.usuario["id"]):
+        abort(404)
+    proyectos_core.actualizar_proyecto(pid, **_proyecto_datos_form(request.form))
+    flash("Proyecto actualizado.", "exito")
+    return redirect(url_for("admin_proyecto", pid=pid))
+
+
+@app.route("/admin/proyectos/<int:pid>/eliminar", methods=["POST"])
+@requiere_admin
+def admin_proyecto_eliminar(pid):
+    proyectos_core.eliminar_proyecto(pid)
+    flash("Proyecto eliminado.", "exito")
+    return redirect(url_for("admin_proyectos"))
+
+
+@app.route("/admin/proyectos/<int:pid>/miembro", methods=["POST"])
+@requiere_admin
+def admin_proyecto_miembro(pid):
+    tipo, _, oid = (request.form.get("persona") or "").partition(":")
+    oid = _int_o_none(oid)
+    if tipo in ("admin", "abogado") and oid:
+        proyectos_core.agregar_miembro(pid, tipo, oid)
+    return redirect(url_for("admin_proyecto", pid=pid) + "#miembros")
+
+
+@app.route("/admin/proyectos/<int:pid>/miembro/quitar", methods=["POST"])
+@requiere_admin
+def admin_proyecto_miembro_quitar(pid):
+    tipo = request.form.get("tipo")
+    oid = _int_o_none(request.form.get("oid"))
+    if tipo in ("admin", "abogado") and oid:
+        proyectos_core.quitar_miembro(pid, tipo, oid)
+    return redirect(url_for("admin_proyecto", pid=pid) + "#miembros")
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea", methods=["POST"])
+@requiere_admin
+def admin_proyecto_tarea_crear(pid):
+    if not proyectos_core.proyecto_visible(pid, "admin", g.usuario["id"]):
+        abort(404)
+    titulo = (request.form.get("titulo") or "").strip()
+    a_tipo, a_id = _proyecto_asignado(request.form)
+    if titulo:
+        proyectos_core.crear_tarea(
+            pid, titulo,
+            descripcion=request.form.get("descripcion") or "",
+            estado=request.form.get("estado") or "pendiente",
+            prioridad=request.form.get("prioridad") or "media",
+            asignado_tipo=a_tipo,
+            asignado_id=a_id,
+            fecha_vencimiento=request.form.get("fecha_vencimiento") or "")
+        flash("Tarea creada.", "exito")
+    else:
+        flash("La tarea necesita un título.", "error")
+    return redirect(url_for("admin_proyecto", pid=pid))
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>")
+@requiere_admin
+def admin_proyecto_tarea(pid, tid):
+    tarea = proyectos_core.tarea_visible(tid, "admin", g.usuario["id"])
+    if not tarea or tarea["proyecto_id"] != pid:
+        abort(404)
+    ctx = _proyecto_ctx("admin", pid, g.usuario)
+    if not ctx:
+        abort(404)
+    ctx["tarea"] = tarea
+    ctx["comentarios"] = proyectos_core.comentarios(tid)
+    return render_template("admin/proyecto_tarea.html", **ctx)
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/editar", methods=["POST"])
+@requiere_admin
+def admin_proyecto_tarea_editar(pid, tid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    a_tipo, a_id = _proyecto_asignado(request.form)
+    proyectos_core.actualizar_tarea(
+        tid,
+        titulo=(request.form.get("titulo") or "").strip(),
+        descripcion=(request.form.get("descripcion") or "").strip(),
+        estado=request.form.get("estado"),
+        prioridad=request.form.get("prioridad"),
+        asignado_tipo=a_tipo,
+        asignado_id=a_id,
+        fecha_vencimiento=(request.form.get("fecha_vencimiento") or "").strip())
+    flash("Tarea actualizada.", "exito")
+    return redirect(url_for("admin_proyecto_tarea", pid=pid, tid=tid))
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/estado", methods=["POST"])
+@requiere_admin
+def admin_proyecto_tarea_estado(pid, tid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    datos = request.get_json(silent=True) or request.form
+    nuevo = (datos.get("estado") or "").strip()
+    ok = proyectos_core.cambiar_estado(tid, nuevo)
+    if request.is_json:
+        return jsonify({"ok": ok, "estado": nuevo})
+    return redirect(url_for("admin_proyecto", pid=pid))
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/comentario", methods=["POST"])
+@requiere_admin
+def admin_proyecto_tarea_comentario(pid, tid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    proyectos_core.agregar_comentario(tid, "admin", g.usuario["id"],
+                                      request.form.get("comentario"))
+    return redirect(url_for("admin_proyecto_tarea", pid=pid, tid=tid) + "#comentarios")
+
+
+@app.route("/admin/proyectos/<int:pid>/tarea/<int:tid>/eliminar", methods=["POST"])
+@requiere_admin
+def admin_proyecto_tarea_eliminar(pid, tid):
+    if not proyectos_core.tarea_visible(tid, "admin", g.usuario["id"]):
+        abort(404)
+    proyectos_core.eliminar_tarea(tid)
+    flash("Tarea eliminada.", "exito")
+    return redirect(url_for("admin_proyecto", pid=pid))
+
+
+# ---- proyectos · abogado
+@app.route("/abogado/proyectos")
+@requiere_abogado
+def abogado_proyectos():
+    return render_template("abogado/proyectos.html",
+                           **_proyecto_lista_ctx("abogado", g.usuario))
+
+
+@app.route("/abogado/proyectos/crear", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_crear():
+    datos = _proyecto_datos_form(request.form)
+    if not datos["nombre"]:
+        flash("El proyecto necesita un nombre.", "error")
+        return redirect(url_for("abogado_proyectos"))
+    pid = proyectos_core.crear_proyecto(
+        propietario_tipo="abogado", propietario_id=g.abogado["id"], **datos)
+    _proyecto_miembros_form(pid, request.form)
+    flash("Proyecto creado.", "exito")
+    return redirect(url_for("abogado_proyecto", pid=pid))
+
+
+@app.route("/abogado/proyectos/<int:pid>")
+@requiere_abogado
+def abogado_proyecto(pid):
+    ctx = _proyecto_ctx("abogado", pid, g.usuario)
+    if not ctx:
+        abort(404)
+    return render_template("abogado/proyecto.html", **ctx)
+
+
+@app.route("/abogado/proyectos/<int:pid>/editar", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_editar(pid):
+    tipo, oid = _proyectos_identidad("abogado")
+    proyecto = proyectos_core.proyecto_visible(pid, tipo, oid)
+    if not proyecto or not _proyectos_es_propietario(proyecto, tipo, oid):
+        abort(403)
+    proyectos_core.actualizar_proyecto(pid, **_proyecto_datos_form(request.form))
+    flash("Proyecto actualizado.", "exito")
+    return redirect(url_for("abogado_proyecto", pid=pid))
+
+
+@app.route("/abogado/proyectos/<int:pid>/eliminar", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_eliminar(pid):
+    tipo, oid = _proyectos_identidad("abogado")
+    proyecto = proyectos_core.proyecto_visible(pid, tipo, oid)
+    if not proyecto or not _proyectos_es_propietario(proyecto, tipo, oid):
+        abort(403)
+    proyectos_core.eliminar_proyecto(pid)
+    flash("Proyecto eliminado.", "exito")
+    return redirect(url_for("abogado_proyectos"))
+
+
+@app.route("/abogado/proyectos/<int:pid>/miembro", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_miembro(pid):
+    tipo, oid = _proyectos_identidad("abogado")
+    proyecto = proyectos_core.proyecto_visible(pid, tipo, oid)
+    if not proyecto or not _proyectos_es_propietario(proyecto, tipo, oid):
+        abort(403)
+    t, _, o = (request.form.get("persona") or "").partition(":")
+    o = _int_o_none(o)
+    if t in ("admin", "abogado") and o:
+        proyectos_core.agregar_miembro(pid, t, o)
+    return redirect(url_for("abogado_proyecto", pid=pid) + "#miembros")
+
+
+@app.route("/abogado/proyectos/<int:pid>/miembro/quitar", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_miembro_quitar(pid):
+    tipo, oid = _proyectos_identidad("abogado")
+    proyecto = proyectos_core.proyecto_visible(pid, tipo, oid)
+    if not proyecto or not _proyectos_es_propietario(proyecto, tipo, oid):
+        abort(403)
+    t = request.form.get("tipo")
+    o = _int_o_none(request.form.get("oid"))
+    if t in ("admin", "abogado") and o:
+        proyectos_core.quitar_miembro(pid, t, o)
+    return redirect(url_for("abogado_proyecto", pid=pid) + "#miembros")
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_tarea_crear(pid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.proyecto_visible(pid, tipo, oid):
+        abort(404)
+    titulo = (request.form.get("titulo") or "").strip()
+    a_tipo, a_id = _proyecto_asignado(request.form)
+    if titulo:
+        proyectos_core.crear_tarea(
+            pid, titulo,
+            descripcion=request.form.get("descripcion") or "",
+            estado=request.form.get("estado") or "pendiente",
+            prioridad=request.form.get("prioridad") or "media",
+            asignado_tipo=a_tipo,
+            asignado_id=a_id,
+            fecha_vencimiento=request.form.get("fecha_vencimiento") or "")
+        flash("Tarea creada.", "exito")
+    else:
+        flash("La tarea necesita un título.", "error")
+    return redirect(url_for("abogado_proyecto", pid=pid))
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>")
+@requiere_abogado
+def abogado_proyecto_tarea(pid, tid):
+    tipo, oid = _proyectos_identidad("abogado")
+    tarea = proyectos_core.tarea_visible(tid, tipo, oid)
+    if not tarea or tarea["proyecto_id"] != pid:
+        abort(404)
+    ctx = _proyecto_ctx("abogado", pid, g.usuario)
+    if not ctx:
+        abort(404)
+    ctx["tarea"] = tarea
+    ctx["comentarios"] = proyectos_core.comentarios(tid)
+    return render_template("abogado/proyecto_tarea.html", **ctx)
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/editar", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_tarea_editar(pid, tid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    a_tipo, a_id = _proyecto_asignado(request.form)
+    proyectos_core.actualizar_tarea(
+        tid,
+        titulo=(request.form.get("titulo") or "").strip(),
+        descripcion=(request.form.get("descripcion") or "").strip(),
+        estado=request.form.get("estado"),
+        prioridad=request.form.get("prioridad"),
+        asignado_tipo=a_tipo,
+        asignado_id=a_id,
+        fecha_vencimiento=(request.form.get("fecha_vencimiento") or "").strip())
+    flash("Tarea actualizada.", "exito")
+    return redirect(url_for("abogado_proyecto_tarea", pid=pid, tid=tid))
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/estado", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_tarea_estado(pid, tid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    datos = request.get_json(silent=True) or request.form
+    nuevo = (datos.get("estado") or "").strip()
+    ok = proyectos_core.cambiar_estado(tid, nuevo)
+    if request.is_json:
+        return jsonify({"ok": ok, "estado": nuevo})
+    return redirect(url_for("abogado_proyecto", pid=pid))
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/comentario", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_tarea_comentario(pid, tid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    proyectos_core.agregar_comentario(tid, "abogado", g.abogado["id"],
+                                      request.form.get("comentario"))
+    return redirect(url_for("abogado_proyecto_tarea", pid=pid, tid=tid) + "#comentarios")
+
+
+@app.route("/abogado/proyectos/<int:pid>/tarea/<int:tid>/eliminar", methods=["POST"])
+@requiere_abogado
+def abogado_proyecto_tarea_eliminar(pid, tid):
+    tipo, oid = _proyectos_identidad("abogado")
+    if not proyectos_core.tarea_visible(tid, tipo, oid):
+        abort(404)
+    proyectos_core.eliminar_tarea(tid)
+    flash("Tarea eliminada.", "exito")
+    return redirect(url_for("abogado_proyecto", pid=pid))
 
 
 # ------------------------------------------------- portal de asociaciones

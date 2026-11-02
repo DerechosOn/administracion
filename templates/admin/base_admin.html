@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/proyectos.css') }}">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a2d86'/><circle cx='50' cy='50' r='16' fill='%232f80ff'/></svg>">
 </head>
 <body>
@@ -24,6 +25,7 @@
       <a href="{{ url_for('admin_cartera') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('admin_cartera') }}">Cartera</a>
       <a href="{{ url_for('admin_formas_pago') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('admin_formas_pago') }}">Formas de pago</a>
       <a href="{{ url_for('admin_procesos') }}" class="{{ 'activo' if request.endpoint == 'admin_procesos' }}">Procesos</a>
+      <a href="{{ url_for('admin_proyectos') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('admin_proyecto') }}">Proyectos</a>
       <a href="{{ url_for('admin_actuaciones') }}" class="{{ 'activo' if request.endpoint == 'admin_actuaciones' }}">Actuaciones</a>
       <a href="{{ url_for('admin_expedientes') }}" class="{{ 'activo' if request.endpoint == 'admin_expedientes' }}">Expedientes</a>
       <a href="{{ url_for('admin_abogados') }}" class="{{ 'activo' if request.endpoint == 'admin_abogados' }}">Abogados</a>

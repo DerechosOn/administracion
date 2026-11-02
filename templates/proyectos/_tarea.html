@@ -1,0 +1,113 @@
+{% set p = rol %}
+<div class="pm-migas">
+  <a href="{{ url_for(p ~ '_proyectos') }}">Proyectos</a> /
+  <a href="{{ url_for(p ~ '_proyecto', pid=proyecto.id) }}">{{ proyecto.nombre }}</a> /
+  Tarea #{{ tarea.id }}
+</div>
+
+<div class="pm-detalle">
+  <div>
+    <div class="panel-form" style="margin-bottom:20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <h1 style="font-size:1.45rem;margin:0 0 6px">{{ tarea.titulo }}</h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="pm-chip prio-{{ tarea.prioridad }}">{{ prioridad_txt[tarea.prioridad] }}</span>
+          <span class="pm-chip pm-suave">{{ estado_txt[tarea.estado] }}</span>
+          {% if tarea.fecha_vencimiento %}
+          <span class="pm-chip {{ 'pm-vencida' if (tarea.fecha_vencimiento[:10] < hoy and tarea.estado != 'completada') else 'pm-suave' }}">{{ tarea.fecha_vencimiento[:10] }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <p style="color:var(--muted);font-size:.8rem;margin:6px 0 18px">
+        Responsable: <b>{{ tarea.asignado_nombre or 'Sin asignar' }}</b>
+        · Creada: {{ tarea.creado_el }}
+        {% if tarea.completado_el %} · Completada: {{ tarea.completado_el }}{% endif %}
+      </p>
+      {% if tarea.descripcion %}
+      <div style="white-space:pre-wrap;line-height:1.65;font-size:.92rem">{{ tarea.descripcion }}</div>
+      {% else %}
+      <p style="color:var(--muted);font-size:.88rem">Esta tarea no tiene descripción. Puedes añadirla en el formulario de la derecha.</p>
+      {% endif %}
+    </div>
+
+    <div class="panel-form" id="comentarios">
+      <h3>Comentarios ({{ comentarios|length }})</h3>
+      {% if comentarios %}
+      <div class="pm-comentarios">
+        {% for c in comentarios %}
+        <div class="pm-comentario">
+          <div class="pm-comentario-cab">
+            <span class="pm-avatar">{{ (c.autor_nombre or '?')[:1] }}</span>
+            <b>{{ c.autor_nombre or 'Usuario' }}</b>
+            <span>{{ c.creado_el }}</span>
+          </div>
+          <p>{{ c.texto }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--muted);font-size:.86rem">Todavía no hay comentarios.</p>
+      {% endif %}
+      <form method="post" action="{{ url_for(p ~ '_proyecto_tarea_comentario', pid=proyecto.id, tid=tarea.id) }}">
+        <div class="campo">
+          <label>Escribe un comentario</label>
+          <textarea name="comentario" rows="3" required placeholder="Avances, decisiones, notas para el equipo…"></textarea>
+        </div>
+        <button class="btn btn-navy btn-sm" type="submit">Publicar comentario</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel-form">
+      <h3>Editar tarea</h3>
+      <form method="post" action="{{ url_for(p ~ '_proyecto_tarea_editar', pid=proyecto.id, tid=tarea.id) }}">
+        <div class="campo">
+          <label>Título *</label>
+          <input name="titulo" required maxlength="160" value="{{ tarea.titulo }}">
+        </div>
+        <div class="campo">
+          <label>Descripción</label>
+          <textarea name="descripcion" rows="4">{{ tarea.descripcion }}</textarea>
+        </div>
+        <div class="campo">
+          <label>Estado</label>
+          <select name="estado">
+            {% for e in estados %}
+            <option value="{{ e }}" {{ 'selected' if e == tarea.estado }}>{{ estado_txt[e] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Prioridad</label>
+          <select name="prioridad">
+            {% for pr in prioridades %}
+            <option value="{{ pr }}" {{ 'selected' if pr == tarea.prioridad }}>{{ prioridad_txt[pr] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Responsable</label>
+          <select name="asignado">
+            <option value="">— Sin asignar —</option>
+            {% for persona in personas %}
+            <option value="{{ persona.tipo }}:{{ persona.id }}"
+              {{ 'selected' if tarea.asignado_tipo == persona.tipo and tarea.asignado_id == persona.id }}>
+              {{ persona.nombre }} — {{ persona.detalle }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label>Fecha de vencimiento</label>
+          <input type="date" name="fecha_vencimiento" value="{{ (tarea.fecha_vencimiento or '')[:10] }}">
+        </div>
+        <button class="btn btn-navy btn-block" type="submit">Guardar tarea</button>
+      </form>
+      <form method="post" action="{{ url_for(p ~ '_proyecto_tarea_eliminar', pid=proyecto.id, tid=tarea.id) }}"
+            onsubmit="return confirm('¿Eliminar esta tarea y sus comentarios?');" style="margin-top:12px">
+        <button class="btn btn-danger" type="submit" style="width:100%">Eliminar tarea</button>
+      </form>
+    </div>
+  </div>
+</div>
