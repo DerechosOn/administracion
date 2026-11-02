@@ -1,40 +1,187 @@
-{% extends "base.html" %}
-{% block estilos %}<link rel="stylesheet" href="{{ url_for('static', filename='css/proyectos.css') }}">{% endblock %}
-{% block titulo %}Portal del abogado — Derechos On{% endblock %}
-{% block contenido %}
-<div class="p-portal">
-  <header class="p-header">
-    <div class="container p-header-in">
-      <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
-      <span class="p-titulo">Portal del abogado</span>
-      <div class="p-usr">
-        <span class="p-avatar">{{ (abogado.nombre or '?')[:1] }}</span>
-        <div class="p-usr-nombre">
-          <b>{{ abogado.nombre }}</b>
-          <span>{{ abogado.especialidad or abogado.correo }}</span>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}Portal del abogado — Derechos On{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/proyectos.css') }}">
+  {% block estilos %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/intranet.css') }}?v=1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a2d86'/><circle cx='50' cy='50' r='16' fill='%232f80ff'/></svg>">
+</head>
+<body>
+{% set yo = abogado if abogado is defined and abogado else (usuario if usuario is defined and usuario else None) %}
+{% set migas = {
+  'abogado_inicio': 'Inicio',
+  'abogado_calendario': 'Calendario',
+  'abogado_crm': 'Tareas',
+  'abogado_crm_tarea': 'Tarea',
+  'abogado_proyectos': 'Proyectos',
+  'abogado_proyecto': 'Proyecto',
+  'abogado_proyecto_tarea': 'Tarea',
+  'abogado_procesos': 'Procesos',
+  'abogado_proceso': 'Proceso',
+  'abogado_archivos': 'Archivos',
+  'abogado_correo': 'Correo',
+  'abogado_correo_config': 'Configuración',
+  'abogado_base': 'Base jurídica'
+} %}
+{% set mig = migas.get(request.endpoint, 'Inicio') %}
+
+{% include "_ix_sprite.html" %}
+
+<div class="ix-app">
+  <aside class="ix-side" id="ixSide" aria-label="Menú del abogado">
+    <div class="ix-side-head">
+      <a class="ix-brand" href="{{ url_for('abogado_inicio') }}" title="Ir al inicio">
+        <img class="ix-brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On">
+        <span class="ix-brand-txt">
+          <b>Derechos On</b>
+          <small>Portal del abogado</small>
+        </span>
+      </a>
+      <button class="ix-icon-btn ix-side-close" id="ixSideClose" type="button" aria-label="Cerrar menú">
+        <svg class="ix-ico"><use href="#i-x"></use></svg>
+      </button>
+    </div>
+
+    <div class="ix-menu-search">
+      <svg class="ix-ico"><use href="#i-search"></use></svg>
+      <input type="search" id="ixMenuBuscar" placeholder="Buscar en el menú…" autocomplete="off" aria-label="Buscar en el menú">
+      <kbd>/</kbd>
+    </div>
+
+    <nav class="ix-nav" id="ixNav">
+      <div class="ix-group" data-ix-group>
+        <button class="ix-group-toggle" type="button" aria-expanded="true">Principal <svg class="ix-ico"><use href="#i-chevron"></use></svg></button>
+        <div class="ix-group-links">
+          <a class="ix-link {{ 'activo' if request.endpoint == 'abogado_inicio' }}" href="{{ url_for('abogado_inicio') }}" data-ix-text="inicio resumen panel">
+            <svg class="ix-ico"><use href="#i-home"></use></svg><span>Inicio</span>
+          </a>
+          <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_crm') }}" href="{{ url_for('abogado_crm') }}" data-ix-text="tareas crm pendientes">
+            <svg class="ix-ico"><use href="#i-check"></use></svg><span>Tareas</span>
+          </a>
+          <a class="ix-link {{ 'activo' if request.endpoint == 'abogado_calendario' }}" href="{{ url_for('abogado_calendario') }}" data-ix-text="calendario agenda citas">
+            <svg class="ix-ico"><use href="#i-calendar"></use></svg><span>Calendario</span>
+          </a>
         </div>
-        <a class="p-boton-salir" href="{{ url_for('salir') }}">Salir</a>
       </div>
-    </div>
-  </header>
 
-  <nav class="p-nav">
-    <div class="container p-nav-in">
-      <a href="{{ url_for('abogado_inicio') }}" class="{{ 'activo' if request.endpoint == 'abogado_inicio' }}">Inicio</a>
-      <a href="{{ url_for('abogado_calendario') }}" class="{{ 'activo' if request.endpoint == 'abogado_calendario' }}">Calendario</a>
-      <a href="{{ url_for('abogado_crm') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_crm') }}">Tareas</a>
-      <a href="{{ url_for('abogado_proyectos') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_proyecto') }}">Proyectos</a>
-      <a href="{{ url_for('abogado_procesos') }}" class="{{ 'activo' if request.endpoint in ['abogado_procesos', 'abogado_proceso'] }}">Procesos</a>
-      <a href="{{ url_for('abogado_archivos') }}" class="{{ 'activo' if request.endpoint == 'abogado_archivos' }}">Archivos</a>
-      <a href="{{ url_for('abogado_correo') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_correo') }}">Correo</a>
-      <a href="{{ url_for('abogado_base') }}" class="{{ 'activo' if request.endpoint in ['abogado_base'] }}">Base jurídica</a>
-      <a href="{{ url_for('abogado_correo_config') }}" class="{{ 'activo' if request.endpoint == 'abogado_correo_config' }}">Configuración</a>
-    </div>
-  </nav>
+      <div class="ix-group" data-ix-group>
+        <button class="ix-group-toggle" type="button" aria-expanded="true">Operación <svg class="ix-ico"><use href="#i-chevron"></use></svg></button>
+        <div class="ix-group-links">
+          <a class="ix-link {{ 'activo' if request.endpoint in ['abogado_procesos','abogado_proceso'] }}" href="{{ url_for('abogado_procesos') }}" data-ix-text="procesos judiciales casos">
+            <svg class="ix-ico"><use href="#i-scale"></use></svg><span>Procesos</span>
+          </a>
+          <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_proyecto') }}" href="{{ url_for('abogado_proyectos') }}" data-ix-text="proyectos tareas equipo">
+            <svg class="ix-ico"><use href="#i-check"></use></svg><span>Proyectos</span>
+          </a>
+          <a class="ix-link {{ 'activo' if request.endpoint == 'abogado_archivos' }}" href="{{ url_for('abogado_archivos') }}" data-ix-text="archivos documentos">
+            <svg class="ix-ico"><use href="#i-folder"></use></svg><span>Archivos</span>
+          </a>
+        </div>
+      </div>
 
-  <section class="dash-main p-main">
-    {% block abogado %}
-    {% endblock %}
-  </section>
+      <div class="ix-group" data-ix-group>
+        <button class="ix-group-toggle" type="button" aria-expanded="true">Herramientas <svg class="ix-ico"><use href="#i-chevron"></use></svg></button>
+        <div class="ix-group-links">
+          <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('abogado_correo') }}" href="{{ url_for('abogado_correo') }}" data-ix-text="correo institucional email">
+            <svg class="ix-ico"><use href="#i-mail"></use></svg><span>Correo</span>
+          </a>
+          <a class="ix-link {{ 'activo' if request.endpoint == 'abogado_base' }}" href="{{ url_for('abogado_base') }}" data-ix-text="base juridica normas">
+            <svg class="ix-ico"><use href="#i-book"></use></svg><span>Base jurídica</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="ix-group" data-ix-group>
+        <button class="ix-group-toggle" type="button" aria-expanded="true">Sistema <svg class="ix-ico"><use href="#i-chevron"></use></svg></button>
+        <div class="ix-group-links">
+          <a class="ix-link {{ 'activo' if request.endpoint == 'abogado_correo_config' }}" href="{{ url_for('abogado_correo_config') }}" data-ix-text="configuracion correo">
+            <svg class="ix-ico"><use href="#i-settings"></use></svg><span>Configuración</span>
+          </a>
+          <a class="ix-link" href="{{ url_for('inicio') }}" target="_blank" rel="noopener" data-ix-text="ver sitio web">
+            <svg class="ix-ico"><use href="#i-external"></use></svg><span>Ver sitio</span>
+          </a>
+          <a class="ix-link ix-peligro" href="{{ url_for('salir') }}" data-ix-text="cerrar sesion salir">
+            <svg class="ix-ico"><use href="#i-logout"></use></svg><span>Cerrar sesión</span>
+          </a>
+        </div>
+      </div>
+
+      <p class="ix-nav-vacio" id="ixNavVacio" hidden>No hay opciones con ese nombre.</p>
+    </nav>
+
+    <div class="ix-side-foot">
+      <a class="ix-mini-user" href="{{ url_for('abogado_correo_config') }}">
+        <span class="ix-avatar">{{ (yo.nombre if yo else 'A')[:1]|upper }}</span>
+        <span class="ix-mini-user-txt">
+          <b>{{ yo.nombre if yo else 'Abogado' }}</b>
+          <small>{{ (yo.especialidad if yo and yo.get('especialidad') else (yo.correo if yo else 'Portal')) }}</small>
+        </span>
+        <svg class="ix-ico"><use href="#i-arrow"></use></svg>
+      </a>
+    </div>
+  </aside>
+
+  <div class="ix-backdrop" id="ixBackdrop" hidden></div>
+
+  <div class="ix-shell">
+    <header class="ix-topbar">
+      <button class="ix-icon-btn ix-menu-btn" id="ixMenuBtn" type="button" aria-label="Abrir menú" aria-controls="ixSide" aria-expanded="false">
+        <svg class="ix-ico"><use href="#i-menu"></use></svg>
+      </button>
+
+      <div class="ix-crumb">
+        <span class="ix-crumb-grupo">Portal del abogado</span>
+        <svg class="ix-ico"><use href="#i-chevron"></use></svg>
+        <b>{{ mig }}</b>
+      </div>
+
+      <form class="ix-global-search" action="{{ url_for('inicio') }}" method="get" role="search" onsubmit="return false;">
+        <svg class="ix-ico"><use href="#i-search"></use></svg>
+        <input type="search" placeholder="Buscar…" autocomplete="off" aria-label="Búsqueda" disabled>
+      </form>
+
+      <div class="ix-top-acciones">
+        <div class="ix-drop" data-ix-drop>
+          <button class="ix-user-btn" type="button" data-ix-drop-btn aria-expanded="false">
+            <span class="ix-avatar">{{ (yo.nombre if yo else 'A')[:1]|upper }}</span>
+            <span class="ix-user-txt"><b>{{ (yo.nombre if yo else 'Abogado').split(' ')[0] }}</b><small>Abogado</small></span>
+            <svg class="ix-ico"><use href="#i-chevron"></use></svg>
+          </button>
+          <div class="ix-drop-menu ix-drop-right">
+            <p class="ix-drop-titulo">{{ yo.correo if yo else 'Cuenta' }}</p>
+            <a href="{{ url_for('abogado_correo_config') }}"><svg class="ix-ico"><use href="#i-settings"></use></svg>Configuración</a>
+            <a href="{{ url_for('inicio') }}" target="_blank" rel="noopener"><svg class="ix-ico"><use href="#i-external"></use></svg>Ver sitio</a>
+            <div class="ix-drop-sep"></div>
+            <a class="ix-peligro" href="{{ url_for('salir') }}"><svg class="ix-ico"><use href="#i-logout"></use></svg>Cerrar sesión</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="ix-main">
+      <div class="admin-main ix-content">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+          {% for categoria, mensaje in mensajes %}
+            <div class="alert {{ categoria }} ix-flash">{{ mensaje }}</div>
+          {% endfor %}
+        {% endwith %}
+        {% block contenido %}
+          <div class="admin-main ix-content">{% block abogado %}{% endblock %}</div>
+        {% endblock %}
+      </div>
+    </main>
+  </div>
 </div>
-{% endblock %}
+
+<script src="{{ url_for('static', filename='js/intranet.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,30 +1,9 @@
-{% extends "base.html" %}
+{% extends "cliente/base_cliente.html" %}
 {% block titulo %}Mis procesos — Derechos On{% endblock %}
 {% block estilos %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/portal_procesos.css') }}">
 {% endblock %}
 {% block contenido %}
-<div class="dash pp-dash">
-  <aside class="dash-side">
-    <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
-    <div class="usuario">
-      <b>{{ usuario.nombre }}</b>
-      <span>{{ usuario.email }}</span>
-    </div>
-    <nav>
-      <a href="{{ url_for('inicio') }}">Inicio</a>
-      <a href="{{ url_for('cliente_inicio') }}" class="activo">Mis procesos</a>
-      <a href="#estado-cuenta">Estado de cuenta</a>
-      {% if not solo_procesos %}
-      <a href="{{ url_for('cliente_contrato') }}">Mi contrato</a>
-      {% else %}
-      <a href="{{ url_for('asociacion_inicio') }}">Portal de la asociación</a>
-      {% endif %}
-      <a href="{{ url_for('salir') }}">Cerrar sesión</a>
-    </nav>
-    <div class="foot">Versión cliente · Datos confidenciales protegidos</div>
-  </aside>
-
   <section class="dash-main pp-main">
     <div class="pp-hero">
       <div class="pp-hero-text">
@@ -514,5 +493,4 @@
     </section>
     {% endif %}
   </section>
-</div>
 {% endblock %}

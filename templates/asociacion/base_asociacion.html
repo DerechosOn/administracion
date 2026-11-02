@@ -1,36 +1,145 @@
-{% extends "base.html" %}
-{% block titulo %}Portal de asociaciones — Derechos On{% endblock %}
-{% block contenido %}
-<div class="p-portal">
-  <header class="p-header">
-    <div class="container p-header-in">
-      <a class="brand" href="{{ url_for('inicio') }}"><img class="brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On"></a>
-      <span class="p-titulo">Portal de asociaciones</span>
-      <div class="p-usr">
-        <span class="p-avatar">{{ (usuario.nombre or '?')[:1] }}</span>
-        <div class="p-usr-nombre">
-          <b>{{ usuario.nombre }}</b>
-          <span>{{ usuario.email }}</span>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}Portal de asociaciones — Derechos On{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/intranet.css') }}?v=1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230a2d86'/><circle cx='50' cy='50' r='16' fill='%232f80ff'/></svg>">
+</head>
+<body>
+{% set yo = usuario if usuario is defined and usuario else None %}
+{% set migas = {
+  'asociacion_inicio': 'Inicio',
+  'asociacion_iat': 'Incentivo IAT',
+  'asociacion_iat_proyecto': 'Proyecto IAT'
+} %}
+{% set mig = migas.get(request.endpoint, 'Inicio') %}
+
+{% include "_ix_sprite.html" %}
+
+<div class="ix-app">
+  <aside class="ix-side" id="ixSide" aria-label="Menú de asociaciones">
+    <div class="ix-side-head">
+      <a class="ix-brand" href="{{ url_for('asociacion_inicio') }}" title="Ir al inicio">
+        <img class="ix-brand-logo" src="{{ url_for('static', filename='img/logo.png') }}?v=2" alt="Derechos On">
+        <span class="ix-brand-txt">
+          <b>Derechos On</b>
+          <small>Portal de asociaciones</small>
+        </span>
+      </a>
+      <button class="ix-icon-btn ix-side-close" id="ixSideClose" type="button" aria-label="Cerrar menú">
+        <svg class="ix-ico"><use href="#i-x"></use></svg>
+      </button>
+    </div>
+
+    <nav class="ix-nav" id="ixNav">
+      <div class="ix-group" data-ix-group>
+        <button class="ix-group-toggle" type="button" aria-expanded="true">Principal <svg class="ix-ico"><use href="#i-chevron"></use></svg></button>
+        <div class="ix-group-links">
+          <a class="ix-link {{ 'activo' if request.endpoint == 'asociacion_inicio' }}" href="{{ url_for('asociacion_inicio') }}" data-ix-text="inicio resumen">
+            <svg class="ix-ico"><use href="#i-home"></use></svg><span>Inicio</span>
+          </a>
+          <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('asociacion_iat') }}" href="{{ url_for('asociacion_iat') }}" data-ix-text="incentivo iat proyecto">
+            <svg class="ix-ico"><use href="#i-star"></use></svg><span>Incentivo IAT</span>
+          </a>
         </div>
-        <a class="p-boton-salir" href="{{ url_for('salir') }}">Salir</a>
       </div>
-    </div>
-  </header>
 
-  <nav class="p-nav">
-    <div class="container p-nav-in">
-      <a href="{{ url_for('asociacion_inicio') }}" class="{{ 'activo' if request.endpoint == 'asociacion_inicio' }}">Inicio</a>
-      <a href="{{ url_for('asociacion_iat') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('asociacion_iat') }}">Incentivo IAT</a>
-      <a href="{{ url_for('cliente_inicio') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('cliente') }}">Mis procesos</a>
-      <a href="{{ url_for('cliente_contrato') }}" class="{{ 'activo' if request.endpoint and request.endpoint.startswith('cliente_contrato') }}">Mi contrato</a>
-      <a href="{{ url_for('cliente_inicio') }}#estado-cuenta">Estado de cuenta</a>
-      <a href="{{ url_for('salir') }}">Cerrar sesión</a>
-    </div>
-  </nav>
+      <div class="ix-group" data-ix-group>
+        <button class="ix-group-toggle" type="button" aria-expanded="true">Mis datos <svg class="ix-ico"><use href="#i-chevron"></use></svg></button>
+        <div class="ix-group-links">
+          <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('cliente') and request.endpoint != 'cliente_contrato' }}" href="{{ url_for('cliente_inicio') }}" data-ix-text="procesos mis casos">
+            <svg class="ix-ico"><use href="#i-scale"></use></svg><span>Mis procesos</span>
+          </a>
+          <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('cliente_contrato') }}" href="{{ url_for('cliente_contrato') }}" data-ix-text="contrato documento">
+            <svg class="ix-ico"><use href="#i-file"></use></svg><span>Mi contrato</span>
+          </a>
+          <a class="ix-link" href="{{ url_for('cliente_inicio') }}#estado-cuenta" data-ix-text="estado cuenta pagos">
+            <svg class="ix-ico"><use href="#i-card"></use></svg><span>Estado de cuenta</span>
+          </a>
+        </div>
+      </div>
 
-  <section class="dash-main p-main">
-    {% block asociacion %}
-    {% endblock %}
-  </section>
+      <div class="ix-group" data-ix-group>
+        <button class="ix-group-toggle" type="button" aria-expanded="true">Sistema <svg class="ix-ico"><use href="#i-chevron"></use></svg></button>
+        <div class="ix-group-links">
+          <a class="ix-link" href="{{ url_for('inicio') }}" target="_blank" rel="noopener" data-ix-text="ver sitio web">
+            <svg class="ix-ico"><use href="#i-external"></use></svg><span>Ver sitio</span>
+          </a>
+          <a class="ix-link ix-peligro" href="{{ url_for('salir') }}" data-ix-text="cerrar sesion salir">
+            <svg class="ix-ico"><use href="#i-logout"></use></svg><span>Cerrar sesión</span>
+          </a>
+        </div>
+      </div>
+
+      <p class="ix-nav-vacio" id="ixNavVacio" hidden>No hay opciones con ese nombre.</p>
+    </nav>
+
+    <div class="ix-side-foot">
+      <a class="ix-mini-user" href="{{ url_for('salir') }}">
+        <span class="ix-avatar">{{ (yo.nombre if yo else 'A')[:1]|upper }}</span>
+        <span class="ix-mini-user-txt">
+          <b>{{ yo.nombre if yo else 'Asociación' }}</b>
+          <small>{{ yo.email if yo else 'Portal' }}</small>
+        </span>
+        <svg class="ix-ico"><use href="#i-arrow"></use></svg>
+      </a>
+    </div>
+  </aside>
+
+  <div class="ix-backdrop" id="ixBackdrop" hidden></div>
+
+  <div class="ix-shell">
+    <header class="ix-topbar">
+      <button class="ix-icon-btn ix-menu-btn" id="ixMenuBtn" type="button" aria-label="Abrir menú" aria-controls="ixSide" aria-expanded="false">
+        <svg class="ix-ico"><use href="#i-menu"></use></svg>
+      </button>
+
+      <div class="ix-crumb">
+        <span class="ix-crumb-grupo">Portal de asociaciones</span>
+        <svg class="ix-ico"><use href="#i-chevron"></use></svg>
+        <b>{{ mig }}</b>
+      </div>
+
+      <div class="ix-top-acciones">
+        <div class="ix-drop" data-ix-drop>
+          <button class="ix-user-btn" type="button" data-ix-drop-btn aria-expanded="false">
+            <span class="ix-avatar">{{ (yo.nombre if yo else 'A')[:1]|upper }}</span>
+            <span class="ix-user-txt"><b>{{ (yo.nombre if yo else 'Asociación').split(' ')[0] }}</b><small>Asociación</small></span>
+            <svg class="ix-ico"><use href="#i-chevron"></use></svg>
+          </button>
+          <div class="ix-drop-menu ix-drop-right">
+            <p class="ix-drop-titulo">{{ yo.email if yo else 'Cuenta' }}</p>
+            <a href="{{ url_for('inicio') }}" target="_blank" rel="noopener"><svg class="ix-ico"><use href="#i-external"></use></svg>Ver sitio</a>
+            <div class="ix-drop-sep"></div>
+            <a class="ix-peligro" href="{{ url_for('salir') }}"><svg class="ix-ico"><use href="#i-logout"></use></svg>Cerrar sesión</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="ix-main">
+      <div class="admin-main ix-content">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+          {% for categoria, mensaje in mensajes %}
+            <div class="alert {{ categoria }} ix-flash">{{ mensaje }}</div>
+          {% endfor %}
+        {% endwith %}
+        {% block contenido %}
+          <div class="admin-main ix-content">{% block asociacion %}{% endblock %}</div>
+        {% endblock %}
+      </div>
+    </main>
+  </div>
 </div>
-{% endblock %}
+
+<script src="{{ url_for('static', filename='js/intranet.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
