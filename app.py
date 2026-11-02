@@ -533,9 +533,19 @@ def _int(sql, params=()):
         return 0
 
 
+def _hoy():
+    """Fecha actual en la zona horaria de Colombia (UTC-5, sin DST)."""
+    return datetime.now(timezone(timedelta(hours=-5))).date()
+
+
+def _ahora():
+    """Fecha y hora actuales en la zona horaria de Colombia."""
+    return datetime.now(timezone(timedelta(hours=-5)))
+
+
 def _contadores_intranet():
     """Números que se muestran como insignias en el menú y la campana."""
-    hoy = date.today().isoformat()
+    hoy = _hoy().isoformat()
     return {
         "citas": _int("SELECT COUNT(*) n FROM citas WHERE estado = 'Pendiente'"),
         "mensajes": _int("SELECT COUNT(*) n FROM contactos WHERE leido = 0"),
@@ -549,7 +559,7 @@ def _contadores_intranet():
 
 def _comparar_periodo(tabla, campo, where=""):
     """(nuevos en 30 días, variación % frente a los 30 días anteriores)."""
-    hoy = date.today()
+    hoy = _hoy()
     desde = (hoy - timedelta(days=29)).isoformat()
     previo_desde = (hoy - timedelta(days=59)).isoformat()
     actual = _int(
@@ -569,7 +579,7 @@ def _comparar_periodo(tabla, campo, where=""):
 
 def _serie_dias(tabla, campo, dias=14, where=""):
     """Conteo por día de los últimos `dias`, del más antiguo al de hoy."""
-    hoy = date.today()
+    hoy = _hoy()
     desde = (hoy - timedelta(days=dias - 1)).isoformat()
     try:
         filas = db.consultar(
@@ -595,7 +605,7 @@ def _hace(valor):
         dia = datetime.strptime((valor or "")[:10], "%Y-%m-%d").date()
     except (ValueError, TypeError):
         return ""
-    diferencia = (date.today() - dia).days
+    diferencia = (_hoy() - dia).days
     if diferencia <= 0:
         return "Hoy"
     if diferencia == 1:
@@ -607,10 +617,10 @@ def _hace(valor):
 
 def _datos_intranet():
     """Todo lo que pinta el resumen y el endpoint de actualización en vivo."""
-    hoy = date.today()
+    hoy = _hoy()
     hoy_iso = hoy.isoformat()
     limite_semana = (hoy + timedelta(days=7)).isoformat()
-    ahora = datetime.now()
+    ahora = _ahora()
     saludo = ("Buenos días" if ahora.hour < 12
               else ("Buenas tardes" if ahora.hour < 19 else "Buenas noches"))
     fecha_larga = "%s, %d de %s de %d" % (

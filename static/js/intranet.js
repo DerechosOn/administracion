@@ -231,7 +231,7 @@
         badge.hidden = numero === 0;
       });
       var marca = document.querySelector("[data-ix-actualizado]");
-      if (marca && datos.actualizado) marca.textContent = datos.actualizado;
+      if (marca) marca.textContent = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
     }
 
     function refrescar() {
@@ -255,4 +255,21 @@
       if (!document.hidden) refrescar();
     });
   }
+  /* ------------------------------------------------ saludo con la hora del navegador */
+  function actualizarSaludo() {
+    var saludoEl = document.getElementById("ixSaludo");
+    var fechaEl = document.getElementById("ixFechaLarga");
+    if (!saludoEl) return;
+    var ahora = new Date();
+    var hora = ahora.getHours();
+    var saludo = hora < 12 ? "Buenos días" : (hora < 19 ? "Buenas tardes" : "Buenas noches");
+    var nombre = saludoEl.getAttribute("data-ix-nombre") || "";
+    saludoEl.textContent = saludo + (nombre ? ", " + nombre : "");
+    if (fechaEl) {
+      var txt = ahora.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      fechaEl.textContent = txt.charAt(0).toUpperCase() + txt.slice(1);
+    }
+  }
+  actualizarSaludo();
+
 })();

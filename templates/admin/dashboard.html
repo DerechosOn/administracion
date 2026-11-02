@@ -7,9 +7,9 @@
   <section class="ix-hero">
     <div>
       <span class="ix-hero-eyebrow">
-        <svg class="ix-ico"><use href="#i-clock"></use></svg>{{ fecha_larga }}
+        <svg class="ix-ico"><use href="#i-clock"></use></svg><span id="ixFechaLarga">{{ fecha_larga }}</span>
       </span>
-      <h1>{{ saludo }}, {{ (usuario.nombre or 'equipo').split(' ')[0] }}</h1>
+      <h1 id="ixSaludo" data-ix-nombre="{{ (usuario.nombre or 'equipo').split(' ')[0] }}">{{ saludo }}, {{ (usuario.nombre or 'equipo').split(' ')[0] }}</h1>
       <p>
         Este es el pulso de Derechos On hoy:
         <b>{{ citas_pendientes }}</b> citas por confirmar,
