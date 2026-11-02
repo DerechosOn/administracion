@@ -1,77 +1,426 @@
 {% extends "admin/base_admin.html" %}
-{% block titulo %}Resumen — Administración Derechos On{% endblock %}
+{% block titulo %}Resumen — Intranet Derechos On{% endblock %}
 {% block contenido %}
-<h1>Panel de administración</h1>
-<p class="sub">Resumen general de la plataforma y últimos procesos actualizados.</p>
+{% set colores = {'azul': '#2f80ff', 'verde': '#12b981', 'naranja': '#f59e0b', 'morado': '#7c3aed', 'rojo': '#ef4444', 'turquesa': '#06b6d4'} %}
+<div class="ix-dashboard" data-ix-live="{{ url_for('admin_api_resumen') }}">
 
-<div class="stat-cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
-  <div class="stat-card"><b>{{ cliente }}</b><span>Clientes registrados</span></div>
-  <div class="stat-card"><b>{{ procesos }}</b><span>Procesos activos</span></div>
-  <div class="stat-card"><b>{{ expedientes }}</b><span>Expedientes</span></div>
-  <div class="stat-card"><b>{{ abogados }}</b><span>Abogados activos</span></div>
-  <div class="stat-card"><b>{{ noticias }}</b><span>Artículos publicados</span></div>
-  <div class="stat-card"><b>{{ citas_pendientes }}</b><span>Citas pendientes</span></div>
-  <div class="stat-card"><b>{{ contactos_nuevos }}</b><span>Mensajes sin leer</span></div>
-</div>
+  <section class="ix-hero">
+    <div>
+      <span class="ix-hero-eyebrow">
+        <svg class="ix-ico"><use href="#i-clock"></use></svg>{{ fecha_larga }}
+      </span>
+      <h1>{{ saludo }}, {{ (usuario.nombre or 'equipo').split(' ')[0] }}</h1>
+      <p>
+        Este es el pulso de Derechos On hoy:
+        <b>{{ citas_pendientes }}</b> citas por confirmar,
+        <b>{{ contactos_nuevos }}</b> mensajes sin leer y
+        <b>{{ tareas_abiertas }}</b> tareas abiertas.
+      </p>
+    </div>
+    <div class="ix-hero-acciones">
+      <a class="ix-btn-ghost" href="{{ url_for('admin_proyectos') }}">
+        <svg class="ix-ico"><use href="#i-plus"></use></svg>Nuevo proyecto
+      </a>
+      <a class="ix-btn-ghost" href="{{ url_for('admin_citas') }}">
+        <svg class="ix-ico"><use href="#i-calendar"></use></svg>Ver agenda
+      </a>
+      <a class="ix-btn-ghost" href="{{ url_for('admin_respaldo') }}">
+        <svg class="ix-ico"><use href="#i-database"></use></svg>Respaldo
+      </a>
+    </div>
+  </section>
 
-{% if citas %}
-<h2 style="font-size:1.2rem;margin-bottom:16px">Próximas citas por confirmar</h2>
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr><th>Fecha</th><th>Hora</th><th>Solicitante</th><th>Abogado</th><th>Motivo</th><th></th></tr>
-    </thead>
-    <tbody>
-      {% for c in citas %}
-      <tr>
-        <td>{{ c.fecha }}</td>
-        <td>{{ c.hora }}</td>
-        <td><b>{{ c.nombre }}</b><br><small style="color:var(--muted)">{{ c.correo }}</small></td>
-        <td>{{ c.abogado_nombre or 'Sin preferencia' }}</td>
-        <td>{{ c.motivo or '—' }}</td>
-        <td>
-          <form method="post" action="{{ url_for('admin_citas_estado', cid=c.id) }}" style="display:inline-flex;gap:6px">
-            <input type="hidden" name="estado" value="Confirmada">
-            <button class="btn btn-sm btn-navy" type="submit">Confirmar</button>
-          </form>
-          <form method="post" action="{{ url_for('admin_citas_estado', cid=c.id) }}" style="display:inline-flex">
-            <input type="hidden" name="estado" value="Cancelada">
-            <button class="btn btn-sm btn-danger" type="submit">Cancelar</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
+  <div class="ix-kpis">
+    <article class="ix-kpi">
+      <div class="ix-kpi-top">
+        <span class="ix-kpi-label">Clientes registrados</span>
+        <span class="ix-kpi-ico azul"><svg class="ix-ico"><use href="#i-users"></use></svg></span>
+      </div>
+      <div class="ix-kpi-valor">
+        <b data-ix-kpi="clientes" data-ix-animar="{{ kpis.clientes.valor }}">{{ kpis.clientes.valor }}</b>
+        <span class="ix-kpi-delta {{ 'sube' if kpis.clientes.delta > 0 else ('baja' if kpis.clientes.delta < 0 else 'neutro') }}" data-ix-delta="clientes">{{ '+' if kpis.clientes.delta > 0 else '' }}{{ kpis.clientes.delta }}%</span>
+      </div>
+      <div class="ix-kpi-pie">
+        <small>{{ kpis.clientes.nota }}</small>
+        {% set max_c = (kpis.clientes.serie|max) or 1 %}
+        <span class="ix-spark" data-ix-spark="clientes">
+          {% for v in kpis.clientes.serie %}<i style="height: {{ ((v * 100 / max_c)|round|int) if v else 0 }}%" title="{{ v }}"></i>{% endfor %}
+        </span>
+      </div>
+    </article>
 
-<h2 style="font-size:1.2rem;margin-bottom:16px">Últimas actualizaciones de procesos</h2>
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr><th>Cliente</th><th>Proceso</th><th>Estado</th><th>Actualizado</th></tr>
-    </thead>
-    <tbody>
-      {% for p in ultimos %}
-      <tr>
-        <td>{{ p.cliente }}</td>
-        <td>{{ p.titulo }}</td>
-        <td><span class="badge {{ p.estado|estado_clase }}">{{ p.estado }}</span></td>
-        <td>{{ p.fecha_actualizacion[:10] }}</td>
-      </tr>
-      {% else %}
-      <tr><td colspan="4" style="color:var(--muted)">No hay procesos registrados.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+    <article class="ix-kpi">
+      <div class="ix-kpi-top">
+        <span class="ix-kpi-label">Procesos activos</span>
+        <span class="ix-kpi-ico morado"><svg class="ix-ico"><use href="#i-scale"></use></svg></span>
+      </div>
+      <div class="ix-kpi-valor">
+        <b data-ix-kpi="procesos" data-ix-animar="{{ kpis.procesos.valor }}">{{ kpis.procesos.valor }}</b>
+        <span class="ix-kpi-delta {{ 'sube' if kpis.procesos.delta > 0 else ('baja' if kpis.procesos.delta < 0 else 'neutro') }}" data-ix-delta="procesos">{{ '+' if kpis.procesos.delta > 0 else '' }}{{ kpis.procesos.delta }}%</span>
+      </div>
+      <div class="ix-kpi-pie">
+        <small>{{ kpis.procesos.nota }}</small>
+        {% set max_p = (kpis.procesos.serie|max) or 1 %}
+        <span class="ix-spark" data-ix-spark="procesos">
+          {% for v in kpis.procesos.serie %}<i style="height: {{ ((v * 100 / max_p)|round|int) if v else 0 }}%" title="{{ v }}"></i>{% endfor %}
+        </span>
+      </div>
+    </article>
 
-<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:28px">
-  <a class="btn btn-navy" href="{{ url_for('admin_procesos') }}">Gestionar procesos</a>
-  <a class="btn btn-outline" href="{{ url_for('admin_expedientes') }}">Expedientes</a>
-  <a class="btn btn-outline" href="{{ url_for('admin_abogados') }}">Abogados</a>
-  <a class="btn btn-outline" href="{{ url_for('admin_noticias') }}">Publicar artículo</a>
-  <a class="btn btn-outline" href="{{ url_for('admin_clientes') }}">Ver clientes</a>
+    <article class="ix-kpi">
+      <div class="ix-kpi-top">
+        <span class="ix-kpi-label">Proyectos en curso</span>
+        <span class="ix-kpi-ico verde"><svg class="ix-ico"><use href="#i-check"></use></svg></span>
+      </div>
+      <div class="ix-kpi-valor">
+        <b data-ix-kpi="proyectos" data-ix-animar="{{ kpis.proyectos.valor }}">{{ kpis.proyectos.valor }}</b>
+        <span class="ix-kpi-delta {{ 'sube' if kpis.proyectos.delta > 0 else ('baja' if kpis.proyectos.delta < 0 else 'neutro') }}" data-ix-delta="proyectos">{{ '+' if kpis.proyectos.delta > 0 else '' }}{{ kpis.proyectos.delta }}%</span>
+      </div>
+      <div class="ix-kpi-pie">
+        <small>{{ kpis.proyectos.nota }}</small>
+        {% set max_pr = (kpis.proyectos.serie|max) or 1 %}
+        <span class="ix-spark" data-ix-spark="proyectos">
+          {% for v in kpis.proyectos.serie %}<i style="height: {{ ((v * 100 / max_pr)|round|int) if v else 0 }}%" title="{{ v }}"></i>{% endfor %}
+        </span>
+      </div>
+    </article>
+
+    <article class="ix-kpi">
+      <div class="ix-kpi-top">
+        <span class="ix-kpi-label">Tareas abiertas</span>
+        <span class="ix-kpi-ico naranja"><svg class="ix-ico"><use href="#i-alert"></use></svg></span>
+      </div>
+      <div class="ix-kpi-valor">
+        <b data-ix-kpi="tareas" data-ix-animar="{{ kpis.tareas.valor }}">{{ kpis.tareas.valor }}</b>
+        <span class="ix-kpi-delta {{ 'sube' if kpis.tareas.delta > 0 else ('baja' if kpis.tareas.delta < 0 else 'neutro') }}" data-ix-delta="tareas">{{ '+' if kpis.tareas.delta > 0 else '' }}{{ kpis.tareas.delta }}%</span>
+      </div>
+      <div class="ix-kpi-pie">
+        <small>{{ kpis.tareas.nota }}</small>
+        {% set max_t = (kpis.tareas.serie|max) or 1 %}
+        <span class="ix-spark" data-ix-spark="tareas">
+          {% for v in kpis.tareas.serie %}<i style="height: {{ ((v * 100 / max_t)|round|int) if v else 0 }}%" title="{{ v }}"></i>{% endfor %}
+        </span>
+      </div>
+    </article>
+  </div>
+
+  {% if not clientes and not procesos and not noticias and not proyectos_activos %}
+  <section class="ix-card ix-onboarding" style="margin-bottom:16px">
+    <div class="ix-card-head">
+      <div class="ix-card-title">
+        <svg class="ix-ico"><use href="#i-star"></use></svg>
+        <div><h2>Pon en marcha tu intranet</h2><small>Cuatro pasos para dejar el despacho listo</small></div>
+      </div>
+    </div>
+    <div class="ix-card-body">
+      <p style="color:var(--ix-muted);font-size:.85rem;margin-bottom:12px">
+        La plataforma está lista y sin datos todavía. Empieza por aquí y el resumen se irá llenando solo.
+      </p>
+      <div class="ix-quick">
+        <a href="{{ url_for('admin_proyectos') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-check"></use></svg></span>Crear el primer proyecto</a>
+        <a href="{{ url_for('admin_clientes') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-users"></use></svg></span>Registrar un cliente</a>
+        <a href="{{ url_for('admin_noticias') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-file"></use></svg></span>Publicar un artículo</a>
+        <a href="{{ url_for('admin_respaldo') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-database"></use></svg></span>Programar un respaldo</a>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="ix-grid">
+    <div class="ix-col">
+
+      <section class="ix-card">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-clock"></use></svg>
+            <div><h2>Tu día</h2><small>Citas y entregas de los próximos 7 días</small></div>
+          </div>
+          <a class="ix-card-link" href="{{ url_for('admin_citas') }}">Ver agenda <svg class="ix-ico"><use href="#i-arrow"></use></svg></a>
+        </div>
+        <div class="ix-card-body">
+          {% if agenda %}
+          <div class="ix-agenda">
+            {% for a in agenda %}
+            <a class="ix-agenda-item" href="{{ a.url }}">
+              <span class="ix-agenda-hora {{ 'todo' if not a.hora }}">
+                {% if a.fecha|length >= 10 %}
+                  {% if a.hora %}
+                  <b>{{ a.hora }}</b><small>{{ a.fecha[8:10] }}/{{ a.fecha[5:7] }}</small>
+                  {% else %}
+                  <b>{{ a.fecha[8:10] }}/{{ a.fecha[5:7] }}</b><small>tarea</small>
+                  {% endif %}
+                {% else %}
+                  <b>—</b><small>sin fecha</small>
+                {% endif %}
+              </span>
+              <span class="ix-agenda-txt">
+                <b>{{ a.titulo }}</b>
+                <small><svg class="ix-ico"><use href="#i-{{ a.icono }}"></use></svg>{{ a.detalle }}</small>
+              </span>
+              <span class="ix-agenda-estado {{ a.clase }}">{{ a.estado }}</span>
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="ix-agenda-vacia">
+            <svg class="ix-ico"><use href="#i-calendar"></use></svg>
+            No hay citas ni tareas próximas. Buen momento para adelantar trabajo.
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="ix-card">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-check"></use></svg>
+            <div><h2>Proyectos en curso</h2><small>Avance por tareas completadas</small></div>
+          </div>
+          <a class="ix-card-link" href="{{ url_for('admin_proyectos') }}">Ver todos <svg class="ix-ico"><use href="#i-arrow"></use></svg></a>
+        </div>
+        <div class="ix-card-body">
+          {% if proyectos_curso %}
+          <div class="ix-proyectos">
+            {% for p in proyectos_curso %}
+            <div class="ix-proyecto">
+              <div class="ix-proyecto-nombre">
+                <i style="background: {{ colores.get(p.color, '#2f80ff') }}"></i>
+                <b><a href="{{ url_for('admin_proyecto', pid=p.id) }}">{{ p.nombre }}</a></b>
+              </div>
+              <span class="ix-proyecto-pct">{{ p.avance }}%</span>
+              <div class="ix-progreso"><i style="width: {{ p.avance }}%"></i></div>
+              <div class="ix-proyecto-meta">
+                <span><svg class="ix-ico"><use href="#i-check"></use></svg>{{ p.hechas }}/{{ p.total }} tareas</span>
+                <span><svg class="ix-ico"><use href="#i-users"></use></svg>{{ p.miembros_n }} personas</span>
+                {% if p.fecha_fin %}<span><svg class="ix-ico"><use href="#i-calendar"></use></svg>{{ p.fecha_fin }}</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="ix-agenda-vacia">
+            <svg class="ix-ico"><use href="#i-check"></use></svg>
+            Todavía no hay proyectos activos.
+            <a href="{{ url_for('admin_proyectos') }}">Crear el primero</a>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="ix-card">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-calendar"></use></svg>
+            <div><h2>Citas por confirmar</h2><small>Solicitudes pendientes de respuesta</small></div>
+          </div>
+          <a class="ix-card-link" href="{{ url_for('admin_citas') }}">Gestionar citas <svg class="ix-ico"><use href="#i-arrow"></use></svg></a>
+        </div>
+        {% if citas %}
+        <div class="table-wrap" style="border:0;border-radius:0;box-shadow:none;border-top:1px solid var(--ix-line)">
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Solicitante</th><th>Abogado</th><th>Motivo</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for c in citas %}
+              <tr>
+                <td><b>{{ c.fecha[8:10] }}/{{ c.fecha[5:7] }}</b><br><small style="color:var(--ix-muted)">{{ c.hora }}</small></td>
+                <td><b>{{ c.nombre }}</b><br><small style="color:var(--ix-muted)">{{ c.correo }}</small></td>
+                <td>{{ c.abogado_nombre or 'Sin preferencia' }}</td>
+                <td>{{ c.motivo or '—' }}</td>
+                <td>
+                  <div class="acciones">
+                    <form method="post" action="{{ url_for('admin_citas_estado', cid=c.id) }}">
+                      <input type="hidden" name="estado" value="Confirmada">
+                      <button class="btn btn-sm btn-navy" type="submit">Confirmar</button>
+                    </form>
+                    <form method="post" action="{{ url_for('admin_citas_estado', cid=c.id) }}">
+                      <input type="hidden" name="estado" value="Cancelada">
+                      <button class="btn btn-sm btn-danger" type="submit">Cancelar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="ix-card-pad">
+          <div class="ix-agenda-vacia">
+            <svg class="ix-ico"><use href="#i-calendar"></use></svg>
+            No hay citas pendientes de confirmación.
+          </div>
+        </div>
+        {% endif %}
+      </section>
+
+    </div>
+
+    <div class="ix-col">
+
+      <section class="ix-card">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-grid"></use></svg>
+            <div><h2>Accesos rápidos</h2><small>A lo que más usas, en un clic</small></div>
+          </div>
+        </div>
+        <div class="ix-card-body">
+          <div class="ix-quick">
+            <a href="{{ url_for('admin_procesos') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-scale"></use></svg></span>Procesos</a>
+            <a href="{{ url_for('admin_proyectos') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-check"></use></svg></span>Proyectos</a>
+            <a href="{{ url_for('admin_clientes') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-users"></use></svg></span>Clientes</a>
+            <a href="{{ url_for('admin_citas') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-calendar"></use></svg></span>Citas</a>
+            <a href="{{ url_for('admin_contactos') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-mail"></use></svg></span>Mensajes</a>
+            <a href="{{ url_for('admin_reportes') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-chart"></use></svg></span>Reportes</a>
+            <a href="{{ url_for('admin_noticias') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-file"></use></svg></span>Artículos</a>
+            <a href="{{ url_for('admin_respaldo') }}"><span class="ix-q-ico"><svg class="ix-ico"><use href="#i-database"></use></svg></span>Respaldo</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="ix-card">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-mail"></use></svg>
+            <div><h2>Mensajes sin leer</h2><small>Formularios de contacto del sitio</small></div>
+          </div>
+          <a class="ix-card-link" href="{{ url_for('admin_contactos') }}">Ver todos <svg class="ix-ico"><use href="#i-arrow"></use></svg></a>
+        </div>
+        <div class="ix-card-body">
+          {% if mensajes %}
+          <div class="ix-msgs">
+            {% for m in mensajes %}
+            <a class="ix-msg" href="{{ url_for('admin_contactos') }}">
+              <span class="ix-msg-avatar">{{ m.inicial }}</span>
+              <span class="ix-msg-txt">
+                <b>{{ m.nombre }}</b>
+                <small>{{ m.asunto or 'Formulario de contacto' }}</small>
+                <time>{{ m.hace }}</time>
+              </span>
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="ix-agenda-vacia">
+            <svg class="ix-ico"><use href="#i-mail"></use></svg>
+            Todo al día: no hay mensajes sin leer.
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="ix-card">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-chart"></use></svg>
+            <div><h2>Actividad reciente</h2><small>Lo último que pasó en la plataforma</small></div>
+          </div>
+        </div>
+        <div class="ix-card-body">
+          {% if actividad %}
+          <div class="ix-timeline">
+            {% for a in actividad %}
+            <a class="ix-act" href="{{ a.url }}">
+              <span class="ix-act-ico {{ a.color }}"><svg class="ix-ico"><use href="#i-{{ a.icono }}"></use></svg></span>
+              <span class="ix-act-txt">
+                <b>{{ a.titulo }}</b>
+                <small>{{ a.detalle }}</small>
+                <time>{{ a.hace }}</time>
+              </span>
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="ix-agenda-vacia">
+            <svg class="ix-ico"><use href="#i-chart"></use></svg>
+            Aún no hay actividad registrada.
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="ix-card">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-chart"></use></svg>
+            <div><h2>Visitas al sitio</h2><small>Últimos 14 días · se actualiza solo</small></div>
+          </div>
+        </div>
+        <div class="ix-card-body">
+          <div class="ix-chart">
+            {% for d in visitas_dias %}
+            <div class="ix-chart-col {{ 'hoy' if d.hoy }}" title="{{ d.fecha }} · {{ d.n }} visitas">
+              <div class="ix-chart-bar" style="height: {{ d.alto }}%"></div>
+              <span class="ix-chart-dia">{{ d.dia }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="ix-chart-pie">
+            <span><b>{{ visitas_total }}</b> visitas en 14 días</span>
+            <span><b>{{ visitas_hoy }}</b> hoy</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="ix-card">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-briefcase"></use></svg>
+            <div><h2>Estado del despacho</h2><small>Números generales</small></div>
+          </div>
+        </div>
+        <div class="ix-card-body">
+          <div class="ix-stats">
+            <div class="ix-stat"><b>{{ abogados }}</b><span>Abogados activos</span></div>
+            <div class="ix-stat"><b>{{ expedientes }}</b><span>Expedientes</span></div>
+            <div class="ix-stat"><b>{{ noticias }}</b><span>Artículos publicados</span></div>
+            <div class="ix-stat"><b>{{ visitas_hoy }}</b><span>Visitas hoy</span></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <section class="ix-card" style="margin-top:16px">
+    <div class="ix-card-head">
+      <div class="ix-card-title">
+        <svg class="ix-ico"><use href="#i-scale"></use></svg>
+        <div><h2>Procesos actualizados</h2><small>Últimos movimientos de expedientes</small></div>
+      </div>
+      <a class="ix-card-link" href="{{ url_for('admin_procesos') }}">Gestionar procesos <svg class="ix-ico"><use href="#i-arrow"></use></svg></a>
+    </div>
+    {% if ultimos %}
+    <div class="table-wrap" style="border:0;border-radius:0;box-shadow:none;border-top:1px solid var(--ix-line)">
+      <table>
+        <thead><tr><th>Cliente</th><th>Proceso</th><th>Estado</th><th>Actualizado</th></tr></thead>
+        <tbody>
+          {% for p in ultimos %}
+          <tr>
+            <td>{{ p.cliente }}</td>
+            <td><b>{{ p.titulo }}</b></td>
+            <td><span class="badge {{ p.estado|estado_clase }}">{{ p.estado }}</span></td>
+            <td>{{ p.fecha_actualizacion[:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="ix-card-pad">
+      <div class="ix-agenda-vacia">
+        <svg class="ix-ico"><use href="#i-scale"></use></svg>
+        No hay procesos registrados todavía.
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <p style="margin-top:16px;text-align:right;color:var(--ix-muted);font-size:.72rem">
+    Actualizado a las <b data-ix-actualizado>{{ actualizado }}</b> · se refresca cada 60 segundos
+  </p>
+
 </div>
 {% endblock %}

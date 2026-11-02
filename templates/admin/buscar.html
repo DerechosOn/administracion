@@ -1,0 +1,81 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Búsqueda — Intranet Derechos On{% endblock %}
+{% block contenido %}
+{% set meta = {
+  'clientes': ('Clientes', 'users'),
+  'procesos': ('Procesos', 'scale'),
+  'proyectos': ('Proyectos', 'check'),
+  'tareas': ('Tareas', 'check'),
+  'citas': ('Citas', 'calendar'),
+  'mensajes': ('Mensajes', 'mail'),
+  'articulos': ('Artículos', 'file')
+} %}
+
+<div class="ix-busqueda-head">
+  <h1>Búsqueda global</h1>
+  <p class="sub">Encuentra clientes, procesos, proyectos, tareas, citas, mensajes y artículos en un solo lugar.</p>
+</div>
+
+<form class="ix-busqueda-form" action="{{ url_for('admin_buscar') }}" method="get" role="search">
+  <input type="search" name="q" value="{{ q }}" placeholder="Escribe un nombre, correo, título o asunto…" autofocus autocomplete="off" aria-label="Término de búsqueda">
+  <button class="ix-btn ix-btn-primary" type="submit">
+    <svg class="ix-ico"><use href="#i-search"></use></svg>Buscar
+  </button>
+</form>
+
+{% if q %}
+  <p class="sub" style="margin-bottom:18px">
+    {% if total %}
+      <b>{{ total }}</b> resultado{{ '' if total == 1 else 's' }} para «{{ q }}».
+    {% else %}
+      No se encontraron resultados para «{{ q }}».
+    {% endif %}
+  </p>
+
+  {% if total %}
+  <div class="ix-resultados">
+    {% for clave, items in resultados.items() %}
+      {% if items %}
+      <section class="ix-card ix-res-grupo">
+        <div class="ix-card-head">
+          <div class="ix-card-title">
+            <svg class="ix-ico"><use href="#i-{{ meta[clave][1] if clave in meta else 'file' }}"></use></svg>
+            <div>
+              <h2>{{ meta[clave][0] if clave in meta else clave|capitalize }}</h2>
+              <small>{{ items|length }} coincidencia{{ '' if items|length == 1 else 's' }}</small>
+            </div>
+          </div>
+        </div>
+        <div class="ix-res-lista">
+          {% for r in items %}
+          <a class="ix-res-item" href="{{ r.url }}">
+            <span class="ix-res-ico"><svg class="ix-ico"><use href="#i-{{ r.icono }}"></use></svg></span>
+            <span class="ix-res-txt">
+              <b>{{ r.titulo }}</b>
+              <small>{{ r.detalle or r.etiqueta }}</small>
+            </span>
+            <svg class="ix-ico"><use href="#i-arrow"></use></svg>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ix-card">
+    <div class="ix-vacio">
+      <svg class="ix-ico"><use href="#i-search"></use></svg>
+      Prueba con otro término o revisa la ortografía. También puedes buscar por correo o número de documento.
+    </div>
+  </div>
+  {% endif %}
+{% else %}
+  <div class="ix-card">
+    <div class="ix-vacio">
+      <svg class="ix-ico"><use href="#i-search"></use></svg>
+      Escribe algo para empezar. Atajo: pulsa <b>/</b> en cualquier página de la intranet.
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

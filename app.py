@@ -477,9 +477,400 @@ def _dias_disponibles(limite=6, abogado_id=None):
     return dias
 
 
+# ---------------------------------------------------------------- intranet
+_MESES_ES = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+             "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+_DIAS_ES = ("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado",
+            "Domingo")
+_DIAS_CORTOS = ("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+
+# Endpoint (o prefijo) → grupo y título que se muestran en la barra superior.
+_SECCIONES_NAV = (
+    (("admin_panel",), "Principal", "Panel de análisis"),
+    (("admin_reportes",), "Principal", "Reportes"),
+    (("admin_procesos",), "Operación", "Procesos"),
+    (("admin_actuaciones",), "Operación", "Actuaciones"),
+    (("admin_expedientes",), "Operación", "Expedientes"),
+    (("admin_proyecto",), "Operación", "Proyectos"),
+    (("admin_citas",), "Operación", "Citas"),
+    (("admin_contactos",), "Operación", "Mensajes"),
+    (("admin_clientes",), "Clientes", "Directorio"),
+    (("admin_cartera", "admin_tarifario", "admin_area_"), "Clientes", "Cartera"),
+    (("admin_formas_pago",), "Clientes", "Formas de pago"),
+    (("admin_agente",), "Clientes", "Agente comercial"),
+    (("admin_abogados",), "Equipo", "Abogados"),
+    (("admin_testimonios",), "Equipo", "Testimonios"),
+    (("admin_noticias",), "Contenido y web", "Artículos"),
+    (("admin_areas",), "Contenido y web", "Áreas de atención"),
+    (("admin_contenido",), "Contenido y web", "Contenido"),
+    (("admin_secciones",), "Contenido y web", "Secciones"),
+    (("admin_slides",), "Contenido y web", "Flyers portada"),
+    (("admin_marketing",), "Contenido y web", "Marketing digital"),
+    (("admin_redes",), "Contenido y web", "Redes"),
+    (("admin_contrato",), "Contenido y web", "Contrato"),
+    (("admin_notificaciones",), "Sistema", "Notificaciones"),
+    (("admin_respaldo",), "Sistema", "Respaldo"),
+    (("admin_cuenta",), "Sistema", "Mi cuenta"),
+    (("admin_buscar",), "Sistema", "Búsqueda"),
+)
+
+
+def _nav_actual(endpoint):
+    if not endpoint or endpoint == "panel_admin":
+        return {"grupo": "Principal", "titulo": "Resumen"}
+    for prefijos, grupo, titulo in _SECCIONES_NAV:
+        if any(endpoint.startswith(p) for p in prefijos):
+            return {"grupo": grupo, "titulo": titulo}
+    return {"grupo": "Panel", "titulo": "Administración"}
+
+
+def _int(sql, params=()):
+    """Cuenta filas sin romper la página si la consulta falla."""
+    try:
+        filas = db.consultar(sql, params)
+        return int(filas[0]["n"] or 0) if filas else 0
+    except Exception:
+        return 0
+
+
+def _contadores_intranet():
+    """Números que se muestran como insignias en el menú y la campana."""
+    hoy = date.today().isoformat()
+    return {
+        "citas": _int("SELECT COUNT(*) n FROM citas WHERE estado = 'Pendiente'"),
+        "mensajes": _int("SELECT COUNT(*) n FROM contactos WHERE leido = 0"),
+        "proyectos": _int("SELECT COUNT(*) n FROM proyectos WHERE estado = 'activo'"),
+        "tareas": _int(
+            "SELECT COUNT(*) n FROM proyecto_tareas WHERE estado != 'completada' "
+            "AND fecha_vencimiento IS NOT NULL AND substr(fecha_vencimiento,1,10) < ?",
+            (hoy,)),
+    }
+
+
+def _comparar_periodo(tabla, campo, where=""):
+    """(nuevos en 30 días, variación % frente a los 30 días anteriores)."""
+    hoy = date.today()
+    desde = (hoy - timedelta(days=29)).isoformat()
+    previo_desde = (hoy - timedelta(days=59)).isoformat()
+    actual = _int(
+        "SELECT COUNT(*) n FROM %s WHERE substr(%s,1,10) >= ? %s"
+        % (tabla, campo, where),
+        (desde,))
+    previo = _int(
+        "SELECT COUNT(*) n FROM %s WHERE substr(%s,1,10) >= ? "
+        "AND substr(%s,1,10) < ? %s" % (tabla, campo, campo, where),
+        (previo_desde, desde))
+    if previo == 0:
+        pct = 100 if actual > 0 else 0
+    else:
+        pct = int(round((actual - previo) * 100.0 / previo))
+    return actual, pct
+
+
+def _serie_dias(tabla, campo, dias=14, where=""):
+    """Conteo por día de los últimos `dias`, del más antiguo al de hoy."""
+    hoy = date.today()
+    desde = (hoy - timedelta(days=dias - 1)).isoformat()
+    try:
+        filas = db.consultar(
+            "SELECT substr(%s,1,10) d, COUNT(*) n FROM %s "
+            "WHERE substr(%s,1,10) >= ? %s GROUP BY d"
+            % (campo, tabla, campo, where), (desde,))
+        mapa = {f["d"]: f["n"] for f in filas}
+    except Exception:
+        mapa = {}
+    return [mapa.get((hoy - timedelta(days=dias - 1 - i)).isoformat(), 0)
+            for i in range(dias)]
+
+
+def _fecha_corta(valor):
+    try:
+        return datetime.strptime((valor or "")[:10], "%Y-%m-%d").strftime("%d/%m")
+    except (ValueError, TypeError):
+        return ""
+
+
+def _hace(valor):
+    try:
+        dia = datetime.strptime((valor or "")[:10], "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return ""
+    diferencia = (date.today() - dia).days
+    if diferencia <= 0:
+        return "Hoy"
+    if diferencia == 1:
+        return "Ayer"
+    if diferencia < 7:
+        return "Hace %d días" % diferencia
+    return dia.strftime("%d/%m/%Y")
+
+
+def _datos_intranet():
+    """Todo lo que pinta el resumen y el endpoint de actualización en vivo."""
+    hoy = date.today()
+    hoy_iso = hoy.isoformat()
+    limite_semana = (hoy + timedelta(days=7)).isoformat()
+    ahora = datetime.now()
+    saludo = ("Buenos días" if ahora.hour < 12
+              else ("Buenas tardes" if ahora.hour < 19 else "Buenas noches"))
+    fecha_larga = "%s, %d de %s de %d" % (
+        _DIAS_ES[hoy.weekday()], hoy.day, _MESES_ES[hoy.month - 1], hoy.year)
+
+    clientes = _int("SELECT COUNT(*) n FROM usuarios WHERE rol = 'cliente'")
+    procesos = _int("SELECT COUNT(*) n FROM procesos")
+    procesos_activos = _int(
+        "SELECT COUNT(*) n FROM procesos WHERE estado NOT IN "
+        "('Resuelto a favor', 'Resuelto en contra', 'Archivado')")
+    abogados = _int("SELECT COUNT(*) n FROM abogados WHERE activo = 1")
+    expedientes = _int("SELECT COUNT(*) n FROM expedientes")
+    noticias = _int("SELECT COUNT(*) n FROM noticias")
+    citas_pendientes = _int("SELECT COUNT(*) n FROM citas WHERE estado = 'Pendiente'")
+    contactos_nuevos = _int("SELECT COUNT(*) n FROM contactos WHERE leido = 0")
+    proyectos_activos = _int("SELECT COUNT(*) n FROM proyectos WHERE estado = 'activo'")
+    tareas_abiertas = _int(
+        "SELECT COUNT(*) n FROM proyecto_tareas WHERE estado != 'completada'")
+    tareas_vencidas = _int(
+        "SELECT COUNT(*) n FROM proyecto_tareas WHERE estado != 'completada' "
+        "AND fecha_vencimiento IS NOT NULL AND substr(fecha_vencimiento,1,10) < ?",
+        (hoy_iso,))
+    visitas_hoy = _int(
+        "SELECT COUNT(*) n FROM visitas WHERE substr(creado_el,1,10) = ?",
+        (hoy_iso,))
+
+    clientes_30, clientes_pct = _comparar_periodo(
+        "usuarios", "fecha_registro", "AND rol = 'cliente'")
+    procesos_30, procesos_pct = _comparar_periodo("procesos", "fecha_apertura")
+    proyectos_30, proyectos_pct = _comparar_periodo("proyectos", "creado_el")
+    tareas_30, tareas_pct = _comparar_periodo("proyecto_tareas", "creado_el")
+
+    serie_clientes = _serie_dias("usuarios", "fecha_registro",
+                                 where="AND rol = 'cliente'")
+    serie_procesos = _serie_dias("procesos", "fecha_apertura")
+    serie_proyectos = _serie_dias("proyectos", "creado_el")
+    serie_tareas = _serie_dias("proyecto_tareas", "creado_el")
+    serie_visitas = _serie_dias("visitas", "creado_el")
+
+    max_visitas = max(serie_visitas) or 1
+    visitas_dias = []
+    for indice, valor in enumerate(serie_visitas):
+        dia = hoy - timedelta(days=13 - indice)
+        visitas_dias.append({
+            "fecha": dia.isoformat(),
+            "dia": _DIAS_CORTOS[dia.weekday()],
+            "n": valor,
+            "alto": max(4, int(round(valor * 100.0 / max_visitas))),
+            "hoy": indice == 13,
+        })
+
+    kpis = {
+        "clientes": {"valor": clientes, "delta": clientes_pct,
+                     "serie": serie_clientes,
+                     "nota": "%d nuevos en 30 días" % clientes_30},
+        "procesos": {"valor": procesos_activos, "delta": procesos_pct,
+                     "serie": serie_procesos,
+                     "nota": "%d abiertos en 30 días" % procesos_30},
+        "proyectos": {"valor": proyectos_activos, "delta": proyectos_pct,
+                      "serie": serie_proyectos,
+                      "nota": "%d creados en 30 días" % proyectos_30},
+        "tareas": {"valor": tareas_abiertas, "delta": tareas_pct,
+                   "serie": serie_tareas,
+                   "nota": "%d vencidas · %d nuevas" % (tareas_vencidas, tareas_30)},
+    }
+
+    # ------------------------------------------------------------ tu día
+    agenda = []
+    citas_semana = []
+    try:
+        citas_semana = db.consultar(
+            "SELECT c.*, a.nombre AS abogado_nombre FROM citas c "
+            "LEFT JOIN abogados a ON a.id = c.abogado_id "
+            "WHERE c.fecha >= ? AND c.fecha <= ? "
+            "AND c.estado IN ('Pendiente', 'Confirmada') "
+            "ORDER BY c.fecha ASC, c.hora ASC LIMIT 12",
+            (hoy_iso, limite_semana))
+    except Exception:
+        citas_semana = []
+    for c in citas_semana:
+        agenda.append({
+            "tipo": "cita", "icono": "calendar",
+            "titulo": c.get("nombre") or "Cita",
+            "detalle": (c.get("motivo") or "Cita con cliente"),
+            "fecha": c.get("fecha") or "", "hora": c.get("hora") or "",
+            "clase": ("confirmada" if c.get("estado") == "Confirmada" else "pendiente"),
+            "estado": c.get("estado") or "Pendiente",
+            "url": url_for("admin_citas"),
+            "vencida": (c.get("fecha") or "") < hoy_iso,
+        })
+
+    tareas_semana = []
+    try:
+        tareas_semana = db.consultar(
+            "SELECT t.*, p.nombre AS proyecto_nombre FROM proyecto_tareas t "
+            "JOIN proyectos p ON p.id = t.proyecto_id "
+            "WHERE t.estado != 'completada' AND t.fecha_vencimiento IS NOT NULL "
+            "AND substr(t.fecha_vencimiento,1,10) <= ? "
+            "ORDER BY t.fecha_vencimiento ASC LIMIT 12", (limite_semana,))
+    except Exception:
+        tareas_semana = []
+    for t in tareas_semana:
+        vencida = (t.get("fecha_vencimiento") or "")[:10] < hoy_iso
+        agenda.append({
+            "tipo": "tarea", "icono": "check",
+            "titulo": t.get("titulo") or "Tarea",
+            "detalle": t.get("proyecto_nombre") or "Proyecto",
+            "fecha": (t.get("fecha_vencimiento") or "")[:10], "hora": "",
+            "clase": "vencida" if vencida else "abierta",
+            "estado": "Vencida" if vencida else "Abierta",
+            "url": url_for("admin_proyecto_tarea", pid=t["proyecto_id"],
+                           tid=t["id"]),
+            "vencida": vencida,
+        })
+    agenda.sort(key=lambda a: ((a.get("fecha") or "9999-99-99"),
+                               (a.get("hora") or "99:99")))
+    agenda = agenda[:9]
+
+    # ------------------------------------------------- proyectos en curso
+    try:
+        todos_proyectos = proyectos_core.listar_proyectos("admin", g.usuario["id"])
+    except Exception:
+        todos_proyectos = []
+    proyectos_curso = [p for p in todos_proyectos
+                       if p.get("estado") == "activo"][:5]
+
+    # ---------------------------------------------------- actividad reciente
+    actividad = []
+    try:
+        for p in db.consultar(
+                "SELECT p.titulo, p.estado, p.fecha_actualizacion, u.nombre AS cliente "
+                "FROM procesos p JOIN usuarios u ON u.id = p.cliente_id "
+                "ORDER BY p.fecha_actualizacion DESC LIMIT 4"):
+            actividad.append({
+                "icono": "scale", "color": "azul",
+                "titulo": p["titulo"],
+                "detalle": "Proceso de %s · %s" % (p["cliente"], p["estado"]),
+                "fecha": p["fecha_actualizacion"],
+                "hace": _hace(p["fecha_actualizacion"]),
+                "url": url_for("admin_procesos"),
+            })
+    except Exception:
+        pass
+    try:
+        for p in db.consultar(
+                "SELECT id, nombre, actualizado_el FROM proyectos "
+                "ORDER BY actualizado_el DESC LIMIT 3"):
+            actividad.append({
+                "icono": "check", "color": "verde",
+                "titulo": p["nombre"], "detalle": "Proyecto actualizado",
+                "fecha": p["actualizado_el"],
+                "hace": _hace(p["actualizado_el"]),
+                "url": url_for("admin_proyecto", pid=p["id"]),
+            })
+    except Exception:
+        pass
+    try:
+        for c in db.consultar(
+                "SELECT nombre, estado, creado_el FROM citas "
+                "ORDER BY creado_el DESC LIMIT 3"):
+            actividad.append({
+                "icono": "calendar", "color": "morado",
+                "titulo": "Cita de %s" % c["nombre"],
+                "detalle": "Estado: %s" % c["estado"],
+                "fecha": c["creado_el"], "hace": _hace(c["creado_el"]),
+                "url": url_for("admin_citas"),
+            })
+    except Exception:
+        pass
+    try:
+        for m in db.consultar(
+                "SELECT nombre, asunto, creado_el FROM contactos "
+                "ORDER BY creado_el DESC LIMIT 3"):
+            actividad.append({
+                "icono": "mail", "color": "naranja",
+                "titulo": "Mensaje de %s" % m["nombre"],
+                "detalle": m["asunto"] or "Formulario de contacto",
+                "fecha": m["creado_el"], "hace": _hace(m["creado_el"]),
+                "url": url_for("admin_contactos"),
+            })
+    except Exception:
+        pass
+    try:
+        for n in db.consultar(
+                "SELECT id, titulo, creado_el FROM noticias "
+                "ORDER BY creado_el DESC LIMIT 2"):
+            actividad.append({
+                "icono": "file", "color": "azul",
+                "titulo": n["titulo"], "detalle": "Artículo publicado",
+                "fecha": n["creado_el"], "hace": _hace(n["creado_el"]),
+                "url": url_for("admin_noticias"),
+            })
+    except Exception:
+        pass
+    actividad.sort(key=lambda a: a.get("fecha") or "", reverse=True)
+    actividad = actividad[:8]
+
+    # ------------------------------------------------------- mensajes
+    mensajes = []
+    try:
+        mensajes = db.consultar(
+            "SELECT * FROM contactos WHERE leido = 0 "
+            "ORDER BY creado_el DESC LIMIT 4")
+    except Exception:
+        mensajes = []
+    for m in mensajes:
+        m["inicial"] = (m.get("nombre") or "?")[:1].upper()
+        m["hace"] = _hace(m.get("creado_el"))
+
+    citas = db.consultar(
+        "SELECT c.*, a.nombre AS abogado_nombre FROM citas c "
+        "LEFT JOIN abogados a ON a.id = c.abogado_id "
+        "WHERE c.estado = 'Pendiente' ORDER BY c.fecha ASC, c.hora ASC LIMIT 6")
+    ultimos = db.consultar(
+        "SELECT p.*, u.nombre AS cliente FROM procesos p "
+        "JOIN usuarios u ON u.id = p.cliente_id "
+        "ORDER BY p.fecha_actualizacion DESC LIMIT 5")
+
+    return {
+        "saludo": saludo,
+        "fecha_larga": fecha_larga,
+        "hoy": hoy,
+        "kpis": kpis,
+        "clientes": clientes,
+        "procesos": procesos,
+        "procesos_activos": procesos_activos,
+        "abogados": abogados,
+        "expedientes": expedientes,
+        "noticias": noticias,
+        "citas_pendientes": citas_pendientes,
+        "contactos_nuevos": contactos_nuevos,
+        "proyectos_activos": proyectos_activos,
+        "tareas_abiertas": tareas_abiertas,
+        "tareas_vencidas": tareas_vencidas,
+        "visitas_hoy": visitas_hoy,
+        "visitas_dias": visitas_dias,
+        "visitas_total": sum(serie_visitas),
+        "agenda": agenda,
+        "proyectos_curso": proyectos_curso,
+        "actividad": actividad,
+        "mensajes": mensajes,
+        "citas": citas,
+        "ultimos": ultimos,
+        "contadores": _contadores_intranet(),
+        "actualizado": ahora.strftime("%H:%M"),
+    }
+
+
 @app.context_processor
 def inyectar_contexto():
-    return {"now": datetime.now(), "C": db.contenido_todos()}
+    contexto = {"now": datetime.now(), "C": db.contenido_todos()}
+    try:
+        usuario = getattr(g, "usuario", None)
+        if request.path.startswith("/admin") and usuario and usuario.get("rol") == "admin":
+            contexto["ix_contadores"] = _contadores_intranet()
+            contexto["ix_nav"] = _nav_actual(request.endpoint)
+            contexto["ix_usuario"] = usuario
+    except Exception:
+        pass
+    return contexto
 
 
 def _formato_cop(valor):
@@ -1864,31 +2255,107 @@ def panel_redirect():
 @app.route("/admin")
 @requiere_admin
 def panel_admin():
-    cliente = db.consultar(
-        "SELECT COUNT(*) AS n FROM usuarios WHERE rol = 'cliente'")[0]["n"]
-    procesos = db.consultar("SELECT COUNT(*) AS n FROM procesos")[0]["n"]
-    noticias = db.consultar("SELECT COUNT(*) AS n FROM noticias")[0]["n"]
-    abogados = db.consultar(
-        "SELECT COUNT(*) AS n FROM abogados WHERE activo = 1")[0]["n"]
-    expedientes = db.consultar("SELECT COUNT(*) AS n FROM expedientes")[0]["n"]
-    citas_pendientes = db.consultar(
-        "SELECT COUNT(*) AS n FROM citas WHERE estado = 'Pendiente'")[0]["n"]
-    contactos_nuevos = db.consultar(
-        "SELECT COUNT(*) AS n FROM contactos WHERE leido = 0")[0]["n"]
-    citas = db.consultar(
-        "SELECT c.*, a.nombre AS abogado_nombre FROM citas c "
-        "LEFT JOIN abogados a ON a.id = c.abogado_id "
-        "WHERE c.estado = 'Pendiente' ORDER BY c.fecha ASC, c.hora ASC LIMIT 6")
-    ultimos = db.consultar(
-        "SELECT p.*, u.nombre AS cliente FROM procesos p "
-        "JOIN usuarios u ON u.id = p.cliente_id "
-        "ORDER BY p.fecha_actualizacion DESC LIMIT 6")
     return render_template("admin/dashboard.html", usuario=g.usuario,
-                           cliente=cliente, procesos=procesos, noticias=noticias,
-                           abogados=abogados, expedientes=expedientes,
-                           citas_pendientes=citas_pendientes,
-                           contactos_nuevos=contactos_nuevos, citas=citas,
-                           ultimos=ultimos)
+                           **_datos_intranet())
+
+
+@app.route("/admin/api/resumen")
+@requiere_admin
+def admin_api_resumen():
+    """Datos frescos para que el resumen se actualice sin recargar."""
+    datos = _datos_intranet()
+    return jsonify({
+        "kpis": {
+            nombre: {"valor": kpi["valor"], "delta": kpi["delta"],
+                     "serie": kpi["serie"]}
+            for nombre, kpi in datos["kpis"].items()
+        },
+        "contadores": datos["contadores"],
+        "actualizado": datos["actualizado"],
+    })
+
+
+@app.route("/admin/buscar")
+@requiere_admin
+def admin_buscar():
+    """Búsqueda global en clientes, procesos, proyectos, citas y mensajes."""
+    consulta = (request.args.get("q") or "").strip()
+    resultados = {}
+    total = 0
+    if consulta:
+        like = "%" + consulta + "%"
+        consultas = {
+            "clientes": (
+                "SELECT id, nombre, email, telefono FROM usuarios "
+                "WHERE rol = 'cliente' AND (nombre LIKE ? OR email LIKE ? "
+                "OR documento LIKE ?) ORDER BY nombre LIMIT 10",
+                (like, like, like), "users", "Cliente",
+                lambda f: f.get("email") or f.get("telefono") or "",
+                lambda f: url_for("admin_clientes")),
+            "procesos": (
+                "SELECT p.id, p.titulo, p.estado, u.nombre AS cliente "
+                "FROM procesos p JOIN usuarios u ON u.id = p.cliente_id "
+                "WHERE p.titulo LIKE ? OR p.descripcion LIKE ? OR u.nombre LIKE ? "
+                "ORDER BY p.fecha_actualizacion DESC LIMIT 10",
+                (like, like, like), "scale", "Proceso",
+                lambda f: "%s · %s" % (f.get("cliente") or "", f.get("estado") or ""),
+                lambda f: url_for("admin_procesos")),
+            "proyectos": (
+                "SELECT id, nombre, estado FROM proyectos "
+                "WHERE nombre LIKE ? OR descripcion LIKE ? "
+                "ORDER BY actualizado_el DESC LIMIT 10",
+                (like, like), "check", "Proyecto",
+                lambda f: "Estado: %s" % (f.get("estado") or ""),
+                lambda f: url_for("admin_proyecto", pid=f["id"])),
+            "tareas": (
+                "SELECT t.id, t.titulo, t.estado, t.proyecto_id, p.nombre AS proyecto "
+                "FROM proyecto_tareas t JOIN proyectos p ON p.id = t.proyecto_id "
+                "WHERE t.titulo LIKE ? OR t.descripcion LIKE ? "
+                "ORDER BY t.actualizado_el DESC LIMIT 10",
+                (like, like), "check", "Tarea",
+                lambda f: "%s · %s" % (f.get("proyecto") or "", f.get("estado") or ""),
+                lambda f: url_for("admin_proyecto_tarea", pid=f["proyecto_id"],
+                                  tid=f["id"])),
+            "citas": (
+                "SELECT id, nombre, correo, fecha, hora, estado FROM citas "
+                "WHERE nombre LIKE ? OR correo LIKE ? OR motivo LIKE ? "
+                "ORDER BY fecha DESC LIMIT 10",
+                (like, like, like), "calendar", "Cita",
+                lambda f: "%s %s · %s" % (f.get("fecha") or "", f.get("hora") or "",
+                                          f.get("estado") or ""),
+                lambda f: url_for("admin_citas")),
+            "mensajes": (
+                "SELECT id, nombre, correo, asunto, creado_el FROM contactos "
+                "WHERE nombre LIKE ? OR correo LIKE ? OR asunto LIKE ? "
+                "OR mensaje LIKE ? ORDER BY creado_el DESC LIMIT 10",
+                (like, like, like, like), "mail", "Mensaje",
+                lambda f: "%s · %s" % (f.get("asunto") or "Contacto",
+                                       f.get("correo") or ""),
+                lambda f: url_for("admin_contactos")),
+            "articulos": (
+                "SELECT id, titulo, etiqueta, creado_el FROM noticias "
+                "WHERE titulo LIKE ? OR resumen LIKE ? OR contenido LIKE ? "
+                "ORDER BY creado_el DESC LIMIT 10",
+                (like, like, like), "file", "Artículo",
+                lambda f: "%s · %s" % (f.get("etiqueta") or "Artículo",
+                                       (f.get("creado_el") or "")[:10]),
+                lambda f: url_for("admin_noticias")),
+        }
+        for clave, (sql, params, icono, etiqueta, detalle, enlace) in consultas.items():
+            try:
+                filas = db.consultar(sql, params)
+            except Exception:
+                filas = []
+            resultados[clave] = [{
+                "titulo": (f.get("nombre") or f.get("titulo") or "Sin título"),
+                "detalle": detalle(f),
+                "url": enlace(f),
+                "icono": icono,
+                "etiqueta": etiqueta,
+            } for f in filas]
+            total += len(resultados[clave])
+    return render_template("admin/buscar.html", usuario=g.usuario,
+                           q=consulta, resultados=resultados, total=total)
 
 
 # ------- noticias
