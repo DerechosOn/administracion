@@ -440,7 +440,7 @@ a.news-card { color: inherit; text-decoration: none; }
 .vacio { text-align: center; padding: 60px 20px; color: var(--muted); background: #fff; border: 1.5px dashed var(--line); border-radius: var(--radius); }
 
 /* ================= ADMIN ================= */
-.table-wrap { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.table-wrap { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
 .table-wrap table { width: 100%; border-collapse: collapse; }
 .table-wrap th { text-align: left; font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: #8a94a8; padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--blue-tint); }
 .table-wrap td { padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: .9rem; vertical-align: middle; }
