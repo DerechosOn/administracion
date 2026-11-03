@@ -18,15 +18,43 @@
 .res-t{font-weight:700}
 .link-btn{background:none;border:none;color:var(--blue-800);cursor:pointer;font-size:.82rem;padding:2px 6px;text-decoration:underline}
 .link-btn.danger{color:#b02a37}
+.editor{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.editor-barra{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:8px;background:var(--bg-soft);border-bottom:1px solid var(--line)}
+.editor-barra button{border:1px solid transparent;background:#fff;color:var(--ink);border-radius:6px;padding:5px 9px;font-size:.82rem;cursor:pointer;line-height:1.2}
+.editor-barra button:hover{border-color:var(--line);background:var(--bg)}
+.editor-sep{width:1px;height:20px;background:var(--line);margin:0 3px}
+.editor-area{min-height:300px;padding:16px 18px;outline:none;font-size:.95rem;line-height:1.65;overflow-wrap:anywhere}
+.editor-area:focus{box-shadow:inset 0 0 0 2px var(--blue-500)}
+.editor-area h3{font-size:1.12rem;margin:14px 0 8px}
+.editor-area a{color:var(--blue-700);text-decoration:underline}
+.editor-area table{width:100%;border-collapse:collapse}
+.editor-area td,.editor-area th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+.editor-pie{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 0 0}
+.contenido-legal{background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:16px 18px;overflow-wrap:anywhere}
+.contenido-legal a{color:var(--blue-700);text-decoration:underline}
+.contenido-legal table{width:100%;border-collapse:collapse}
+.contenido-legal th,.contenido-legal td{border:1px solid var(--line);padding:6px 8px;text-align:left}
 </style>
 
 <section style="max-width:960px">
   <h1>Base jurídica del IAT</h1>
-  <p class="sub">Marco normativo y jurisprudencia del <b>Incentivo al Aprovechamiento y Tratamiento de Residuos (IAT)</b> y de las organizaciones de recicladores de oficio (aprovechamiento, reconocimiento, formalización, RUOR, PGIRS). Esta base la mantiene el equipo jurídico y alimenta al agente IAT del portal de asociaciones. El <b>motor de búsqueda y actualización</b> está dedicado a este tema: mantiene al abogado al día con las normas y providencias del IAT.</p>
+  <p class="sub">Marco normativo y jurisprudencia del <b>Incentivo al Aprovechamiento y Tratamiento de Residuos (IAT)</b> y de las organizaciones de recicladores de oficio (aprovechamiento, reconocimiento, formalización, RUOR, PGIRS). Esta base alimenta al agente IAT del portal de asociaciones.</p>
+
+  {% if es_responsable %}
+  <div class="notas" style="background:#e8f4ff;border-left:3px solid var(--blue-500);padding:10px 14px;border-radius:8px">
+    <b>Eres el abogado responsable de las asociaciones de recicladores.</b> Puedes editar el marco normativo, la jurisprudencia y el reconocimiento. Los cambios se publican de inmediato y alimentan al agente IAT. Usa el botón <b>Enlace</b> para que cada norma o providencia tenga su acceso directo.
+  </div>
+  {% else %}
+  <div class="notas aviso">
+    <b>Consulta libre.</b> Esta base la administra {% if responsable %}<b>{{ responsable.nombre }}</b>{% else %}el abogado asignado a las asociaciones{% endif %}. Puedes buscar y leer todo el contenido, pero no modificarlo.
+  </div>
+  {% endif %}
 
   <div class="motor-grid">
     <div class="motor-card"><span class="sub">Catálogo IAT total</span><div class="kpi">{{ motor_resumen.total }}</div></div>
+    {% if es_responsable %}
     <div class="motor-card"><span class="sub">Pendientes por revisar</span><div class="kpi">{{ motor_resumen.pendientes }}</div></div>
+    {% endif %}
     <div class="motor-card"><span class="sub">Normas IAT aprobadas</span><div class="kpi">{{ motor_resumen.aprobadas }}</div></div>
     <div class="motor-card"><span class="sub">Fuentes vigiladas</span><div class="kpi">{{ motor_resumen.fuentes }}</div></div>
   </div>
@@ -57,6 +85,7 @@
     {% endif %}
   </div>
 
+  {% if es_responsable %}
   <div class="panel-form" style="margin-top:22px">
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <h3 style="margin:0">Motor de actualización del IAT</h3>
@@ -106,15 +135,18 @@
       </form>
     </details>
   </div>
+  {% endif %}
 
   <div class="panel-form" style="margin-top:22px">
-      <h3 style="margin:0">Catálogo del motor</h3>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span class="sub" style="margin:0">{{ motor_resumen.total }} registros</span>
-        <form method="post" action="{{ url_for('abogado_base_catalogo_cargar') }}" style="margin:0">
-          <button class="btn" type="submit">Cargar catálogo desde la base jurídica</button>
-        </form>
-      </div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <h3 style="margin:0">{{ 'Catálogo del motor' if es_responsable else 'Catálogo vigente' }}</h3>
+      <span class="sub" style="margin:0">{{ motor_resumen.total }} registros</span>
+    </div>
+    {% if es_responsable %}
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+      <form method="post" action="{{ url_for('abogado_base_catalogo_cargar') }}" style="margin:0">
+        <button class="btn" type="submit">Cargar catálogo desde la base jurídica</button>
+      </form>
     </div>
 
     {% if pendientes %}
@@ -184,33 +216,192 @@
         <button class="btn btn-navy" type="submit">Añadir al catálogo</button>
       </form>
     </details>
+    {% else %}
+    {% if aprobadas %}
+    <table class="motor-tabla" style="margin-top:6px">
+      <thead><tr><th>Norma o providencia</th><th>Tipo</th><th>Fuente</th></tr></thead>
+      <tbody>
+      {% for n in aprobadas %}
+        <tr>
+          <td>{{ n.titulo }}</td>
+          <td>{{ n.categoria or n.tipo }}</td>
+          <td>{% if n.url %}<a href="{{ n.url }}" target="_blank" rel="noopener">Acceso directo ↗</a>{% else %}—{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="sub" style="margin-top:10px">El catálogo vigente aún no tiene normas cargadas. Consulta las secciones de abajo o pregunta al abogado responsable.</p>
+    {% endif %}
+    {% endif %}
   </div>
 
   {% for clave, titulo, desc in secciones %}
   <div class="panel-form" style="margin-top:22px">
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <h3 style="margin:0">{{ titulo }}</h3>
-      <span class="sub" style="margin:0">{{ C.get(clave, '')|length }} caracteres guardados</span>
+      {% if es_responsable %}<span class="sub" style="margin:0">Editor visual · sin etiquetas HTML</span>{% endif %}
     </div>
     <p class="sub">{{ desc }}</p>
-    <form method="post" action="{{ url_for('abogado_base') }}">
-      <textarea name="{{ clave }}" rows="20" spellcheck="false"
-                style="width:100%;min-height:340px;font-family:Consolas,Monaco,monospace;font-size:.85rem;line-height:1.55;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg-soft)">{{ C.get(clave, '')|e }}</textarea>
-      <div style="margin:10px 0">
+
+    {% if es_responsable %}
+    <form method="post" action="{{ url_for('abogado_base') }}" class="editor-form">
+      <div class="editor">
+        <div class="editor-barra" role="toolbar" aria-label="Formato del contenido">
+          <button type="button" data-cmd="bold" title="Negrita"><b>N</b></button>
+          <button type="button" data-cmd="italic" title="Cursiva"><i>C</i></button>
+          <button type="button" data-cmd="underline" title="Subrayado"><u>S</u></button>
+          <span class="editor-sep"></span>
+          <button type="button" data-block="h3" title="Título">Título</button>
+          <button type="button" data-block="p" title="Párrafo">Párrafo</button>
+          <span class="editor-sep"></span>
+          <button type="button" data-cmd="insertUnorderedList" title="Lista con viñetas">• Lista</button>
+          <button type="button" data-cmd="insertOrderedList" title="Lista numerada">1. Lista</button>
+          <span class="editor-sep"></span>
+          <button type="button" data-tabla title="Insertar una tabla de dos columnas">Tabla</button>
+          <button type="button" data-fila title="Añadir una fila a la tabla donde está el cursor">Añadir fila</button>
+          <span class="editor-sep"></span>
+          <button type="button" data-link title="Insertar un enlace a una norma o providencia">Enlace</button>
+          <button type="button" data-cmd="unlink" title="Quitar el enlace de la selección">Quitar enlace</button>
+          <span class="editor-sep"></span>
+          <button type="button" data-cmd="removeFormat" title="Quitar todo el formato de la selección">Limpiar formato</button>
+        </div>
+        <div class="editor-area" contenteditable="true" data-editor-area spellcheck="true">{{ C.get(clave, '')|safe }}</div>
+      </div>
+      <textarea name="{{ clave }}" hidden>{{ C.get(clave, '')|e }}</textarea>
+      <div class="editor-pie">
+        <span class="sub editor-estado" style="margin:0">Escribe o pega el texto y aplícale formato. Los enlaces se abren en una pestaña nueva.</span>
         <button class="btn btn-navy" type="submit">Guardar {{ titulo }}</button>
       </div>
     </form>
-    <details style="margin-top:2px">
-      <summary style="cursor:pointer;font-size:.88rem;color:var(--blue-800)">Ver vista previa (cómo se ve publicado)</summary>
-      <div class="notas" style="margin-top:10px;background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;padding:14px 18px">
-        {{ C.get(clave, '')|safe }}
-      </div>
-    </details>
+    {% else %}
+    <div class="contenido-legal">
+      {{ C.get(clave, '')|safe }}
+    </div>
+    {% endif %}
   </div>
   {% endfor %}
 
   <div class="notas aviso" style="margin-top:24px">
-    <b>Uso:</b> el <b>buscador</b> consulta el catálogo IAT y las secciones de esta base jurídica; el <b>motor de actualización</b> vigila las fuentes oficiales del sector y propone las novedades del tema IAT como <em>pendientes</em>; tú apruebas, descartas o reabres cada registro. Así el abogado se mantiene actualizado en el IAT sin revisar los portales a mano. El portal conserva la versión más reciente que publiques y la usa como material de referencia para el agente IAT que orienta a las asociaciones.
+    {% if es_responsable %}
+    <b>Uso:</b> el <b>buscador</b> consulta el catálogo IAT y las secciones de esta base jurídica; el <b>motor de actualización</b> vigila las fuentes oficiales del sector y propone las novedades del tema IAT como <em>pendientes</em>; tú apruebas, descartas o reabres cada registro. En los editores visuales escribe el contenido como en un procesador de texto y usa <b>Enlace</b> para dar acceso directo a cada norma o providencia. El portal conserva la versión más reciente que publiques y la usa como material de referencia para el agente IAT que orienta a las asociaciones.
+    {% else %}
+    <b>Consulta libre:</b> puedes buscar por norma, tema o providencia y abrir los enlaces oficiales del catálogo y de las secciones. La edición corresponde al abogado responsable de las asociaciones de recicladores{% if responsable %} (<b>{{ responsable.nombre }}</b>){% endif %}.
+    {% endif %}
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+{% if es_responsable %}
+<script>
+(function () {
+  document.querySelectorAll('.editor-form').forEach(function (form) {
+    var area = form.querySelector('[data-editor-area]');
+    var campo = form.querySelector('textarea[name]');
+    var estado = form.querySelector('.editor-estado');
+    if (!area || !campo) return;
+
+    function actualizarEstado() {
+      if (!estado) return;
+      var texto = (area.innerText || '').replace(/\s+/g, ' ').trim();
+      estado.textContent = texto.length + ' caracteres · ' + (texto ? 'con contenido' : 'vacío');
+    }
+
+    function prepararEnlaces() {
+      area.querySelectorAll('a[href]').forEach(function (a) {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+      });
+    }
+
+    function insertarTabla() {
+      document.execCommand('insertHTML', false,
+        '<table><thead><tr><th>Norma o providencia</th><th>Contenido</th></tr></thead>' +
+        '<tbody><tr><td>Escribe aquí</td><td>Escribe aquí</td></tr></tbody></table><p><br></p>');
+      actualizarEstado();
+    }
+
+    function agregarFila() {
+      var sel = window.getSelection();
+      var nodo = sel && sel.anchorNode;
+      var elemento = nodo && (nodo.nodeType === 1 ? nodo : nodo.parentElement);
+      var celda = elemento && elemento.closest ? elemento.closest('td,th') : null;
+      if (!celda) {
+        window.alert('Ubica el cursor dentro de una tabla para añadir una fila.');
+        return;
+      }
+      var fila = celda.parentElement;
+      var nueva = fila.cloneNode(true);
+      nueva.querySelectorAll('td,th').forEach(function (c) { c.innerHTML = '&nbsp;'; });
+      fila.parentNode.insertBefore(nueva, fila.nextSibling);
+      actualizarEstado();
+    }
+
+    function insertarEnlace() {
+      var sel = window.getSelection();
+      var url = window.prompt('Pega la dirección del enlace (debe empezar por https://):', 'https://');
+      if (!url) return;
+      url = url.trim();
+      if (!/^https?:\/\//i.test(url)) {
+        window.alert('La dirección debe empezar por http:// o https://');
+        return;
+      }
+      var haySeleccion = sel && !sel.isCollapsed && sel.anchorNode && area.contains(sel.anchorNode);
+      if (haySeleccion) {
+        document.execCommand('createLink', false, url);
+      } else {
+        var texto = window.prompt('Texto que se verá en el enlace:', url);
+        if (!texto) return;
+        var a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = texto;
+        var rango = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+        if (rango && area.contains(rango.commonAncestorContainer)) {
+          rango.deleteContents();
+          rango.insertNode(a);
+          rango.setStartAfter(a);
+          rango.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(rango);
+        } else {
+          area.appendChild(a);
+        }
+      }
+      prepararEnlaces();
+      actualizarEstado();
+    }
+
+    area.addEventListener('input', actualizarEstado);
+    actualizarEstado();
+
+    form.addEventListener('submit', function () {
+      prepararEnlaces();
+      campo.value = area.innerHTML;
+    });
+
+    form.querySelectorAll('.editor-barra button').forEach(function (btn) {
+      btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+      btn.addEventListener('click', function () {
+        area.focus();
+        if (btn.dataset.cmd) {
+          document.execCommand(btn.dataset.cmd, false, null);
+        } else if (btn.dataset.block) {
+          document.execCommand('formatBlock', false, btn.dataset.block.toUpperCase());
+        } else if (btn.hasAttribute('data-tabla')) {
+          insertarTabla();
+        } else if (btn.hasAttribute('data-fila')) {
+          agregarFila();
+        } else if (btn.hasAttribute('data-link')) {
+          insertarEnlace();
+        }
+        actualizarEstado();
+      });
+    });
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

@@ -30,6 +30,18 @@
   </div>
 </section>
 
+<section style="margin-top:26px">
+  <h3 style="font-size:1.1rem;margin-bottom:8px">Abogado de asociaciones</h3>
+  {% if abogado_asociaciones %}
+  <div class="notas" style="background:#e8f4ff;border-left:3px solid var(--blue-500);padding:12px 16px;border-radius:8px;max-width:720px">
+    <b>{{ abogado_asociaciones.nombre }}</b>{% if abogado_asociaciones.especialidad %} · {{ abogado_asociaciones.especialidad }}{% endif %}
+    <p style="margin:6px 0 0">Es el abogado responsable de acompañar a las asociaciones de recicladores y de mantener actualizada la base jurídica del IAT.{% if abogado_asociaciones.correo %} Correo: <a href="mailto:{{ abogado_asociaciones.correo }}" style="color:var(--blue-700)">{{ abogado_asociaciones.correo }}</a>.{% endif %}{% if abogado_asociaciones.telefono %} Teléfono: {{ abogado_asociaciones.telefono }}.{% endif %}</p>
+  </div>
+  {% else %}
+  <p class="sub">Aún no hay un abogado asignado a las asociaciones. La administración del despacho hará la asignación.</p>
+  {% endif %}
+</section>
+
 <section style="margin-top:30px">
   <h3 style="font-size:1.1rem;margin-bottom:8px">Últimas solicitudes</h3>
   {% if solicitudes %}

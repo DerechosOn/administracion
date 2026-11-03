@@ -743,6 +743,7 @@ def _sembrar_contenido(cur):
         "faq4_r": "Aplicamos la Ley 1581 de 2012. Consulta nuestra política de privacidad para más detalle.",
         "faq5_p": "¿Atienden de forma presencial y virtual?",
         "faq5_r": "Sí, ofrecemos atención presencial en nuestra oficina y virtual por videollamada y correo.",
+        "abogado_asociaciones_id": "",
         "iat_marco_normativo_html": """<h3 style="font-size:1.15rem;margin-bottom:10px">Marco normativo del IAT</h3>
 <div class="table-wrap" style="max-width:860px">
   <table>
@@ -750,11 +751,11 @@ def _sembrar_contenido(cur):
       <tr><th style="width:210px">Norma</th><th>Contenido</th></tr>
     </thead>
     <tbody>
-      <tr><td><b>Ley 1753 de 2015, art. 88</b></td><td>Crea el IAT con cargo a la tarifa del servicio de aseo.</td></tr>
-      <tr><td><b>Decreto 1077 de 2015, arts. 2.3.2.7.10 y 2.3.2.7.11</b></td><td>El municipio o distrito evalúa los proyectos de aprovechamiento presentados por los prestadores; en el parágrafo 1 del art. 2.3.2.7.11 se ordena una <b>evaluación diferencial para recicladores de oficio en proceso de formalización</b>.</td></tr>
-      <tr><td><b>Decreto 2412 de 2018</b></td><td>Adicionó el capítulo del IAT al Decreto 1077 de 2015.</td></tr>
-      <tr><td><b>Decreto 802 de 2022, art. 2.3.2.7.9</b></td><td>Reglamenta el IAT: los proyectos se radican ante la Secretaría General de la Alcaldía con las condiciones y requisitos del capítulo; sustituyó el capítulo 7 del Decreto 1077 de 2015.</td></tr>
-      <tr><td><b>Resolución 547 de 2022 del MVCT</b></td><td>Criterios de elegibilidad de los proyectos (reemplazó la Resolución 176 de 2020).</td></tr>
+      <tr><td><b><a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=61933" target="_blank" rel="noopener noreferrer">Ley 1753 de 2015, art. 88</a></b></td><td>Crea el IAT con cargo a la tarifa del servicio de aseo.</td></tr>
+      <tr><td><b><a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=77216" target="_blank" rel="noopener noreferrer">Decreto 1077 de 2015, arts. 2.3.2.7.10 y 2.3.2.7.11</a></b></td><td>El municipio o distrito evalúa los proyectos de aprovechamiento presentados por los prestadores; en el parágrafo 1 del art. 2.3.2.7.11 se ordena una <b>evaluación diferencial para recicladores de oficio en proceso de formalización</b>.</td></tr>
+      <tr><td><b><a href="https://www.minvivienda.gov.co/normativa/decreto-2412-2018" target="_blank" rel="noopener noreferrer">Decreto 2412 de 2018</a></b></td><td>Adicionó el capítulo del IAT al Decreto 1077 de 2015.</td></tr>
+      <tr><td><b><a href="https://www.minvivienda.gov.co/normativa/decreto-802-de-2022" target="_blank" rel="noopener noreferrer">Decreto 802 de 2022, art. 2.3.2.7.9</a></b></td><td>Reglamenta el IAT: los proyectos se radican ante la Secretaría General de la Alcaldía con las condiciones y requisitos del capítulo; sustituyó el capítulo 7 del Decreto 1077 de 2015.</td></tr>
+      <tr><td><b><a href="https://www.minvivienda.gov.co/normativa/resolucion-0547-2022-0" target="_blank" rel="noopener noreferrer">Resolución 547 de 2022 del MVCT</a></b></td><td>Criterios de elegibilidad de los proyectos (reemplazó la Resolución 176 de 2020).</td></tr>
     </tbody>
   </table>
 </div>""",
@@ -762,51 +763,51 @@ def _sembrar_contenido(cur):
 <p class="sub" style="max-width:860px">Línea de tiempo desde la sentencia hito hasta la más reciente. Las decisiones de la Corte han obligado a Bogotá y a los demás municipios a reconocer a los recicladores de oficio como gestores ambientales y sujetos de especial protección, y a garantizar su inclusión remunerada en el servicio de aseo.</p>
 <ul class="timeline" style="max-width:860px">
   <li class="tl-item">
-    <span class="tl-fecha">T-724 / 2003</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/2003/T-724-03.htm" target="_blank" rel="noopener noreferrer">T-724 / 2003</a></span>
     <span class="tl-body"><span class="tl-desc"><b>Sentencia hito.</b> Ordena a Bogotá diseñar e implementar una política pública incluyente y permanente para los recicladores, reconociéndolos como <b>sujetos de especial protección constitucional</b> y como gestores ambientales; dispone acciones afirmativas y un seguimiento permanente. Es el punto de partida de toda la línea jurisprudencial.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">C-793 / 2009</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/2009/C-793-09.htm" target="_blank" rel="noopener noreferrer">C-793 / 2009</a></span>
     <span class="tl-body"><span class="tl-desc">Exequibilidad condicionada del comparendo ambiental: el destino de los recicladores de oficio depende de la inclusión efectiva y remunerada en la prestación del servicio, no de la sanción a su actividad.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">T-291 / 2009</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/2009/T-291-09.htm" target="_blank" rel="noopener noreferrer">T-291 / 2009</a></span>
     <span class="tl-body"><span class="tl-desc">Tutela de la Asociación de Recicladores de Navarro (Cali): reitera las órdenes de protección y el deber de vinculación efectiva en el esquema de aseo. Complementada por la T-411 de 2009.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Auto 091 / 2010</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2010/A091-10.htm" target="_blank" rel="noopener noreferrer">Auto 091 / 2010</a></span>
     <span class="tl-body"><span class="tl-desc">Asume el cumplimiento de la T-724 de 2003 y <b>suspende la licitación pública</b> que amenazaba la inclusión de los recicladores en el relleno sanitario de Doña Juana.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Auto 268 / 2010</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2010/A268-10.htm" target="_blank" rel="noopener noreferrer">Auto 268 / 2010</a></span>
     <span class="tl-body"><span class="tl-desc">Declara el incumplimiento de la licitación 001 de 2010 (barrido y limpieza con inclusión simulada) y reitera las órdenes de la sentencia hito.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Auto 275 / 2011</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2011/A275-11.htm" target="_blank" rel="noopener noreferrer">Auto 275 / 2011</a></span>
     <span class="tl-body"><span class="tl-desc">Declara el <b>incumplimiento definitivo</b> y deja sin efectos la licitación 001 de 2011 por no garantizar la inclusión efectiva y remunerada de los recicladores.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Autos 084 / 2012, 366 y 118 / 2014, 587 / 2015</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2012/A084-12.htm" target="_blank" rel="noopener noreferrer">Auto 084 / 2012</a>, <a href="https://www.corteconstitucional.gov.co/relatoria/autos/2014/A366-14.htm" target="_blank" rel="noopener noreferrer">Auto 366 / 2014</a>, <a href="https://www.corteconstitucional.gov.co/relatoria/autos/2014/A118-14.htm" target="_blank" rel="noopener noreferrer">Auto 118 / 2014</a> y <a href="https://www.corteconstitucional.gov.co/relatoria/autos/2015/A587-15.htm" target="_blank" rel="noopener noreferrer">Auto 587 / 2015</a></span>
     <span class="tl-body"><span class="tl-desc">Providencias de seguimiento: verifican avances, corrigen la formalización (autocertificación del censo, asociación efectiva) y mantienen la orden de no exclusión.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Auto 736 / 2017</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2017/A736-17.htm" target="_blank" rel="noopener noreferrer">Auto 736 / 2017</a></span>
     <span class="tl-body"><span class="tl-desc">Frente a la licitación 002 de 2017 de Bogotá, exige condiciones que garanticen la <b>inclusión real y la remuneración directa</b> de los recicladores según su participación en el censo.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Auto 311 / 2020</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2020/A311-20.htm" target="_blank" rel="noopener noreferrer">Auto 311 / 2020</a></span>
     <span class="tl-body"><span class="tl-desc">Rechaza la solicitud de cierre del seguimiento y ordena nuevas verificaciones: persisten falencias en la formalización y en la remuneración efectiva del aprovechamiento.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Auto 1927 / 2022</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2022/A1927-22.htm" target="_blank" rel="noopener noreferrer">Auto 1927 / 2022</a></span>
     <span class="tl-body"><span class="tl-desc">Define que el seguimiento a la T-724 de 2003 sigue vigente y precisa la competencia para continuarlo, manteniendo la supervisión de la política de inclusión.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Auto 1001 / 2023</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2023/A1001-23.htm" target="_blank" rel="noopener noreferrer">Auto 1001 / 2023</a></span>
     <span class="tl-body"><span class="tl-desc">Continúa el seguimiento: constata el cumplimiento parcial de las órdenes y requiere a la administración distrital medidas concretas para el esquema de aprovechamiento.</span></span>
   </li>
   <li class="tl-item">
-    <span class="tl-fecha">Auto 2059 / 2025</span>
+    <span class="tl-fecha"><a href="https://www.corteconstitucional.gov.co/relatoria/autos/2025/A2059-25.htm" target="_blank" rel="noopener noreferrer">Auto 2059 / 2025</a></span>
     <span class="tl-body"><span class="tl-desc"><b>Más reciente.</b> Ante el vencimiento de los contratos del esquema ASE (primera quincena de febrero de 2026), ordena a la CREG adoptar un régimen tarifario transitorio antes del 25 de enero de 2026 y a las autoridades locales garantizar la continuidad operacional y la remuneración efectiva de las organizaciones de recicladores.</span></span>
   </li>
 </ul>
@@ -825,14 +826,14 @@ def _sembrar_contenido(cur):
       <tbody>
         <tr><td><b>Constitución Política</b> (arts. 13, 25, 38, 79-80 y 365-370)</td><td>Igualdad material y acciones afirmativas a favor de grupos en condición de debilidad (art. 13); derecho al trabajo (art. 25); libertad de asociación (art. 38); ambiente sano y deber de la Nación de fomentar la educación ambiental (arts. 79-80); el aseo como servicio público a cargo del Estado (arts. 365-370).</td></tr>
         <tr><td><b>Ley 79 de 1988</b></td><td>Régimen de las cooperativas y de las formas asociativas y solidarias de trabajo, base para la constitución de organizaciones sin ánimo de lucro de recicladores.</td></tr>
-        <tr><td><b>Ley 142 de 1994, art. 15, numeral 4</b></td><td>Reconoce como prestadores del servicio público de aseo a las <b>organizaciones autorizadas</b> para la prestación de servicios públicos (entre ellas, organizaciones de recicladores), en los términos del artículo 365 de la Constitución.</td></tr>
+        <tr><td><b><a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=2752" target="_blank" rel="noopener noreferrer">Ley 142 de 1994, art. 15, numeral 4</a></b></td><td>Reconoce como prestadores del servicio público de aseo a las <b>organizaciones autorizadas</b> para la prestación de servicios públicos (entre ellas, organizaciones de recicladores), en los términos del artículo 365 de la Constitución.</td></tr>
         <tr><td><b>Decreto 2150 de 1995, arts. 40 a 45</b></td><td>Simplificación de trámites: la <b>personería jurídica de las organizaciones sin ánimo de lucro se obtiene por registro en la Cámara de Comercio</b> (constitución, estatutos, acta de asamblea de constitución y nombramiento de representantes), sin calificación previa del Estado.</td></tr>
         <tr><td><b>Decreto 427 de 1996</b></td><td>Reglamenta el numeral 4 del artículo 15 de la Ley 142 de 1994: requisitos para que las organizaciones autorizadas presten servicios públicos.</td></tr>
         <tr><td><b>Decreto 421 de 2000</b></td><td>Requisitos de las organizaciones solidarias de reciclaje para la prestación de la actividad de comercialización y la inscripción ante la Superintendencia de Servicios Públicos y la Comisión de Regulación de Agua Potable.</td></tr>
-        <tr><td><b>Decreto 596 de 2016</b> (adiciona el Cap. 5, Tít. 2, Parte 3 del Decreto 1077 de 2015)</td><td>Régimen <b>transitorio de formalización</b> de los recicladores de oficio como prestadores de la actividad complementaria de aprovechamiento, con registro en el RUOR o instrumento equivalente y censo de recicladores.</td></tr>
+        <tr><td><b><a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=69038" target="_blank" rel="noopener noreferrer">Decreto 596 de 2016</a></b> (adiciona el Cap. 5, Tít. 2, Parte 3 del Decreto 1077 de 2015)</td><td>Régimen <b>transitorio de formalización</b> de los recicladores de oficio como prestadores de la actividad complementaria de aprovechamiento, con registro en el RUOR o instrumento equivalente y censo de recicladores.</td></tr>
         <tr><td><b>Resolución 276 de 2016 del MVCT</b></td><td>Adopta el <b>marco de referencia de la actividad de aprovechamiento</b> y los instrumentos para la transición hacia la formalización de los recicladores de oficio.</td></tr>
         <tr><td><b>Decreto 1345 de 2021</b></td><td>Extiende la progresividad del régimen transitorio de formalización del aprovechamiento (actualiza el Decreto 596 de 2016) a <b>8 años</b>, manteniendo la exclusividad del reciclador de oficio sobre el material aprovechable.</td></tr>
-        <tr><td><b>Decreto 1381 de 2024</b></td><td>Nuevo régimen: ratifica la <b>exclusividad del aprovechamiento a favor de las organizaciones de recicladores de oficio por 15 años</b>, exige la verificación de que la organización agrupe al menos el <b>90 % del censo</b> de recicladores del área, y el registro ante la Superintendencia de Servicios Públicos Domiciliarios (SSPD).</td></tr>
+        <tr><td><b><a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=256236" target="_blank" rel="noopener noreferrer">Decreto 1381 de 2024</a></b></td><td>Nuevo régimen: ratifica la <b>exclusividad del aprovechamiento a favor de las organizaciones de recicladores de oficio por 15 años</b>, exige la verificación de que la organización agrupe al menos el <b>90 % del censo</b> de recicladores del área, y el registro ante la Superintendencia de Servicios Públicos Domiciliarios (SSPD).</td></tr>
         <tr><td><b>Resolución 754 de 2014 del MVCT</b></td><td>Metodología para la formulación, implementación, evaluación, seguimiento, control y actualización de los <b>PGIRS</b>; el PGIRS debe contener el programa de aprovechamiento y la inclusión social de los recicladores de oficio.</td></tr>
         <tr><td><b>CONPES 3871 de 2016</b></td><td>Política nacional para la gestión integral de residuos sólidos: inclusión de los recicladores de oficio en los esquemas de aseo y formalización progresiva.</td></tr>
       </tbody>

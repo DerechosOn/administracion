@@ -3,6 +3,17 @@
 <h1>Hola, {{ abogado.nombre.split(' ')[0] }}</h1>
 <p class="sub">Este es tu día a día: procesos asignados, próximos vencimientos y actuaciones del mes por cliente.</p>
 
+{% if es_responsable_asociaciones %}
+<div class="notas" style="background:#e8f4ff;border-left:3px solid var(--blue-500);padding:10px 14px;border-radius:8px">
+  <b>Eres el abogado responsable de las asociaciones de recicladores.</b>
+  Desde la <a href="{{ url_for('abogado_base') }}" style="color:var(--blue-700);text-decoration:underline">base jurídica del IAT</a> mantienes el marco normativo, la jurisprudencia y el reconocimiento que alimentan al agente IAT de las asociaciones. Los demás abogados solo pueden consultarla.
+</div>
+{% elif abogado_asociaciones %}
+<div class="notas" style="padding:10px 14px;border-radius:8px">
+  <b>Abogado de asociaciones:</b> {{ abogado_asociaciones.nombre }}. La <a href="{{ url_for('abogado_base') }}" style="color:var(--blue-700);text-decoration:underline">base jurídica del IAT</a> está disponible para consulta libre; su edición corresponde a ese abogado.
+</div>
+{% endif %}
+
 <div class="stat-cards">
   <div class="stat-card"><b>{{ num_procesos }}</b><span>Procesos a tu cargo</span></div>
   <div class="stat-card"><b>{{ num_actuaciones }}</b><span>Actuaciones registradas</span></div>

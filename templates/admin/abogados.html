@@ -5,6 +5,32 @@
 <p class="sub">Agrega nuevos profesionales o retíralos del equipo. Con correo y contraseña, el abogado tendrá acceso a su portal propio (calendario, procesos y videollamada).</p>
 
 <div class="panel-form">
+  <h3>Abogado responsable de las asociaciones de recicladores</h3>
+  <p class="sub">Selecciona al abogado que atenderá a las asociaciones de recicladores. Solo ese abogado podrá editar la base jurídica del IAT; los demás abogados la consultan en modo lectura. Si retiras al abogado, la asignación queda vacía.</p>
+  <form method="post" action="{{ url_for('admin_abogados_asociaciones') }}">
+    <div class="form-row" style="align-items:flex-end">
+      <div class="campo">
+        <label>Abogado asignado</label>
+        <select name="abogado_id">
+          <option value="">— Sin asignar —</option>
+          {% for a in abogados if a.activo %}
+          <option value="{{ a.id }}" {{ 'selected' if asignado and asignado.id == a.id }}>{{ a.nombre }}{% if a.especialidad %} · {{ a.especialidad }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo" style="flex:0 0 auto">
+        <button class="btn btn-navy" type="submit">Guardar asignación</button>
+      </div>
+    </div>
+  </form>
+  {% if asignado %}
+  <p class="sub" style="margin:10px 0 0">Actualmente: <b>{{ asignado.nombre }}</b>{% if asignado.correo %} · {{ asignado.correo }}{% endif %}. Este abogado es el único que puede editar la base jurídica del IAT.</p>
+  {% else %}
+  <p class="sub" style="margin:10px 0 0">Sin asignar. Mientras no haya un responsable, ningún abogado puede editar la base jurídica del IAT.</p>
+  {% endif %}
+</div>
+
+<div class="panel-form">
   <h3>Agregar abogado</h3>
   <form method="post" action="{{ url_for('admin_abogados_crear') }}">
     <div class="form-row">
@@ -48,7 +74,7 @@
     <tbody>
       {% for a in abogados %}
       <tr>
-        <td><b>{{ a.nombre }}</b></td>
+        <td><b>{{ a.nombre }}</b>{% if asignado and asignado.id == a.id %}<br><span class="badge favor">Asociaciones IAT</span>{% endif %}</td>
         <td>{{ a.especialidad or '—' }}</td>
         <td>{{ a.tarjeta_profesional or '—' }}</td>
         <td>

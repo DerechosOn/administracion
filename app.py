@@ -275,6 +275,46 @@ def requiere_abogado(funcion):
     return envoltura
 
 
+CLAVE_ABOGADO_ASOCIACIONES = "abogado_asociaciones_id"
+
+
+def _abogado_asociaciones():
+    """Abogado asignado por la administración para atender las asociaciones
+    de recicladores. Solo este abogado puede editar la base jurídica del IAT;
+    los demás la consultan en modo lectura."""
+    try:
+        valor = (db.contenido_todos().get(CLAVE_ABOGADO_ASOCIACIONES) or "").strip()
+        aid = int(valor)
+    except (TypeError, ValueError):
+        return None
+    if aid <= 0:
+        return None
+    abogado = db.abogado_por_id(aid)
+    if not abogado or not abogado.get("activo"):
+        return None
+    return abogado
+
+
+def _es_abogado_asociaciones():
+    responsable = _abogado_asociaciones()
+    return bool(responsable and g.get("abogado")
+                and responsable["id"] == g.abogado["id"])
+
+
+def requiere_abogado_asociaciones(funcion):
+    """Restringe las acciones de edición de la base jurídica del IAT al
+    abogado responsable de las asociaciones de recicladores."""
+    @wraps(funcion)
+    def envoltura(*args, **kwargs):
+        if not _es_abogado_asociaciones():
+            flash("La base jurídica del IAT la administra el abogado asignado a las "
+                  "asociaciones de recicladores. Puedes consultarla, pero no modificarla.",
+                  "error")
+            return redirect(url_for("abogado_base"))
+        return funcion(*args, **kwargs)
+    return envoltura
+
+
 def es_asociacion(usuario):
     return bool(usuario) and usuario["rol"] == "cliente" and \
         usuario.get("tipo_persona") == "asociacion"
@@ -1681,6 +1721,8 @@ def abogado_inicio():
                            num_actuaciones=len(datos["actuaciones"]),
                            proximas=proximas[:14], del_mes=vencimientos(hoy, datos["actuaciones"]),
                            tareas_proyecto=tareas_proyecto,
+                           es_responsable_asociaciones=_es_abogado_asociaciones(),
+                           abogado_asociaciones=_abogado_asociaciones(),
                            prioridad_txt=proyectos_core.PRIORIDAD_TXT,
                            estado_txt=proyectos_core.ESTADO_TXT)
 
@@ -5105,7 +5147,29 @@ def admin_secciones_eliminar(sid):
 @requiere_admin
 def admin_abogados():
     return render_template("admin/abogados.html", usuario=g.usuario,
-                           abogados=db.abogados_lista())
+                           abogados=db.abogados_lista(),
+                           asignado=_abogado_asociaciones())
+
+
+@app.route("/admin/abogados/asociaciones", methods=["POST"])
+@requiere_admin
+def admin_abogados_asociaciones():
+    """Asigna al abogado que atenderá las asociaciones de recicladores y que
+    administra la base jurídica del IAT."""
+    aid = request.form.get("abogado_id", type=int)
+    if not aid:
+        db.contenido_guardar({CLAVE_ABOGADO_ASOCIACIONES: ""})
+        flash("Asignación retirada. Ningún abogado podrá editar la base jurídica "
+              "del IAT hasta que asignes uno.", "exito")
+        return redirect(url_for("admin_abogados"))
+    abogado = db.abogado_por_id(aid)
+    if not abogado or not abogado.get("activo"):
+        flash("Selecciona un abogado activo del despacho.", "error")
+        return redirect(url_for("admin_abogados"))
+    db.contenido_guardar({CLAVE_ABOGADO_ASOCIACIONES: str(aid)})
+    flash("%s atenderá ahora a las asociaciones de recicladores y administrará "
+          "la base jurídica del IAT." % abogado["nombre"], "exito")
+    return redirect(url_for("admin_abogados"))
 
 
 @app.route("/admin/abogados/crear", methods=["POST"])
@@ -5153,6 +5217,8 @@ def _crear_cuenta_abogado(correo, clave, nombre):
 @requiere_admin
 def admin_abogados_quitar(aid):
     abogado = db.abogado_por_id(aid)
+    if _abogado_asociaciones() and _abogado_asociaciones()["id"] == aid:
+        db.contenido_guardar({CLAVE_ABOGADO_ASOCIACIONES: ""})
     db.ejecutar("UPDATE procesos SET abogado_id = NULL WHERE abogado_id = ?", (aid,))
     db.ejecutar("DELETE FROM abogados WHERE id = ?", (aid,))
     if abogado and abogado.get("correo"):
@@ -8045,6 +8111,7 @@ def asociacion_inicio():
                            solicitudes=solicitudes[:5],
                            estados=estados,
                            total=len(solicitudes),
+                           abogado_asociaciones=_abogado_asociaciones(),
                            hoy=date.today())
 
 
@@ -8058,6 +8125,7 @@ def asociacion_iat():
                            tipos=IAT_TIPOS, estados=IAT_ESTADOS,
                            ia_activa=bool(ia_juridica.configurado()),
                            organizacion=(g.usuario.get("nombre") or ""),
+                           abogado_asociaciones=_abogado_asociaciones(),
                            hoy=date.today())
 
 
@@ -8437,7 +8505,8 @@ def iat_agente_chat():
             marco = ""
         if marco:
             sistema += ("\n\nMARCO NORMATIVO DEL IAT (base legal del despacho, actualizada por el "
-                        "equipo jurídico; úsala para citar normas y fechas con precisión):\n" + marco)
+                        "equipo jurídico; úsala para citar normas y fechas con precisión):\n"
+                        + html_seguro.a_texto(marco))
         sistema += ("\n\nMATERIAL DE NORMATIVIDAD (referencia):\n"
                     + agente_iat.normativa_para(proy.get("municipio")))
         try:
@@ -8507,9 +8576,19 @@ def abogado_base():
         ("reconocimiento_html", "Reconocimiento de asociaciones de recicladores",
          "Requisitos nacionales, departamentales y municipales para el reconocimiento y la formalización."),
     ]
+    es_responsable = _es_abogado_asociaciones()
+    responsable = _abogado_asociaciones()
     if request.method == "POST":
-        cambios = {clave: (request.form.get(clave) or "").strip()
-                   for clave, _, _ in secciones if (request.form.get(clave) or "").strip()}
+        if not es_responsable:
+            flash("La base jurídica del IAT la administra el abogado asignado a las "
+                  "asociaciones de recicladores. Puedes consultarla, pero no modificarla.",
+                  "error")
+            return redirect(url_for("abogado_base"))
+        cambios = {}
+        for clave, _, _ in secciones:
+            if clave in request.form:
+                cambios[clave] = html_seguro.limpiar(
+                    (request.form.get(clave) or "").strip())
         if cambios:
             db.contenido_guardar(cambios)
             flash("Base jurídica y jurisprudencial actualizada.", "exito")
@@ -8517,8 +8596,13 @@ def abogado_base():
 
     consulta = (request.args.get("q") or "").strip()
     r = motor_normativo.buscar(consulta) if consulta else None
+    contenido = db.contenido_todos()
     return render_template("abogado/base_juridica.html", abogado=g.abogado,
-                           secciones=secciones, C=db.contenido_todos(),
+                           secciones=secciones,
+                           C={clave: html_seguro.limpiar(contenido.get(clave) or "")
+                              for clave, _, _ in secciones},
+                           es_responsable=es_responsable,
+                           responsable=responsable,
                            motor_resumen=db.motor_resumen(),
                            fuentes=db.motor_fuentes_lista(),
                            pendientes=db.motor_normas_lista(estado="pendiente", limite=40),
@@ -8528,6 +8612,7 @@ def abogado_base():
 
 @app.route("/abogado/base/fuentes", methods=["POST"])
 @requiere_abogado
+@requiere_abogado_asociaciones
 def abogado_base_fuentes_crear():
     nombre = (request.form.get("nombre") or "").strip()
     url = (request.form.get("url") or "").strip()
@@ -8544,6 +8629,7 @@ def abogado_base_fuentes_crear():
 
 @app.route("/abogado/base/fuentes/<int:fid>", methods=["POST"])
 @requiere_abogado
+@requiere_abogado_asociaciones
 def abogado_base_fuentes_accion(fid):
     accion = request.form.get("accion") or ""
     if accion == "eliminar":
@@ -8570,6 +8656,7 @@ def abogado_base_fuentes_accion(fid):
 
 @app.route("/abogado/base/normas", methods=["POST"])
 @requiere_abogado
+@requiere_abogado_asociaciones
 def abogado_base_norma_crear():
     titulo = (request.form.get("titulo") or "").strip()
     if not titulo:
@@ -8595,6 +8682,7 @@ def abogado_base_norma_crear():
 
 @app.route("/abogado/base/normas/<int:nid>", methods=["POST"])
 @requiere_abogado
+@requiere_abogado_asociaciones
 def abogado_base_norma_accion(nid):
     accion = request.form.get("accion") or ""
     if not db.motor_norma_por_id(nid):
@@ -8617,6 +8705,7 @@ def abogado_base_norma_accion(nid):
 
 @app.route("/abogado/base/motor/actualizar", methods=["POST"])
 @requiere_abogado
+@requiere_abogado_asociaciones
 def abogado_base_motor_actualizar():
     r = motor_normativo.revisar_todas(disparador="manual")
     if not r.get("ok"):
@@ -8630,6 +8719,7 @@ def abogado_base_motor_actualizar():
 
 @app.route("/abogado/base/catalogo/cargar", methods=["POST"])
 @requiere_abogado
+@requiere_abogado_asociaciones
 def abogado_base_catalogo_cargar():
     n = motor_normativo.sembrar_desde_base()
     if n:
