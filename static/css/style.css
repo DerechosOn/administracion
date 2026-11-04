@@ -122,8 +122,8 @@ img { max-width: 100%; display: block; }
 .section-head p { color: var(--muted); }
 
 /* Acceso rápido */
-.tiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
-.tile { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 22px 12px; text-align: center; box-shadow: var(--shadow); transition: transform .18s, box-shadow .18s, border-color .18s; }
+.tiles { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+.tile { flex: 0 1 150px; min-width: 130px; max-width: 170px; background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 22px 12px; text-align: center; box-shadow: var(--shadow); transition: transform .18s, box-shadow .18s, border-color .18s; }
 .tile:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--blue-500); }
 .tile .ico { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; background: linear-gradient(135deg, var(--blue-800), var(--blue-600)); color: #fff; display: grid; place-items: center; }
 .tile .ico svg { width: 26px; height: 26px; }
