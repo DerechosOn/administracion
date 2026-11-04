@@ -8,24 +8,38 @@
   <h3>Solicitud de oferta</h3>
   <form method="post" action="{{ url_for('cliente_servicios') }}">
     <input type="hidden" name="accion" value="solicitar">
-    {% for area in areas %}
-    <div style="margin-bottom:14px">
-      <b style="display:block;margin-bottom:6px">{{ area }}</b>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px">
-      {% for t in tarifario if t.area == area %}
-        <label class="chk" style="font-size:.86rem">
-          <input type="checkbox" name="servicios" value="{{ t.clave }}"> {{ t.numero }} · {{ t.servicio }}
-        </label>
-      {% endfor %}
-      </div>
+    <div class="campo" style="margin-bottom:12px">
+      <label>Buscar servicio</label>
+      <input type="search" id="buscador_servicios" placeholder="Escribe una palabra: civil, laboral, contrato, familia..." autocomplete="off">
     </div>
-    {% endfor %}
+    <div id="lista_servicios" style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px">
+      {% for t in tarifario %}
+      <label class="chk servicio-item" style="font-size:.86rem" data-texto="{{ t.area }} {{ t.numero }} {{ t.servicio }}">
+        <input type="checkbox" name="servicios" value="{{ t.clave }}"> {{ t.numero }} · {{ t.servicio }} <span class="sub">({{ t.area }})</span>
+      </label>
+      {% endfor %}
+    </div>
     <div class="campo" style="margin-top:12px">
       <label>Servicio libre (no listado)</label>
       <input type="text" name="servicio_libre" placeholder="Ej. Asesoría personalizada">
     </div>
     <button class="btn btn-navy" type="submit">Enviar solicitud de oferta</button>
   </form>
+  <script>
+  (function () {
+    var input = document.getElementById('buscador_servicios');
+    var items = Array.from(document.querySelectorAll('.servicio-item'));
+    if (!input) return;
+    function filtrar() {
+      var q = input.value.trim().toLowerCase();
+      items.forEach(function (el) {
+        var texto = (el.getAttribute('data-texto') || '').toLowerCase();
+        el.style.display = (!q || texto.indexOf(q) !== -1) ? '' : 'none';
+      });
+    }
+    input.addEventListener('input', filtrar);
+  })();
+  </script>
 </div>
 
 <div class="panel-form" style="max-width:960px;margin-top:22px">
