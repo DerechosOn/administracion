@@ -17,6 +17,40 @@
   }) %}
 {% endfor %}
 
+{% if solicitudes_oferta_pendientes %}
+<div class="panel-form">
+  <h3>Solicitudes de oferta pendientes de precio</h3>
+  <p class="sub">Servicios solicitados por clientes. Asigna una tarifa CONALBOS o un valor libre y envíalo para aceptación.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Cliente</th><th>Servicio solicitado</th><th>Precio</th></tr></thead>
+      <tbody>
+      {% for s in solicitudes_oferta_pendientes %}
+        <tr>
+          <td>{{ s.cliente_nombre }}<br><span class="sub">{{ s.cliente_email }}</span></td>
+          <td>{{ s.servicio }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_solicitud_oferta_precio', sid=s.id) }}" style="display:flex;gap:6px;align-items:center;margin:0;flex-wrap:wrap">
+              <select name="tarifa_clave" style="width:220px">
+                <option value="">— Tarifa CONALBOS —</option>
+                {% for t in tarifario %}
+                <option value="{{ t.clave }}" {% if t.clave == s.tarifa_clave %}selected{% endif %}>{{ t.numero }} · {{ t.servicio }}</option>
+                {% endfor %}
+              </select>
+              <input type="number" name="valor" step="0.01" min="0" placeholder="Valor" required style="width:120px">
+              <input type="text" name="servicio" value="{{ s.servicio }}" placeholder="Servicio" style="width:180px">
+              <input type="text" name="observacion" placeholder="Observación" style="width:160px">
+              <button class="btn btn-navy btn-sm" type="submit">Enviar precio</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 <div class="panel-form">
   <h3>Nuevo registro de cartera</h3>
   <form method="post" action="{{ url_for('admin_cartera_crear') }}" id="formCartera">

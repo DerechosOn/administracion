@@ -243,6 +243,20 @@ def iniciar():
             FOREIGN KEY (cliente_id) REFERENCES usuarios (id) ON DELETE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS solicitudes_oferta (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente_id INTEGER NOT NULL,
+            servicio TEXT NOT NULL,
+            origen TEXT NOT NULL DEFAULT 'libre',
+            tarifa_clave TEXT DEFAULT '',
+            valor REAL NOT NULL DEFAULT 0,
+            estado TEXT NOT NULL DEFAULT 'pendiente_admin',
+            observacion TEXT DEFAULT '',
+            creado_el TEXT NOT NULL,
+            actualizado_el TEXT NOT NULL,
+            FOREIGN KEY (cliente_id) REFERENCES usuarios (id) ON DELETE CASCADE
+        );
+
         CREATE TABLE IF NOT EXISTS comprobantes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente_id INTEGER NOT NULL,
@@ -1387,6 +1401,55 @@ def cartera_editar(cid, datos):
 
 def cartera_eliminar(cid):
     ejecutar("DELETE FROM cartera WHERE id = ?", (cid,))
+
+
+# ---------------------------------------------------------------- solicitudes de oferta (servicios)
+def solicitud_oferta_crear(datos):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    return ejecutar(
+        "INSERT INTO solicitudes_oferta (cliente_id, servicio, origen, tarifa_clave, valor, "
+        "estado, observacion, creado_el, actualizado_el) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (datos["cliente_id"], datos["servicio"], datos.get("origen", "libre"),
+         datos.get("tarifa_clave", ""), float(datos.get("valor", 0) or 0),
+         datos.get("estado", "pendiente_admin"), datos.get("observacion", ""),
+         datos.get("creado_el", ahora), datos.get("actualizado_el", ahora)))
+
+
+def solicitudes_oferta_de_cliente(cliente_id):
+    return consultar(
+        "SELECT * FROM solicitudes_oferta WHERE cliente_id = ? ORDER BY id DESC",
+        (cliente_id,))
+
+
+def solicitud_oferta_por_id(sid):
+    filas = consultar("SELECT * FROM solicitudes_oferta WHERE id = ?", (sid,))
+    return filas[0] if filas else None
+
+
+def solicitudes_oferta_pendientes_admin():
+    return consultar(
+        "SELECT so.*, u.nombre AS cliente_nombre, u.email AS cliente_email "
+        "FROM solicitudes_oferta so JOIN usuarios u ON u.id = so.cliente_id "
+        "WHERE so.estado = 'pendiente_admin' ORDER BY so.id DESC")
+
+
+def solicitud_oferta_actualizar(sid, datos):
+    campos = []
+    params = []
+    for k in ("servicio", "origen", "tarifa_clave", "valor", "estado", "observacion", "actualizado_el"):
+        if k in datos:
+            campos.append(k + " = ?")
+            params.append(datos[k])
+    if not campos:
+        return
+    params.append(sid)
+    ejecutar("UPDATE solicitudes_oferta SET " + ", ".join(campos) + " WHERE id = ?", tuple(params))
+
+
+def solicitudes_oferta_aceptadas(cliente_id):
+    return consultar(
+        "SELECT COUNT(*) AS n FROM solicitudes_oferta WHERE cliente_id = ? AND estado = 'aceptada'",
+        (cliente_id,))[0]["n"]
 
 
 # ---------------------------------------------------------------- comprobantes de pago

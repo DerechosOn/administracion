@@ -1255,7 +1255,7 @@ def registro_persona():
         clave2 = (request.form.get("clave2") or "")
         tipo_servicio = (request.form.get("tipo_servicio") or "").strip()
 
-        if not nombre or not email or not telefono or not documento or not clave or not tipo_servicio:
+        if not nombre or not email or not telefono or not documento or not clave:
             error = "Complete los campos obligatorios."
         elif "@" not in email:
             error = "Correo inválido."
@@ -1270,7 +1270,7 @@ def registro_persona():
                            "direccion": direccion, "ciudad": ciudad}
             uid = db.ejecutar(
                 "INSERT INTO usuarios (nombre, email, password_hash, rol, telefono, documento, tipo_servicio, activo, fecha_registro, datos_extra, tipo_persona) "
-                "VALUES (?, ?, ?, 'cliente', ?, ?, ?, 1, ?, ?, 'natural')",
+                "VALUES (?, ?, ?, 'cliente', ?, ?, ?, 0, ?, ?, 'natural')",
                 (nombre, email, generate_password_hash(clave),
                  telefono, documento, tipo_servicio,
                  datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -1281,8 +1281,9 @@ def registro_persona():
                  "email": email, "telefono": telefono},
                 tipo_servicio)
             _registrar_interaccion("registro", detalle="natural · " + nombre)
-            flash("Registro exitoso. Ya puedes iniciar sesión.", "exito")
-            return redirect(url_for("login"))
+            session["uid"] = uid
+            flash("Registro creado. Completa tu solicitud de oferta para activar tu cuenta.", "exito")
+            return redirect(url_for("cliente_servicios"))
     return render_template("registro_persona.html", usuario=usuario_actual(), error=error,
                            servicios=SERVICIOS_REGISTRO)
 
@@ -1386,8 +1387,9 @@ def registro_empresa():
                  "email": email, "telefono": telefono},
                 tipo_servicio)
             _registrar_interaccion("registro", detalle="juridica · " + nombre)
-            flash("Registro exitoso. Ya puedes iniciar sesión.", "exito")
-            return redirect(url_for("login"))
+            session["uid"] = uid
+            flash("Registro creado. Completa tu solicitud de oferta para activar tu cuenta.", "exito")
+            return redirect(url_for("cliente_servicios"))
     return render_template("registro_empresa.html", usuario=usuario_actual(), error=error,
                            servicios=SERVICIOS_REGISTRO)
 
@@ -1448,8 +1450,9 @@ def registro_asociacion():
                  "email": email, "telefono": telefono},
                 tipo_servicio)
             _registrar_interaccion("registro", detalle="asociacion · " + razon_social)
-            flash("Registro exitoso. Ya puedes iniciar sesión.", "exito")
-            return redirect(url_for("login"))
+            session["uid"] = uid
+            flash("Registro creado. Completa tu solicitud de oferta para activar tu cuenta.", "exito")
+            return redirect(url_for("cliente_servicios"))
     return render_template("registro_asociacion.html", usuario=usuario_actual(), error=error,
                            servicios=SERVICIOS_REGISTRO)
 
@@ -1525,6 +1528,88 @@ def salir():
 
 
 # ---------------------------------------------------------------- cliente
+@app.route("/cliente/servicios", methods=["GET", "POST"])
+@requiere_cliente
+def cliente_servicios():
+    usuario = g.usuario
+    extras = db.tarifario_extras()
+    areas_propias = db.tarifario_areas()
+    tuplas_propias = [(a["numero"], a["nombre"]) for a in areas_propias]
+    catalogo, _indice = tarifas_conalbos.con_extras(extras, areas_propias)
+    areas = tarifas_conalbos.areas([a["nombre"] for a in areas_propias])
+
+    if request.method == "POST":
+        accion = (request.form.get("accion") or "").strip()
+        if accion == "solicitar":
+            seleccionados = request.form.getlist("servicios")
+            libre = (request.form.get("servicio_libre") or "").strip()
+            creados = 0
+            for clave in seleccionados:
+                item = tarifas_conalbos.POR_SERVICIO.get(clave)
+                if item is None:
+                    for extra in extras:
+                        if ("%s %s" % (extra.get("numero"), extra.get("servicio"))) == clave:
+                            item = tarifas_conalbos._desde_extra(extra)
+                            break
+                if item is None:
+                    continue
+                db.solicitud_oferta_crear({
+                    "cliente_id": usuario["id"],
+                    "servicio": item.get("servicio") or clave,
+                    "origen": "conalbos",
+                    "tarifa_clave": clave,
+                    "valor": 0.0,
+                    "estado": "pendiente_admin",
+                    "observacion": "Solicitud de oferta. Tarifa CONALBOS sin valor asignado.",
+                })
+                creados += 1
+            if libre:
+                db.solicitud_oferta_crear({
+                    "cliente_id": usuario["id"],
+                    "servicio": libre,
+                    "origen": "libre",
+                    "tarifa_clave": "",
+                    "valor": 0.0,
+                    "estado": "pendiente_admin",
+                    "observacion": "Servicio libre solicitado por el cliente.",
+                })
+                creados += 1
+            if creados:
+                flash("Solicitud de oferta enviada al administrador.", "exito")
+            else:
+                flash("Selecciona al menos un servicio o escribe uno libremente.", "error")
+        elif accion == "aceptar":
+            sid = request.form.get("sid", type=int)
+            sol = db.solicitud_oferta_por_id(sid) if sid else None
+            if not sol or sol["cliente_id"] != usuario["id"]:
+                flash("Solicitud no encontrada.", "error")
+            elif sol["estado"] != "pendiente_cliente" or float(sol["valor"] or 0) <= 0:
+                flash("Esta solicitud aún no tiene precio para aceptar.", "error")
+            else:
+                db.cartera_crear({
+                    "cliente_id": usuario["id"],
+                    "servicio": sol["servicio"],
+                    "descripcion": sol.get("observacion", ""),
+                    "valor_total": sol["valor"],
+                    "pagado": 0,
+                    "vencimiento": "",
+                })
+                db.solicitud_oferta_actualizar(sid, {
+                    "estado": "aceptada",
+                    "actualizado_el": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                })
+                db.ejecutar("UPDATE usuarios SET activo = 1 WHERE id = ?", (usuario["id"],))
+                cid = _crear_contrato_cliente(usuario, sol["servicio"])
+                flash("Servicio aceptado. Ahora firma tu contrato.", "exito")
+                return redirect(url_for("cliente_contrato_ver", cid=cid))
+        return redirect(url_for("cliente_servicios"))
+
+    solicitudes = db.solicitudes_oferta_de_cliente(usuario["id"])
+    return render_template("cliente/servicios.html", usuario=usuario,
+                           solicitudes=solicitudes,
+                           tarifario=catalogo, areas=areas)
+
+
 @app.route("/cliente")
 @requiere_cliente
 def cliente_inicio():
@@ -5863,6 +5948,7 @@ def admin_cartera():
     tuplas_propias = [(a["numero"], a["nombre"]) for a in areas_propias]
     catalogo, _indice = tarifas_conalbos.con_extras(extras, areas_propias)
     return render_template("admin/cartera.html", usuario=g.usuario, registros=registros,
+                           solicitudes_oferta_pendientes=db.solicitudes_oferta_pendientes_admin(),
                            clientes=db.clientes_todos(), cliente_id=cliente_id,
                            total_cartera=total_cartera, total_pagado=total_pagado,
                            total_saldo=total_cartera - total_pagado, vencidas=vencidas,
@@ -5878,6 +5964,34 @@ def admin_cartera():
                            smmlv=tarifas_conalbos.SMMLV_VIGENTE,
                            marca=MARCA_DERECHOS_ON,
                            fuente_tarifario=tarifas_conalbos.FUENTE)
+
+
+@app.route("/admin/solicitudes_oferta/<int:sid>/precio", methods=["POST"])
+@requiere_admin
+def admin_solicitud_oferta_precio(sid):
+    sol = db.solicitud_oferta_por_id(sid)
+    if not sol:
+        flash("Solicitud no encontrada.", "error")
+        return redirect(url_for("admin_cartera"))
+    try:
+        valor = float((request.form.get("valor") or "0").replace(".", "").replace(",", ".")
+                      if (request.form.get("valor") or "").count(".") > 1
+                      else (request.form.get("valor") or "0"))
+    except ValueError:
+        valor = 0.0
+    if valor <= 0:
+        flash("Indica un precio válido.", "error")
+        return redirect(url_for("admin_cartera"))
+    db.solicitud_oferta_actualizar(sid, {
+        "valor": valor,
+        "tarifa_clave": (request.form.get("tarifa_clave") or sol.get("tarifa_clave", "")).strip(),
+        "servicio": (request.form.get("servicio") or sol["servicio"]).strip(),
+        "estado": "pendiente_cliente",
+        "observacion": (request.form.get("observacion") or sol.get("observacion", "")).strip(),
+        "actualizado_el": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    })
+    flash("Precio enviado al cliente para aceptación.", "exito")
+    return redirect(url_for("admin_cartera"))
 
 
 @app.route("/admin/cartera/crear", methods=["POST"])

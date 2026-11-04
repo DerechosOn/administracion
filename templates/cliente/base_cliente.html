@@ -48,6 +48,9 @@
           <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('cliente_contrato') }}" href="{{ url_for('cliente_contrato') }}" data-ix-text="contrato documento">
             <svg class="ix-ico"><use href="#i-file"></use></svg><span>Mi contrato</span>
           </a>
+          <a class="ix-link {{ 'activo' if request.endpoint == 'cliente_servicios' }}" href="{{ url_for('cliente_servicios') }}" data-ix-text="servicios oferta">
+            <svg class="ix-ico"><use href="#i-scale"></use></svg><span>Mis servicios</span>
+          </a>
           <a class="ix-link" href="{{ url_for('cliente_inicio') }}#estado-cuenta" data-ix-text="estado cuenta pagos">
             <svg class="ix-ico"><use href="#i-card"></use></svg><span>Estado de cuenta</span>
           </a>

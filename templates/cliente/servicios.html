@@ -1,0 +1,70 @@
+{% extends "cliente/base_cliente.html" %}
+{% block titulo %}Mis servicios — Derechos On{% endblock %}
+{% block contenido %}
+<h1>Mis servicios</h1>
+<p class="sub">Solicita una oferta de servicios. Selecciona servicios del tarifario o escribe uno libremente; el administrador asignará el valor y te lo enviará para aceptación.</p>
+
+<div class="panel-form" style="max-width:960px">
+  <h3>Solicitud de oferta</h3>
+  <form method="post" action="{{ url_for('cliente_servicios') }}">
+    <input type="hidden" name="accion" value="solicitar">
+    {% for area in areas %}
+    <div style="margin-bottom:14px">
+      <b style="display:block;margin-bottom:6px">{{ area }}</b>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px">
+      {% for t in tarifario if t.area == area %}
+        <label class="chk" style="font-size:.86rem">
+          <input type="checkbox" name="servicios" value="{{ t.clave }}"> {{ t.numero }} · {{ t.servicio }}
+        </label>
+      {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    <div class="campo" style="margin-top:12px">
+      <label>Servicio libre (no listado)</label>
+      <input type="text" name="servicio_libre" placeholder="Ej. Asesoría personalizada">
+    </div>
+    <button class="btn btn-navy" type="submit">Enviar solicitud de oferta</button>
+  </form>
+</div>
+
+<div class="panel-form" style="max-width:960px;margin-top:22px">
+  <h3>Solicitudes enviadas</h3>
+  {% if solicitudes %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Servicio</th><th>Valor</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>
+      {% for s in solicitudes %}
+        <tr>
+          <td>{{ s.servicio }}</td>
+          <td>{% if s.valor %}{{ s.valor }}{% else %}Por definir{% endif %}</td>
+          <td>
+            {% if s.estado == 'pendiente_admin' %}Pendiente de precio
+            {% elif s.estado == 'pendiente_cliente' %}Pendiente de aceptación
+            {% elif s.estado == 'aceptada' %}Aceptado
+            {% else %}{{ s.estado }}{% endif %}
+          </td>
+          <td>
+            {% if s.estado == 'pendiente_cliente' and s.valor and s.valor > 0 %}
+            <form method="post" action="{{ url_for('cliente_servicios') }}" style="display:inline;margin:0">
+              <input type="hidden" name="accion" value="aceptar">
+              <input type="hidden" name="sid" value="{{ s.id }}">
+              <button class="btn btn-navy btn-sm" type="submit">Aceptar y firmar contrato</button>
+            </form>
+            {% elif s.estado == 'pendiente_admin' %}
+            <span class="sub">Esperando precio del administrador</span>
+            {% elif s.estado == 'aceptada' %}
+            <span class="sub">Servicio en cartera</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="sub">Aún no has enviado solicitudes de oferta.</p>
+  {% endif %}
+</div>
+{% endblock %}
