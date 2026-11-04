@@ -6,6 +6,11 @@ import json
 import sqlite3
 from datetime import datetime
 
+try:
+    import libsql as _libsql
+except Exception:  # pragma: no cover - optional dependency
+    _libsql = None
+
 from werkzeug.security import generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,9 +39,22 @@ ERRORES_NO_EXISTE = 2
 
 
 def conectar():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
+    sync_url = (os.environ.get("TURSO_DATABASE_URL")
+                or os.environ.get("LIBSQL_URL") or "").strip()
+    auth_token = (os.environ.get("TURSO_AUTH_TOKEN")
+                  or os.environ.get("LIBSQL_AUTH_TOKEN") or "").strip()
+    if sync_url and _libsql is not None:
+        conn = _libsql.connect(DB_PATH, sync_url=sync_url, auth_token=auth_token)
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            conn.row_factory = sqlite3.Row
+        except Exception:
+            pass
+    try:
+        conn.execute("PRAGMA foreign_keys = ON")
+    except Exception:
+        pass
     return conn
 
 
@@ -358,6 +376,11 @@ def iniciar():
     conn.commit()
     migrar(conn)
     semilla(conn)
+    if hasattr(conn, "sync"):
+        try:
+            conn.sync()
+        except Exception:
+            pass
     conn.close()
 
 
@@ -902,12 +925,16 @@ def _sembrar_contenido(cur):
             cur.execute("INSERT INTO contenido (clave, valor) VALUES (?, ?)", (clave, valor))
 
 
+def _filas_a_dicts(cur):
+    cols = [d[0] for d in (cur.description or [])]
+    return [dict(zip(cols, row)) for row in (cur.fetchall() or [])]
+
+
 def consultar(sql, params=()):
     conn = conectar()
     try:
-        if params:
-            return [dict(r) for r in conn.execute(sql, params).fetchall()]
-        return [dict(r) for r in conn.execute(sql).fetchall()]
+        cur = conn.execute(sql, params) if params else conn.execute(sql)
+        return _filas_a_dicts(cur)
     finally:
         conn.close()
 
@@ -917,6 +944,11 @@ def ejecutar(sql, params=()):
     try:
         cur = conn.execute(sql, params)
         conn.commit()
+        if hasattr(conn, "sync"):
+            try:
+                conn.sync()
+            except Exception:
+                pass
         return cur.lastrowid
     finally:
         conn.close()

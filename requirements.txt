@@ -6,3 +6,4 @@ reportlab>=4.0
 python-docx>=1.1
 openpyxl>=3.1
 truststore>=0.10; python_version >= "3.10"
+libsql>=0.1.11
