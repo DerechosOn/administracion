@@ -4263,6 +4263,38 @@ def admin_contrato():
     if request.method == "POST":
         accion = request.form.get("accion", "").strip()
 
+        # Firma electronica del despacho (canvas)
+        if accion == "firma_digital":
+            nombre = request.form.get("firmante_nombre", "").strip()
+            cargo = request.form.get("firmante_cargo", "").strip()
+            imagen = request.form.get("firma_imagen", "").strip()
+            if nombre:
+                db.contenido_guardar({"contrato_firmante_nombre": nombre})
+            if cargo:
+                db.contenido_guardar({"contrato_firmante_cargo": cargo})
+            if not imagen.startswith("data:image/png;base64,"):
+                flash("Dibuja la firma del despacho antes de guardar.", "error")
+                return redirect(url_for("admin_contrato"))
+            import base64 as _b64
+            data = imagen.split(",", 1)[1]
+            try:
+                raw = _b64.b64decode(data)
+            except Exception:
+                flash("Firma inválida.", "error")
+                return redirect(url_for("admin_contrato"))
+            viejo = db.contenido_todos().get("contrato_firma_archivo", "")
+            nombre_archivo = "firma-despacho-digital.png"
+            with open(os.path.join(BASE_DIR, "static", "img", nombre_archivo), "wb") as fh:
+                fh.write(raw)
+            if viejo and viejo != nombre_archivo:
+                try:
+                    os.remove(os.path.join(BASE_DIR, "static", "img", viejo))
+                except OSError:
+                    pass
+            db.contenido_guardar({"contrato_firma_archivo": nombre_archivo})
+            flash("Firma electrónica del despacho guardada.", "exito")
+            return redirect(url_for("admin_contrato"))
+
         # Subida de plantilla Word (.docx)
         if accion == "subir_plantilla":
             archivo = request.files.get("plantilla_docx")

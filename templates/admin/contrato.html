@@ -181,8 +181,50 @@
             </div>
             {% endif %}
           </div>
-          <button type="submit" class="btn btn-primary">Guardar firma</button>
+          <div style="margin:14px 0">
+            <label>Firma electrónica (dibuja en el recuadro)</label>
+            <canvas id="pad-firma-despacho" width="520" height="150" style="border:1px solid var(--line);border-radius:8px;background:#fff;display:block"></canvas>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button type="button" class="btn btn-outline" id="btn-limpiar-despacho">Limpiar</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="btn-guardar-firma-digital">Guardar firma electrónica</button>
         </form>
+
+<script>
+(function () {
+  var pad = document.getElementById('pad-firma-despacho');
+  if (!pad) return;
+  var ctx = pad.getContext('2d');
+  var dibujando = false, hayTrazos = false;
+  ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1d2733';
+  function pos(e){var r=pad.getBoundingClientRect();var sx=pad.width/r.width,sy=pad.height/r.height;var p=e.touches?e.touches[0]:e;return{x:(p.clientX-r.left)*sx,y:(p.clientY-r.top)*sy};}
+  function iniciar(e){e.preventDefault();dibujando=true;hayTrazos=true;ctx.beginPath();var p=pos(e);ctx.moveTo(p.x,p.y);}
+  function mover(e){if(!dibujando)return;e.preventDefault();var p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();}
+  function detener(){if(!dibujando)return;dibujando=false;ctx.beginPath();}
+  pad.addEventListener('mousedown',iniciar);pad.addEventListener('mousemove',mover);pad.addEventListener('mouseup',detener);pad.addEventListener('mouseleave',detener);
+  pad.addEventListener('touchstart',iniciar,{passive:false});pad.addEventListener('touchmove',mover,{passive:false});pad.addEventListener('touchend',detener);
+  var btnLimpiar=document.getElementById('btn-limpiar-despacho');
+  if(btnLimpiar) btnLimpiar.addEventListener('click',function(){ctx.clearRect(0,0,pad.width,pad.height);hayTrazos=false;});
+  var btnGuardar=document.getElementById('btn-guardar-firma-digital');
+  if(btnGuardar) btnGuardar.addEventListener('click',function(e){
+    e.preventDefault();
+    if(!hayTrazos){alert('Dibuja la firma del despacho antes de guardar.');return;}
+    var form=btnGuardar.closest('form');
+    var input=document.createElement('input');
+    input.type='hidden';input.name='accion';input.value='firma_digital';
+    form.appendChild(input);
+    var img=document.createElement('input');
+    img.type='hidden';img.name='firma_imagen';img.value=pad.toDataURL('image/png');
+    form.appendChild(img);
+    var nom=document.getElementById('firmante_nombre');
+    var car=document.getElementById('firmante_cargo');
+    if(nom && !form.querySelector('input[name="firmante_nombre"]')){var n=document.createElement('input');n.type='hidden';n.name='firmante_nombre';n.value=nom.value;form.appendChild(n);}
+    if(car && !form.querySelector('input[name="firmante_cargo"]')){var c=document.createElement('input');c.type='hidden';c.name='firmante_cargo';c.value=car.value;form.appendChild(c);}
+    form.submit();
+  });
+})();
+</script>
       </div>
     </section>
   </div>
