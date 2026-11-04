@@ -6,10 +6,12 @@ import json
 import sqlite3
 from datetime import datetime
 
-try:
-    import libsql as _libsql
-except Exception:  # pragma: no cover - optional dependency
-    _libsql = None
+def _libsql():
+    try:
+        import libsql
+        return libsql
+    except Exception:  # pragma: no cover - optional dependency
+        return None
 
 from werkzeug.security import generate_password_hash
 
@@ -43,8 +45,9 @@ def conectar():
                 or os.environ.get("LIBSQL_URL") or "").strip()
     auth_token = (os.environ.get("TURSO_AUTH_TOKEN")
                   or os.environ.get("LIBSQL_AUTH_TOKEN") or "").strip()
-    if sync_url and _libsql is not None:
-        conn = _libsql.connect(DB_PATH, sync_url=sync_url, auth_token=auth_token)
+    libsql_mod = _libsql()
+    if sync_url and libsql_mod is not None:
+        conn = libsql_mod.connect(DB_PATH, sync_url=sync_url, auth_token=auth_token)
     else:
         conn = sqlite3.connect(DB_PATH)
         try:
