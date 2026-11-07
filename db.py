@@ -6,13 +6,6 @@ import json
 import sqlite3
 from datetime import datetime
 
-def _libsql():
-    try:
-        import libsql
-        return libsql
-    except Exception:  # pragma: no cover - optional dependency
-        return None
-
 from werkzeug.security import generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -41,33 +34,9 @@ ERRORES_NO_EXISTE = 2
 
 
 def conectar():
-    sync_url = (os.environ.get("TURSO_DATABASE_URL")
-                or os.environ.get("LIBSQL_URL") or "").strip()
-    auth_token = (os.environ.get("TURSO_AUTH_TOKEN")
-                  or os.environ.get("LIBSQL_AUTH_TOKEN") or "").strip()
-    libsql_mod = _libsql()
-    if sync_url and libsql_mod is not None:
-        # Si quedo un derecho.db antiguo (de SQLite) sin metadata de libsql,
-        # libsql falla al sincronizar. Se limpia para forzar una sincronizacion
-        # limpia desde Turso.
-        info_path = DB_PATH + "-info"
-        if os.path.exists(DB_PATH) and not os.path.exists(info_path):
-            for suf in ("", "-wal", "-shm", "-info"):
-                try:
-                    os.remove(DB_PATH + suf)
-                except FileNotFoundError:
-                    pass
-        conn = libsql_mod.connect(DB_PATH, sync_url=sync_url, auth_token=auth_token)
-    else:
-        conn = sqlite3.connect(DB_PATH)
-        try:
-            conn.row_factory = sqlite3.Row
-        except Exception:
-            pass
-    try:
-        conn.execute("PRAGMA foreign_keys = ON")
-    except Exception:
-        pass
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
@@ -274,20 +243,6 @@ def iniciar():
             FOREIGN KEY (cliente_id) REFERENCES usuarios (id) ON DELETE CASCADE
         );
 
-        CREATE TABLE IF NOT EXISTS solicitudes_oferta (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cliente_id INTEGER NOT NULL,
-            servicio TEXT NOT NULL,
-            origen TEXT NOT NULL DEFAULT 'libre',
-            tarifa_clave TEXT DEFAULT '',
-            valor REAL NOT NULL DEFAULT 0,
-            estado TEXT NOT NULL DEFAULT 'pendiente_admin',
-            observacion TEXT DEFAULT '',
-            creado_el TEXT NOT NULL,
-            actualizado_el TEXT NOT NULL,
-            FOREIGN KEY (cliente_id) REFERENCES usuarios (id) ON DELETE CASCADE
-        );
-
         CREATE TABLE IF NOT EXISTS comprobantes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente_id INTEGER NOT NULL,
@@ -389,11 +344,6 @@ def iniciar():
     conn.commit()
     migrar(conn)
     semilla(conn)
-    if hasattr(conn, "sync"):
-        try:
-            conn.sync()
-        except Exception:
-            pass
     conn.close()
 
 
@@ -938,16 +888,12 @@ def _sembrar_contenido(cur):
             cur.execute("INSERT INTO contenido (clave, valor) VALUES (?, ?)", (clave, valor))
 
 
-def _filas_a_dicts(cur):
-    cols = [d[0] for d in (cur.description or [])]
-    return [dict(zip(cols, row)) for row in (cur.fetchall() or [])]
-
-
 def consultar(sql, params=()):
     conn = conectar()
     try:
-        cur = conn.execute(sql, params) if params else conn.execute(sql)
-        return _filas_a_dicts(cur)
+        if params:
+            return [dict(r) for r in conn.execute(sql, params).fetchall()]
+        return [dict(r) for r in conn.execute(sql).fetchall()]
     finally:
         conn.close()
 
@@ -957,11 +903,6 @@ def ejecutar(sql, params=()):
     try:
         cur = conn.execute(sql, params)
         conn.commit()
-        if hasattr(conn, "sync"):
-            try:
-                conn.sync()
-            except Exception:
-                pass
         return cur.lastrowid
     finally:
         conn.close()
@@ -1446,55 +1387,6 @@ def cartera_editar(cid, datos):
 
 def cartera_eliminar(cid):
     ejecutar("DELETE FROM cartera WHERE id = ?", (cid,))
-
-
-# ---------------------------------------------------------------- solicitudes de oferta (servicios)
-def solicitud_oferta_crear(datos):
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
-    return ejecutar(
-        "INSERT INTO solicitudes_oferta (cliente_id, servicio, origen, tarifa_clave, valor, "
-        "estado, observacion, creado_el, actualizado_el) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (datos["cliente_id"], datos["servicio"], datos.get("origen", "libre"),
-         datos.get("tarifa_clave", ""), float(datos.get("valor", 0) or 0),
-         datos.get("estado", "pendiente_admin"), datos.get("observacion", ""),
-         datos.get("creado_el", ahora), datos.get("actualizado_el", ahora)))
-
-
-def solicitudes_oferta_de_cliente(cliente_id):
-    return consultar(
-        "SELECT * FROM solicitudes_oferta WHERE cliente_id = ? ORDER BY id DESC",
-        (cliente_id,))
-
-
-def solicitud_oferta_por_id(sid):
-    filas = consultar("SELECT * FROM solicitudes_oferta WHERE id = ?", (sid,))
-    return filas[0] if filas else None
-
-
-def solicitudes_oferta_pendientes_admin():
-    return consultar(
-        "SELECT so.*, u.nombre AS cliente_nombre, u.email AS cliente_email "
-        "FROM solicitudes_oferta so JOIN usuarios u ON u.id = so.cliente_id "
-        "WHERE so.estado = 'pendiente_admin' ORDER BY so.id DESC")
-
-
-def solicitud_oferta_actualizar(sid, datos):
-    campos = []
-    params = []
-    for k in ("servicio", "origen", "tarifa_clave", "valor", "estado", "observacion", "actualizado_el"):
-        if k in datos:
-            campos.append(k + " = ?")
-            params.append(datos[k])
-    if not campos:
-        return
-    params.append(sid)
-    ejecutar("UPDATE solicitudes_oferta SET " + ", ".join(campos) + " WHERE id = ?", tuple(params))
-
-
-def solicitudes_oferta_aceptadas(cliente_id):
-    return consultar(
-        "SELECT COUNT(*) AS n FROM solicitudes_oferta WHERE cliente_id = ? AND estado = 'aceptada'",
-        (cliente_id,))[0]["n"]
 
 
 # ---------------------------------------------------------------- comprobantes de pago
