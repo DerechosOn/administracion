@@ -28,4 +28,4 @@ EXPOSE 8000
 
 # Un solo worker + hilos: mantiene la BD SQLite y evita duplicar el
 # registro automático de redes. Ajusta workers si usas un disco persistente.
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 1 --threads 8 --timeout 120 wsgi:application"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 1 --threads 1 --timeout 300 wsgi:application"]
