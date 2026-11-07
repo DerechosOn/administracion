@@ -18,10 +18,10 @@ _db_listo = threading.Event()
 
 def _inicializar():
     try:
+        import logging
+        logging.info("INICIO: comenzando db.iniciar()")
         db.iniciar()
-        from app import _retext_contratos, arrancar_redes_auto
-        _retext_contratos()
-        arrancar_redes_auto()
+        logging.info("INICIO: db.iniciar() completado")
     except Exception as exc:
         import logging
         logging.exception("Error inicializando la base de datos: %s", exc)
