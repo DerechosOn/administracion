@@ -47,6 +47,16 @@ def conectar():
                   or os.environ.get("LIBSQL_AUTH_TOKEN") or "").strip()
     libsql_mod = _libsql()
     if sync_url and libsql_mod is not None:
+        # Si quedo un derecho.db antiguo (de SQLite) sin metadata de libsql,
+        # libsql falla al sincronizar. Se limpia para forzar una sincronizacion
+        # limpia desde Turso.
+        info_path = DB_PATH + "-info"
+        if os.path.exists(DB_PATH) and not os.path.exists(info_path):
+            for suf in ("", "-wal", "-shm", "-info"):
+                try:
+                    os.remove(DB_PATH + suf)
+                except FileNotFoundError:
+                    pass
         conn = libsql_mod.connect(DB_PATH, sync_url=sync_url, auth_token=auth_token)
     else:
         conn = sqlite3.connect(DB_PATH)
