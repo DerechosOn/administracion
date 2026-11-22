@@ -13,8 +13,20 @@
         <input name="nombre" required placeholder="Ej. Derecho Ambiental">
       </div>
       <div class="campo">
-        <label>Icono (clave)</label>
-        <input name="icono" placeholder="scale | book | users | briefcase | gavel | chart | building | shield | star" value="scale">
+        <label>Icono</label>
+        <input type="hidden" name="icono" id="icono_seleccionado" value="scale">
+        <div class="galeria-iconos" data-target="icono_seleccionado" data-actual="scale" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px;max-width:420px">
+          {% for clave, path in iconos.items() %}
+          <button type="button" class="btn-icono" data-icono="{{ clave }}" title="{{ clave }}"
+                  style="border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;cursor:pointer;display:grid;place-items:center">
+            {{ clave|icono_svg|safe }}
+          </button>
+          {% endfor %}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-outline btn-sm" id="btn_sugerir_icono">Sugerir con IA</button>
+          <span class="sub" id="icono_actual" style="margin:0">Seleccionado: <b>scale</b></span>
+        </div>
       </div>
     </div>
     <div class="campo">
@@ -67,8 +79,20 @@
         <input name="nombre" value="{{ a.nombre }}" required>
       </div>
       <div class="campo">
-        <label>Icono (clave)</label>
-        <input name="icono" value="{{ a.icono }}">
+        <label>Icono</label>
+        <input type="hidden" name="icono" id="icono_edit_{{ a.id }}" value="{{ a.icono }}">
+        <div class="galeria-iconos" data-target="icono_edit_{{ a.id }}" data-actual="{{ a.icono }}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px;max-width:420px">
+          {% for clave, path in iconos.items() %}
+          <button type="button" class="btn-icono" data-icono="{{ clave }}" title="{{ clave }}"
+                  style="border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;cursor:pointer;display:grid;place-items:center">
+            {{ clave|icono_svg|safe }}
+          </button>
+          {% endfor %}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          <button type="button" class="btn btn-outline btn-sm btn-sugerir" data-nombre="{{ a.nombre }}" data-target="icono_edit_{{ a.id }}">Sugerir con IA</button>
+          <span class="sub" style="margin:0">Seleccionado: <b class="icono-actual">{{ a.icono }}</b></span>
+        </div>
       </div>
       <div class="campo">
         <label>Descripción</label>
@@ -82,4 +106,78 @@
   </div>
 </div>
 {% endfor %}
+
+<script>
+(function () {
+  function actualizarGaleria(galeria, clave) {
+    var targetId = galeria.getAttribute('data-target');
+    var input = document.getElementById(targetId);
+    if (input) input.value = clave;
+    galeria.setAttribute('data-actual', clave);
+    galeria.querySelectorAll('.btn-icono').forEach(function (btn) {
+      btn.style.borderColor = (btn.getAttribute('data-icono') === clave) ? 'var(--blue-500)' : 'var(--line)';
+      btn.style.background = (btn.getAttribute('data-icono') === clave) ? '#e8f4ff' : '#fff';
+    });
+    var label = galeria.parentElement.querySelector('.icono-actual');
+    if (label) label.textContent = clave;
+  }
+
+  document.querySelectorAll('.galeria-iconos').forEach(function (galeria) {
+    var actual = galeria.getAttribute('data-actual') || 'scale';
+    actualizarGaleria(galeria, actual);
+    galeria.querySelectorAll('.btn-icono').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        actualizarGaleria(galeria, btn.getAttribute('data-icono'));
+      });
+    });
+  });
+
+  // Sugerencia con IA
+  document.querySelectorAll('.btn-sugerir').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var nombre = btn.getAttribute('data-nombre') || '';
+      var targetId = btn.getAttribute('data-target');
+      var inputNombre = document.querySelector('input[name="nombre"]');
+      if (!nombre && inputNombre) nombre = inputNombre.value.trim();
+      if (!nombre) { alert('Escribe primero el nombre del área.'); return; }
+      btn.disabled = true;
+      btn.textContent = 'Sugiriendo...';
+      fetch('/admin/areas/sugerir-icono?nombre=' + encodeURIComponent(nombre))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var galeria = btn.closest('.campo').querySelector('.galeria-iconos');
+          if (galeria && data.icono) actualizarGaleria(galeria, data.icono);
+        })
+        .catch(function () { alert('No se pudo sugerir el icono.'); })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = 'Sugerir con IA';
+        });
+    });
+  });
+
+  // Para el formulario de creación, sugerir según el nombre mientras se escribe (opcional)
+  var inputNombreCrear = document.querySelector('form[action*="areas_crear"] input[name="nombre"]');
+  var btnSugerirCrear = document.getElementById('btn_sugerir_icono');
+  if (btnSugerirCrear) {
+    btnSugerirCrear.addEventListener('click', function () {
+      var nombre = inputNombreCrear ? inputNombreCrear.value.trim() : '';
+      if (!nombre) { alert('Escribe primero el nombre del área.'); return; }
+      btnSugerirCrear.disabled = true;
+      btnSugerirCrear.textContent = 'Sugiriendo...';
+      fetch('/admin/areas/sugerir-icono?nombre=' + encodeURIComponent(nombre))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var galeria = document.querySelector('.galeria-iconos[data-target="icono_seleccionado"]');
+          if (galeria && data.icono) actualizarGaleria(galeria, data.icono);
+        })
+        .catch(function () { alert('No se pudo sugerir el icono.'); })
+        .finally(function () {
+          btnSugerirCrear.disabled = false;
+          btnSugerirCrear.textContent = 'Sugerir con IA';
+        });
+    });
+  }
+})();
+</script>
 {% endblock %}

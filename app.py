@@ -3881,7 +3881,46 @@ def admin_redes():
 @requiere_admin
 def admin_areas():
     return render_template("admin/areas.html", usuario=g.usuario,
-                           areas=db.areas_todas())
+                           areas=db.areas_todas(), iconos=ICONOS_SVG)
+
+
+@app.route("/admin/areas/sugerir-icono")
+@requiere_admin
+def admin_areas_sugerir_icono():
+    nombre = (request.args.get("nombre") or "").strip()
+    if not nombre:
+        return jsonify({"icono": "scale"})
+    claves = list(ICONOS_SVG.keys())
+    # Intento con IA si está configurada
+    try:
+        if ia_juridica.configurado():
+            mensajes = [{"role": "user",
+                         "content": ("Elige UNA clave de esta lista que mejor represente "
+                                     "el área de práctica jurídica '%s': %s. "
+                                     "Responde SOLO con la clave, sin explicación."
+                                     % (nombre, ", ".join(claves)))}]
+            resp = ia_juridica.consultar(mensajes, max_tokens=20, temperatura=0.0)
+            clave = (resp or "").strip().lower().strip("\"'.,:; ")
+            if clave in claves:
+                return jsonify({"icono": clave, "ia": True})
+    except Exception:
+        pass
+    # Respaldo por palabras clave
+    texto = nombre.lower()
+    reglas = [
+        (("familia", "familiares"), "users"),
+        (("laboral", "trabajo", "empleo"), "briefcase"),
+        (("penal", "criminal"), "gavel"),
+        (("civil", "contrato", "inmueble"), "scale"),
+        (("comercial", "empresa", "sociedad"), "chart"),
+        (("administrativo", "publico"), "building"),
+        (("ambiental",), "shield"),
+        (("recicl", "asociacion"), "users"),
+    ]
+    for palabras, clave in reglas:
+        if any(p in texto for p in palabras):
+            return jsonify({"icono": clave, "ia": False})
+    return jsonify({"icono": "scale", "ia": False})
 
 
 @app.route("/admin/areas/crear", methods=["POST"])
