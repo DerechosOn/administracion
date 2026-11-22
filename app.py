@@ -218,6 +218,11 @@ ICONOS_SVG = {
     "star": '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
     "mail": '<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M22 6l-10 7L2 6"/>',
     "phone": '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8 10a16 16 0 0 0 6 6l1.35-1.35a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    "laboral": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 13v.01M2 9h20"/>',
+    "penal": '<path d="M14 13l-8.5 8.5a2.12 2.12 0 0 1-3-3L11 10M16 16l5-5M4 20l3.5-3.5M20 4l-8.5 8.5M18 6l-3-3 5-1 1 5-3-1z"/>',
+    "comercial": '<path d="M18 20V10M12 20V4M6 20v-6"/><path d="M3 21h18"/>',
+    "civil": '<path d="M12 3v18M5 21h14M6 7l-3 6a3 3 0 0 0 6 0L6 7zm12 0l-3 6a3 3 0 0 0 6 0l-3-6zM12 3l-2 4M12 3l2 4"/>',
+    "tributario": '<path d="M4 2h16v20H4zM8 6h8M8 10h8M8 14h5"/><path d="M15 14l2 2 4-4"/>',
 }
 
 
@@ -3882,45 +3887,6 @@ def admin_redes():
 def admin_areas():
     return render_template("admin/areas.html", usuario=g.usuario,
                            areas=db.areas_todas(), iconos=ICONOS_SVG)
-
-
-@app.route("/admin/areas/sugerir-icono")
-@requiere_admin
-def admin_areas_sugerir_icono():
-    nombre = (request.args.get("nombre") or "").strip()
-    if not nombre:
-        return jsonify({"icono": "scale"})
-    claves = list(ICONOS_SVG.keys())
-    # Intento con IA si está configurada
-    try:
-        if ia_juridica.configurado():
-            mensajes = [{"role": "user",
-                         "content": ("Elige UNA clave de esta lista que mejor represente "
-                                     "el área de práctica jurídica '%s': %s. "
-                                     "Responde SOLO con la clave, sin explicación."
-                                     % (nombre, ", ".join(claves)))}]
-            resp = ia_juridica.consultar(mensajes, max_tokens=20, temperatura=0.0)
-            clave = (resp or "").strip().lower().strip("\"'.,:; ")
-            if clave in claves:
-                return jsonify({"icono": clave, "ia": True})
-    except Exception:
-        pass
-    # Respaldo por palabras clave
-    texto = nombre.lower()
-    reglas = [
-        (("familia", "familiares"), "users"),
-        (("laboral", "trabajo", "empleo"), "briefcase"),
-        (("penal", "criminal"), "gavel"),
-        (("civil", "contrato", "inmueble"), "scale"),
-        (("comercial", "empresa", "sociedad"), "chart"),
-        (("administrativo", "publico"), "building"),
-        (("ambiental",), "shield"),
-        (("recicl", "asociacion"), "users"),
-    ]
-    for palabras, clave in reglas:
-        if any(p in texto for p in palabras):
-            return jsonify({"icono": clave, "ia": False})
-    return jsonify({"icono": "scale", "ia": False})
 
 
 @app.route("/admin/areas/crear", methods=["POST"])

@@ -24,7 +24,6 @@
           {% endfor %}
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-outline btn-sm" id="btn_sugerir_icono">Sugerir con IA</button>
           <span class="sub" id="icono_actual" style="margin:0">Seleccionado: <b>scale</b></span>
         </div>
       </div>
@@ -90,7 +89,6 @@
           {% endfor %}
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-outline btn-sm btn-sugerir" data-nombre="{{ a.nombre }}" data-target="icono_edit_{{ a.id }}">Sugerir con IA</button>
           <span class="sub" style="margin:0">Seleccionado: <b class="icono-actual">{{ a.icono }}</b></span>
         </div>
       </div>
@@ -132,52 +130,5 @@
     });
   });
 
-  // Sugerencia con IA
-  document.querySelectorAll('.btn-sugerir').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var nombre = btn.getAttribute('data-nombre') || '';
-      var targetId = btn.getAttribute('data-target');
-      var inputNombre = document.querySelector('input[name="nombre"]');
-      if (!nombre && inputNombre) nombre = inputNombre.value.trim();
-      if (!nombre) { alert('Escribe primero el nombre del área.'); return; }
-      btn.disabled = true;
-      btn.textContent = 'Sugiriendo...';
-      fetch('/admin/areas/sugerir-icono?nombre=' + encodeURIComponent(nombre))
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var galeria = btn.closest('.campo').querySelector('.galeria-iconos');
-          if (galeria && data.icono) actualizarGaleria(galeria, data.icono);
-        })
-        .catch(function () { alert('No se pudo sugerir el icono.'); })
-        .finally(function () {
-          btn.disabled = false;
-          btn.textContent = 'Sugerir con IA';
-        });
-    });
-  });
-
-  // Para el formulario de creación, sugerir según el nombre mientras se escribe (opcional)
-  var inputNombreCrear = document.querySelector('form[action*="areas_crear"] input[name="nombre"]');
-  var btnSugerirCrear = document.getElementById('btn_sugerir_icono');
-  if (btnSugerirCrear) {
-    btnSugerirCrear.addEventListener('click', function () {
-      var nombre = inputNombreCrear ? inputNombreCrear.value.trim() : '';
-      if (!nombre) { alert('Escribe primero el nombre del área.'); return; }
-      btnSugerirCrear.disabled = true;
-      btnSugerirCrear.textContent = 'Sugiriendo...';
-      fetch('/admin/areas/sugerir-icono?nombre=' + encodeURIComponent(nombre))
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var galeria = document.querySelector('.galeria-iconos[data-target="icono_seleccionado"]');
-          if (galeria && data.icono) actualizarGaleria(galeria, data.icono);
-        })
-        .catch(function () { alert('No se pudo sugerir el icono.'); })
-        .finally(function () {
-          btnSugerirCrear.disabled = false;
-          btnSugerirCrear.textContent = 'Sugerir con IA';
-        });
-    });
-  }
-})();
 </script>
 {% endblock %}
