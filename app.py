@@ -4367,28 +4367,12 @@ def admin_contrato():
 
             return redirect(url_for("admin_contrato"))
 
-        # Firma autorizada (existente)
+        # Solo firma electrónica (canvas). Se guarda mediante accion=firma_digital.
         db.contenido_guardar({
             "contrato_firmante_nombre": request.form.get("firmante_nombre", "").strip(),
             "contrato_firmante_cargo": request.form.get("firmante_cargo", "").strip(),
         })
-        archivo = request.files.get("firma")
-        if archivo and archivo.filename:
-            original = os.path.basename(archivo.filename.replace("\\", "/"))
-            ext = os.path.splitext(original)[1].lower()
-            if ext not in EXTENSIONES_IMAGEN:
-                flash("Formato de imagen no permitido. Use JPG, PNG, WEBP o GIF.", "error")
-                return redirect(url_for("admin_contrato"))
-            viejo = db.contenido_todos().get("contrato_firma_archivo", "")
-            nombre = "firma-despacho" + ext
-            archivo.save(os.path.join(BASE_DIR, "static", "img", nombre))
-            if viejo and viejo != nombre:
-                try:
-                    os.remove(os.path.join(BASE_DIR, "static", "img", viejo))
-                except OSError:
-                    pass
-            db.contenido_guardar({"contrato_firma_archivo": nombre})
-        flash("Firma autorizada del despacho guardada.", "exito")
+        flash("Datos del firmante guardados.", "exito")
         return redirect(url_for("admin_contrato"))
 
     return _render_admin_contrato()
