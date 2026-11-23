@@ -5,9 +5,13 @@ import os
 import json
 import sqlite3
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from werkzeug.security import generate_password_hash
+
+def _ahora():
+    return datetime.now(timezone(timedelta(hours=-5)))
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Carpeta de datos. Si se define DATA_DIR (p. ej. un disco persistente),
@@ -678,7 +682,7 @@ def migrar(conn):
 
 def _sembrar_fuentes(cur):
     """Fuentes oficiales del tema IAT que el motor vigila por defecto."""
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ahora = _ahora().strftime("%Y-%m-%d %H:%M")
     cur.executemany(
         "INSERT INTO motor_fuentes (nombre, tipo, area, url, activo, creado_el) "
         "VALUES (?, ?, ?, ?, 1, ?)",
@@ -703,7 +707,7 @@ def _sembrar_fuentes(cur):
 
 def semilla(conn):
     cur = conn.cursor()
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ahora = _ahora().strftime("%Y-%m-%d %H:%M")
 
     cur.execute("SELECT COUNT(*) FROM usuarios WHERE rol = 'admin'")
     if cur.fetchone()[0] == 0:
@@ -1139,7 +1143,7 @@ def contacto_crear(datos):
         "VALUES (?, ?, ?, ?, ?, ?)",
         (datos["nombre"], datos["correo"], datos.get("telefono", ""),
          datos.get("asunto", ""), datos["mensaje"],
-         datetime.now().strftime("%Y-%m-%d %H:%M")))
+         _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def contactos_todos(leido=None):
@@ -1167,7 +1171,7 @@ def cita_crear(datos):
         "VALUES (?, ?, ?, ?, ?, ?, ?, 'Pendiente', ?)",
         (datos["nombre"], datos["correo"], datos.get("telefono", ""),
          datos.get("abogado_id"), datos["fecha"], datos["hora"],
-         datos.get("motivo", ""), datetime.now().strftime("%Y-%m-%d %H:%M")))
+         datos.get("motivo", ""), _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def citas_todas():
@@ -1237,7 +1241,7 @@ def testimonio_crear(datos, cliente_id=None):
         "VALUES (?, ?, ?, ?, ?, ?)",
         (datos["cliente_nombre"], datos["texto"],
          int(datos.get("calificacion", 5) or 5),
-         activo, cliente_id, datetime.now().strftime("%Y-%m-%d %H:%M")))
+         activo, cliente_id, _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def testimonio_editar(tid, datos):
@@ -1286,7 +1290,7 @@ def actividad_crear(datos):
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (datos["abogado_id"], datos["titulo"], datos.get("tipo", "Actividad"),
          datos["fecha"], datos["hora"], datos.get("hora_fin", datos["hora"]),
-         datos.get("descripcion", ""), datetime.now().strftime("%Y-%m-%d %H:%M")))
+         datos.get("descripcion", ""), _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def actividades_de_abogado(abogado_id):
@@ -1409,7 +1413,7 @@ def cartera_de_cliente(cliente_id):
 
 
 def cartera_crear(datos):
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ahora = _ahora().strftime("%Y-%m-%d %H:%M")
     return ejecutar(
         "INSERT INTO cartera (cliente_id, servicio, descripcion, valor_total, pagado, "
         "vencimiento, creado_el, actualizado_el) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -1424,7 +1428,7 @@ def cartera_editar(cid, datos):
         "vencimiento = ?, actualizado_el = ? WHERE id = ?",
         (datos["servicio"], datos.get("descripcion", ""),
          float(datos.get("valor_total", 0) or 0), float(datos.get("pagado", 0) or 0),
-         datos.get("vencimiento", ""), datetime.now().strftime("%Y-%m-%d %H:%M"), cid))
+         datos.get("vencimiento", ""), _ahora().strftime("%Y-%m-%d %H:%M"), cid))
 
 
 def cartera_eliminar(cid):
@@ -1433,7 +1437,7 @@ def cartera_eliminar(cid):
 
 # ---------------------------------------------------------------- solicitudes de oferta (servicios)
 def solicitud_oferta_crear(datos):
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ahora = _ahora().strftime("%Y-%m-%d %H:%M")
     return ejecutar(
         "INSERT INTO solicitudes_oferta (cliente_id, servicio, origen, tarifa_clave, valor, "
         "estado, observacion, creado_el, actualizado_el) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -1488,7 +1492,7 @@ def comprobante_crear(datos):
         (datos["cliente_id"], datos.get("cartera_id"), datos["nombre_archivo"],
          datos.get("archivo", ""), datos.get("tamano", 0),
          float(datos.get("importe", 0) or 0),
-         datos.get("nota", ""), datetime.now().strftime("%Y-%m-%d %H:%M")))
+         datos.get("nota", ""), _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def comprobante_por_id(cid):
@@ -1516,7 +1520,7 @@ def comprobante_estado(cid, estado, validado_por=""):
     ejecutar(
         "UPDATE comprobantes SET estado = ?, validado_el = ?, validado_por = ? WHERE id = ?",
         (estado,
-         datetime.now().strftime("%Y-%m-%d %H:%M") if sella else "",
+         _ahora().strftime("%Y-%m-%d %H:%M") if sella else "",
          validado_por if sella else "",
          cid))
 
@@ -1531,7 +1535,7 @@ def forma_pago_crear(datos):
          datos.get("instrucciones", ""),
          1 if datos.get("activa") in (1, "1", True) else 0,
          int(datos.get("orden", 0) or 0),
-         datetime.now().strftime("%Y-%m-%d %H:%M")))
+         _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def forma_pago_por_id(fpid):
@@ -1566,7 +1570,7 @@ def contrato_crear(datos):
         "VALUES (?, ?, ?, ?, ?, 'Activo', ?)",
         (datos["cliente_id"], datos.get("numero", ""), datos.get("servicio", ""),
          datos.get("ciudad", "Bogotá D.C."), datos.get("texto", ""),
-         datetime.now().strftime("%Y-%m-%d %H:%M")))
+         _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def contrato_actualizar(cid, datos):
@@ -1590,7 +1594,7 @@ def prospecto_crear(datos):
          datos.get("representante_legal", ""), datos.get("domicilio", ""),
          datos.get("direccion", ""),
          datos.get("score", 0) or 0, datos.get("estado", "Nuevo") or "Nuevo",
-         datos.get("propuesta", ""), datetime.now().strftime("%Y-%m-%d %H:%M")))
+         datos.get("propuesta", ""), _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def prospecto_actualizar(pid, cambios):
@@ -1635,7 +1639,7 @@ def busqueda_agente_crear(texto, fuentes):
     return ejecutar(
         "INSERT INTO busquedas_agente (texto, fuentes, resultado, nro_resultados, creado_el) "
         "VALUES (?, ?, 'Pendiente por importar', 0, ?)",
-        (texto, fuentes, datetime.now().strftime("%Y-%m-%d %H:%M")))
+        (texto, fuentes, _ahora().strftime("%Y-%m-%d %H:%M")))
 
 
 def busquedas_agente_lista(limite=30):
@@ -1668,10 +1672,6 @@ def contratos_de_cliente(cliente_id):
 
 # ---------------------------------------------------------------- telemetría
 
-def _ahora():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
 def visita_crear(sesion, pagina, dispositivo, navegador, es_vuelta):
     return ejecutar(
         "INSERT INTO visitas (sesion, pagina, dispositivo, navegador, es_vuelta, creado_el) "
@@ -1700,7 +1700,7 @@ def red_metrica_guardar(plataforma, seguidores=0, alcance=0, impresiones=0,
     Con unico_diario=True la fila del dia se actualiza en lugar de acumular
     una por cada ejecucion automatica (que corre cada pocas horas).
     """
-    fecha = datetime.now().strftime("%Y-%m-%d")
+    fecha = _ahora().strftime("%Y-%m-%d")
     if unico_diario:
         filas = consultar(
             "SELECT id FROM redes_metricas WHERE plataforma=? AND fecha=?",
@@ -1780,7 +1780,7 @@ def marketing_eliminar(analisis_id):
 # ---------------------------------------------------------------- IAT / recicladores
 def iat_crear(datos):
     """Radicado de un proyecto de aprovechamiento. Devuelve el id."""
-    anio = datetime.now().year
+    anio = _ahora().year
     base = f"IAT-{anio}-"
     filas = consultar(
         "SELECT radicado FROM iat_solicitudes WHERE radicado LIKE ? ORDER BY id DESC",

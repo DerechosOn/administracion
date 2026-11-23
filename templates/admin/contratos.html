@@ -1,0 +1,30 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Contratos firmados — Administración Derechos On{% endblock %}
+{% block contenido %}
+<h1>Contratos de clientes</h1>
+<p class="sub">Contratos generados a partir de los servicios aceptados. Puedes verlos en formato de papelería y guardarlos como PDF.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Número</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Firmado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+    {% for c in contratos %}
+      <tr>
+        <td>{{ c.numero }}</td>
+        <td>{{ c.cliente_nombre }}<br><span class="sub">{{ c.cliente_email }}</span></td>
+        <td>{{ c.servicio }}</td>
+        <td>{{ c.estado }}</td>
+        <td>{{ c.firmado_el or 'Pendiente' }}</td>
+        <td>
+          <a class="btn btn-sm btn-outline" href="{{ url_for('admin_contrato_ver', cid=c.id) }}" target="_blank">Ver / Imprimir PDF</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" style="color:var(--muted)">No hay contratos registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

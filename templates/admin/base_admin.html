@@ -140,6 +140,9 @@
           <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('admin_contrato') }}" href="{{ url_for('admin_contrato') }}" data-ix-text="contrato plantilla documentos firma">
             <svg class="ix-ico"><use href="#i-file"></use></svg><span>Contrato</span>
           </a>
+          <a class="ix-link {{ 'activo' if request.endpoint == 'admin_contratos' }}" href="{{ url_for('admin_contratos') }}" data-ix-text="contratos firmados clientes">
+            <svg class="ix-ico"><use href="#i-file"></use></svg><span>Contratos firmados</span>
+          </a>
         </div>
       </div>
 

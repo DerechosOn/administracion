@@ -21,6 +21,10 @@ import hashlib
 import uuid
 import calendar as calendario_py
 from datetime import datetime, timezone, date, timedelta
+
+def _ahora():
+    return datetime.now(timezone(timedelta(hours=-5)))
+
 from functools import wraps
 
 from io import BytesIO, StringIO
@@ -917,7 +921,7 @@ def _datos_intranet():
 
 @app.context_processor
 def inyectar_contexto():
-    contexto = {"now": datetime.now(), "C": db.contenido_todos()}
+    contexto = {"now": _ahora(), "C": db.contenido_todos()}
     try:
         usuario = getattr(g, "usuario", None)
         if request.path.startswith("/admin") and usuario and usuario.get("rol") == "admin":
@@ -1198,7 +1202,7 @@ def _crear_contrato_cliente(usuario, servicio):
     cid = db.contrato_crear({
         "cliente_id": usuario["id"], "servicio": servicio,
         "texto": _contrato_html(usuario, servicio, "")})
-    numero = "DO-%s-%04d" % (datetime.now().year, cid)
+    numero = "DO-%s-%04d" % (_ahora().year, cid)
     db.contrato_actualizar(cid, {
         "numero": numero,
         "texto": _contrato_html(usuario, servicio, numero)})
@@ -1279,7 +1283,7 @@ def registro_persona():
                 "VALUES (?, ?, ?, 'cliente', ?, ?, ?, 0, ?, ?, 'natural')",
                 (nombre, email, generate_password_hash(clave),
                  telefono, documento, tipo_servicio,
-                 datetime.now().strftime("%Y-%m-%d %H:%M"),
+                 _ahora().strftime("%Y-%m-%d %H:%M"),
                  json.dumps(datos_extra, ensure_ascii=False))
             )
             _crear_contrato_cliente(
@@ -1385,7 +1389,7 @@ def registro_empresa():
                 "VALUES (?, ?, ?, 'cliente', ?, ?, ?, 1, ?, ?, 'juridica')",
                 (nombre, email, generate_password_hash(clave),
                  telefono, documento, tipo_servicio,
-                 datetime.now().strftime("%Y-%m-%d %H:%M"),
+                 _ahora().strftime("%Y-%m-%d %H:%M"),
                  json.dumps(datos_extra, ensure_ascii=False))
             )
             _crear_contrato_cliente(
@@ -1448,7 +1452,7 @@ def registro_asociacion():
                 "VALUES (?, ?, ?, 'cliente', ?, ?, ?, 1, ?, ?, 'asociacion')",
                 (razon_social, email, generate_password_hash(clave),
                  telefono, nit, tipo_servicio,
-                 datetime.now().strftime("%Y-%m-%d %H:%M"),
+                 _ahora().strftime("%Y-%m-%d %H:%M"),
                  json.dumps(datos_extra, ensure_ascii=False))
             )
             _crear_contrato_cliente(
@@ -1499,7 +1503,7 @@ def cliente_contrato_firmar(cid):
     if not imagen.startswith("data:image/png;base64,"):
         flash("Dibuja tu firma en el recuadro antes de enviar.", "error")
         return redirect(url_for("cliente_contrato_ver", cid=cid))
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ahora = _ahora().strftime("%Y-%m-%d %H:%M")
     firma_despacho = (db.contenido_todos().get("contrato_firma_archivo") or "").strip()
     huella = hashlib.sha256(
         (c.get("texto", "") + "|" + nombre + "|" + imagen + "|" +
@@ -1608,7 +1612,7 @@ def cliente_servicios():
                 })
                 db.solicitud_oferta_actualizar(sid, {
                     "estado": "aceptada",
-                    "actualizado_el": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "actualizado_el": _ahora().strftime("%Y-%m-%d %H:%M"),
                 })
                 db.ejecutar("UPDATE usuarios SET activo = 1 WHERE id = ?", (usuario["id"],))
                 cid = _crear_contrato_cliente(usuario, sol["servicio"])
@@ -1765,7 +1769,7 @@ def admin_comprobante_validar(cid):
     if comp["cartera_id"]:
         db.ejecutar(
             "UPDATE cartera SET pagado = pagado + ?, actualizado_el = ? WHERE id = ?",
-            (float(comp["importe"] or 0), datetime.now().strftime("%Y-%m-%d %H:%M"),
+            (float(comp["importe"] or 0), _ahora().strftime("%Y-%m-%d %H:%M"),
              comp["cartera_id"]))
     db.comprobante_estado(cid, "Validado", validador)
     flash("Comprobante validado. El abono se aplicó a la cartera.", "exito")
@@ -2043,7 +2047,7 @@ def _armar_dias(eventos, dias):
             "ncols": ncols,
         }
         if dia == date.today():
-            ah = datetime.now()
+            ah = _ahora()
             info["now_top"] = max(0.0, (ah.hour * 60 + ah.minute - HORA_MIN_CAL * 60) * 100.0 / total_min)
         estructura.append(info)
     return estructura
@@ -2138,9 +2142,9 @@ def abogado_proceso_notas(pid):
         return redirect(url_for("abogado_proceso", pid=pid))
     db.ejecutar(
         "INSERT INTO anotaciones (proceso_id, abogado_id, texto, creado_el) VALUES (?, ?, ?, ?)",
-        (pid, g.abogado["id"], texto, datetime.now().strftime("%Y-%m-%d %H:%M")))
+        (pid, g.abogado["id"], texto, _ahora().strftime("%Y-%m-%d %H:%M")))
     db.ejecutar("UPDATE procesos SET fecha_actualizacion = ? WHERE id = ?",
-                (datetime.now().strftime("%Y-%m-%d %H:%M"), pid))
+                (_ahora().strftime("%Y-%m-%d %H:%M"), pid))
     flash("Anotación guardada.", "exito")
     return redirect(url_for("abogado_proceso", pid=pid))
 
@@ -2526,7 +2530,7 @@ def admin_noticias_crear():
         "INSERT INTO noticias (titulo, resumen, contenido, etiqueta, imagen, creado_el) VALUES (?, ?, ?, ?, ?, ?)",
         (request.form["titulo"].strip(), request.form.get("resumen", "").strip(),
          request.form.get("contenido", "").strip(), request.form.get("etiqueta", "Artículo").strip(),
-         imagen_nombre, datetime.now().strftime("%Y-%m-%d %H:%M")))
+         imagen_nombre, _ahora().strftime("%Y-%m-%d %H:%M")))
     flash("Artículo publicado.", "exito")
     if any(c["activa"] and c["auto"] for c in redes.leer_config().values()):
         filas = db.consultar("SELECT * FROM noticias WHERE id = ?", (nid,))
@@ -3784,7 +3788,7 @@ def chat_nuevo():
 
 def _chat_a_html(usuario, filas):
     """Convierte la conversación del chat en un correo legible."""
-    fecha = datetime.now().strftime("%d/%m/%Y · %I:%M %p")
+    fecha = _ahora().strftime("%d/%m/%Y · %I:%M %p")
     partes = [
         '<div style="font-family:Arial,Helvetica,sans-serif;max-width:620px;margin:0 auto">'
         '<div style="background:linear-gradient(90deg,#075e54,#128c7e);color:#fff;'
@@ -4193,7 +4197,7 @@ def _propuesta_html(p):
         intro += (" En su calidad de %s en un proceso ante la Rama Judicial, "
                   "podemos asesorarle y representarle judicial y extrajudicialmente."
                   % h.escape(rol.lower()))
-    fecha = datetime.now().strftime("%d de %B de %Y")
+    fecha = _ahora().strftime("%d de %B de %Y")
     logo = _logo_data_url()
     fila = lambda etiqueta, valor: ("""
         <tr><td style="padding:4px 10px;border-bottom:1px solid #e6eef7;color:#5b6775;font-size:12px;white-space:nowrap">%s</td>
@@ -5313,7 +5317,7 @@ def admin_abogados_crear():
         (nombre, request.form.get("especialidad", "").strip(),
          correo, request.form.get("telefono", "").strip(),
          request.form.get("tarjeta_profesional", "").strip(),
-         datetime.now().strftime("%Y-%m-%d %H:%M")))
+         _ahora().strftime("%Y-%m-%d %H:%M")))
     _crear_cuenta_abogado(correo, clave, nombre)
     flash("Abogado agregado al despacho.", "exito")
     return redirect(url_for("admin_abogados"))
@@ -5324,7 +5328,7 @@ def _crear_cuenta_abogado(correo, clave, nombre):
     if "@" not in correo:
         return
     usuario = db.usuario_por_email(correo)
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ahora = _ahora().strftime("%Y-%m-%d %H:%M")
     if usuario:
         if usuario["rol"] != "abogado":
             flash("El correo ya pertenece a otro tipo de usuario; no se modificó su cuenta.", "error")
@@ -5377,7 +5381,7 @@ def admin_expedientes_crear():
         "INSERT INTO expedientes (proceso_id, tipo, titulo, descripcion, fecha) VALUES (?, ?, ?, ?, ?)",
         (int(request.form["proceso_id"]), request.form.get("tipo", "Documento"),
          request.form["titulo"].strip(), request.form.get("descripcion", "").strip(),
-         request.form.get("fecha", "") or datetime.now().strftime("%Y-%m-%d")))
+         request.form.get("fecha", "") or _ahora().strftime("%Y-%m-%d")))
     flash("Expediente agregado al proceso.", "exito")
     return redirect(url_for("admin_expedientes"))
 
@@ -5409,7 +5413,7 @@ def admin_procesos():
 @app.route("/admin/procesos/crear", methods=["POST"])
 @requiere_admin
 def admin_procesos_crear():
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ahora = _ahora().strftime("%Y-%m-%d %H:%M")
     abogado_id = request.form.get("abogado_id")
     db.ejecutar(
         "INSERT INTO procesos (cliente_id, abogado_id, titulo, despacho, descripcion, tipo, estado, fecha_apertura, fecha_actualizacion, notas) "
@@ -5439,7 +5443,7 @@ def admin_procesos_editar(pid):
          request.form.get("descripcion", "").strip(), request.form.get("tipo", "").strip(),
          request.form.get("estado", "Trámite inicial"),
          request.form.get("notas", "").strip(),
-         datetime.now().strftime("%Y-%m-%d %H:%M"), pid))
+         _ahora().strftime("%Y-%m-%d %H:%M"), pid))
     flash("Proceso actualizado.", "exito")
     return redirect(url_for("admin_procesos"))
 
@@ -5474,13 +5478,13 @@ def admin_actuaciones_crear():
         "INSERT INTO actuaciones (proceso_id, fecha, fecha_maxima, descripcion, creado_el) "
         "VALUES (?, ?, ?, ?, ?)",
         (int(request.form["proceso_id"]),
-         request.form.get("fecha", "") or datetime.now().strftime("%Y-%m-%d"),
+         request.form.get("fecha", "") or _ahora().strftime("%Y-%m-%d"),
          fecha_maxima,
          request.form["descripcion"].strip(),
-         datetime.now().strftime("%Y-%m-%d %H:%M")))
+         _ahora().strftime("%Y-%m-%d %H:%M")))
     db.ejecutar(
         "UPDATE procesos SET fecha_actualizacion = ? WHERE id = ?",
-        (datetime.now().strftime("%Y-%m-%d %H:%M"), int(request.form["proceso_id"])))
+        (_ahora().strftime("%Y-%m-%d %H:%M"), int(request.form["proceso_id"])))
     flash("Actuación registrada en el proceso.", "exito")
     return redirect(url_for("admin_actuaciones"))
 
@@ -5494,7 +5498,7 @@ def admin_actuaciones_editar(aid):
     db.ejecutar(
         "UPDATE actuaciones SET proceso_id = ?, fecha = ?, fecha_maxima = ?, descripcion = ? WHERE id = ?",
         (int(request.form["proceso_id"]),
-         request.form.get("fecha", "") or datetime.now().strftime("%Y-%m-%d"),
+         request.form.get("fecha", "") or _ahora().strftime("%Y-%m-%d"),
          fecha_maxima,
          request.form["descripcion"].strip(), aid))
     flash("Actuación actualizada.", "exito")
@@ -5528,7 +5532,7 @@ def admin_actuaciones_documento(aid):
     db.ejecutar(
         "INSERT INTO documentos (actuacion_id, nombre_original, archivo, tamano, cargado_el) VALUES (?, ?, ?, ?, ?)",
         (aid, original, nombre_guardado, tamano,
-         datetime.now().strftime("%Y-%m-%d %H:%M")))
+         _ahora().strftime("%Y-%m-%d %H:%M")))
     flash("Documento adjuntado a la actuación.", "exito")
     return redirect(url_for("admin_actuaciones"))
 
@@ -5695,7 +5699,7 @@ def admin_clientes_exportar():
     ws['A2'].font = Font(name='Calibri', bold=True, size=14, color=TEXT_DARK)
     ws['A2'].alignment = Alignment(horizontal='left', vertical='top')
 
-    ws['A3'] = f"Actualizado: {datetime.now().strftime('%d/%m/%Y %H:%M')}   |   Total clientes: {len(clientes)}"
+    ws['A3'] = f"Actualizado: {_ahora().strftime('%d/%m/%Y %H:%M')}   |   Total clientes: {len(clientes)}"
     ws['A3'].font = Font(name='Calibri', size=10, color=TEXT_MID)
     ws['A3'].alignment = Alignment(horizontal='left', vertical='top')
 
@@ -5787,7 +5791,7 @@ def admin_clientes_exportar():
     ws2['A1'].alignment = Alignment(horizontal='left', vertical='bottom')
 
     ws2.merge_cells('A2:E2')
-    ws2['A2'] = f"Actualizado: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    ws2['A2'] = f"Actualizado: {_ahora().strftime('%d/%m/%Y %H:%M')}"
     ws2['A2'].font = Font(name='Calibri', size=11, color=TEXT_MID)
     ws2['A2'].alignment = Alignment(horizontal='left', vertical='top')
 
@@ -5874,7 +5878,7 @@ def admin_clientes_exportar():
     ws3['A1'].alignment = Alignment(horizontal='left', vertical='bottom')
 
     ws3.merge_cells('A2:C2')
-    ws3['A2'] = f"Actualizado: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    ws3['A2'] = f"Actualizado: {_ahora().strftime('%d/%m/%Y %H:%M')}"
     ws3['A2'].font = Font(name='Calibri', size=11, color=TEXT_MID)
     ws3['A2'].alignment = Alignment(horizontal='left', vertical='top')
 
@@ -5945,7 +5949,7 @@ def admin_clientes_exportar():
     wb.save(buffer)
     buffer.seek(0)
 
-    filename = f"clientes_derechoson_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    filename = f"clientes_derechoson_{_ahora().strftime('%Y%m%d_%H%M')}.xlsx"
     return send_file(buffer, as_attachment=True, download_name=filename,
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
@@ -6032,7 +6036,7 @@ def admin_solicitud_oferta_precio(sid):
         "servicio": (request.form.get("servicio") or sol["servicio"]).strip(),
         "estado": "pendiente_cliente",
         "observacion": (request.form.get("observacion") or sol.get("observacion", "")).strip(),
-        "actualizado_el": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "actualizado_el": _ahora().strftime("%Y-%m-%d %H:%M"),
     })
     flash("Precio enviado al cliente para aceptación.", "exito")
     return redirect(url_for("admin_cartera"))
@@ -6071,6 +6075,26 @@ def admin_cartera_editar(cid):
         "vencimiento": request.form.get("vencimiento", "").strip()})
     flash("Registro de cartera actualizado.", "exito")
     return redirect(url_for("admin_cartera"))
+
+
+@app.route("/admin/contratos")
+@requiere_admin
+def admin_contratos():
+    filas = db.consultar(
+        "SELECT ct.*, u.nombre AS cliente_nombre, u.email AS cliente_email "
+        "FROM contratos ct LEFT JOIN usuarios u ON u.id = ct.cliente_id "
+        "ORDER BY ct.id DESC")
+    return render_template("admin/contratos.html", usuario=g.usuario, contratos=filas)
+
+
+@app.route("/admin/contrato/<int:cid>")
+@requiere_admin
+def admin_contrato_ver(cid):
+    c = db.contrato_por_id(cid)
+    if not c:
+        abort(404)
+    return render_template("cliente/contrato.html", usuario=g.usuario, c=c,
+                           hide_header=True)
 
 
 @app.route("/admin/cartera/<int:cid>/eliminar", methods=["POST"])
@@ -6334,7 +6358,7 @@ def admin_respaldo_descargar():
         shutil.rmtree(carpeta, ignore_errors=True)
         return respuesta
 
-    nombre = "respaldo-derechoson-%s.zip" % datetime.now().strftime("%Y%m%d-%H%M")
+    nombre = "respaldo-derechoson-%s.zip" % _ahora().strftime("%Y%m%d-%H%M")
     return send_file(destino, as_attachment=True, download_name=nombre,
                      mimetype="application/zip")
 
@@ -6621,7 +6645,7 @@ def admin_reportes_exportar():
         ws['A2'].font = Font(name='Calibri', bold=True, size=14, color=TEXT_DARK)
         ws['A2'].alignment = Alignment(horizontal='left', vertical='top')
         ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=max_col)
-        ws['A3'] = f"Actualizado: {datetime.now().strftime('%d/%m/%Y %H:%M')}   |   {subtitle}"
+        ws['A3'] = f"Actualizado: {_ahora().strftime('%d/%m/%Y %H:%M')}   |   {subtitle}"
         ws['A3'].font = Font(name='Calibri', size=10, color=TEXT_MID)
         ws['A3'].alignment = Alignment(horizontal='left', vertical='top')
         for c in range(1, max_col+1):
@@ -6906,7 +6930,7 @@ def admin_reportes_pdf():
 
     # Cabecera
     elementos.append(Paragraph("Reporte Operativo — Derechos On", estilo_titulo))
-    elementos.append(Paragraph(f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}", estilo_sub))
+    elementos.append(Paragraph(f"Generado el {_ahora().strftime('%d/%m/%Y %H:%M')}", estilo_sub))
     elementos.append(Spacer(1, 8))
 
     # KPIs totales
@@ -7285,7 +7309,7 @@ def _datos_panel(args=None):
         try:
             desde = datetime.strptime(str(sync_ultimo["ejecutado_el"])[:19],
                                       "%Y-%m-%d %H:%M:%S")
-            sync_horas = max(0.0, (datetime.now() - desde).total_seconds() / 3600.0)
+            sync_horas = max(0.0, (_ahora() - desde).total_seconds() / 3600.0)
         except (TypeError, ValueError):
             sync_horas = None
 
