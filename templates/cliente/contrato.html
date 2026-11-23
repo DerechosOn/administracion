@@ -67,10 +67,7 @@
       <div class="ct-firmar-ops">
         <button type="button" class="btn btn-outline" id="btn-limpiar">Limpiar firma</button>
       </div>
-      <div class="campo" style="max-width:460px;margin-top:14px">
-        <label for="firma-nombre">Nombre completo del firmante *</label>
-        <input type="text" id="firma-nombre" value="{{ usuario.nombre }}" placeholder="Escribe tu nombre tal como aparece en el documento">
-      </div>
+      <input type="hidden" id="firma-nombre" value="{{ usuario.nombre }}">
       <button type="button" class="btn btn-navy" id="btn-firmar">Firmar digitalmente</button>
     </div>
     {% endif %}
