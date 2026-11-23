@@ -4289,7 +4289,7 @@ def admin_contrato():
             if cargo:
                 db.contenido_guardar({"contrato_firmante_cargo": cargo})
             if not imagen.startswith("data:image/png;base64,"):
-                flash("Dibuja la firma del despacho antes de guardar.", "error")
+                flash("Dibuja la firma antes de guardar.", "error")
                 return redirect(url_for("admin_contrato"))
             import base64 as _b64
             data = imagen.split(",", 1)[1]

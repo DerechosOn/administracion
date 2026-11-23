@@ -174,7 +174,7 @@
             {% endif %}
           </div>
           <div style="margin:14px 0">
-            <label>Firma del despacho</label>
+
             <canvas id="pad-firma-despacho" width="520" height="150" style="border:1px solid var(--line);border-radius:8px;background:#fff;display:block"></canvas>
             <div style="display:flex;gap:8px;margin-top:8px">
               <button type="button" class="btn btn-outline" id="btn-limpiar-despacho">Limpiar</button>
@@ -201,7 +201,7 @@
   var btnGuardar=document.getElementById('btn-guardar-firma-digital');
   if(btnGuardar) btnGuardar.addEventListener('click',function(e){
     e.preventDefault();
-    if(!hayTrazos){alert('Dibuja la firma del despacho antes de guardar.');return;}
+    if(!hayTrazos){alert('Dibuja la firma antes de guardar.');return;}
     var form=btnGuardar.closest('form');
     var input=document.createElement('input');
     input.type='hidden';input.name='accion';input.value='firma_digital';
