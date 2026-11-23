@@ -166,14 +166,6 @@
             </div>
           </div>
           <div class="form-field">
-            <label for="firma">Imagen de la firma (JPG, PNG, WEBP, GIF · máx. 2 MB)</label>
-            <div class="file-input-wrapper">
-              <input type="file" id="firma" name="firma" accept="image/*" onchange="updateFileLabel(this)">
-              <label for="firma" class="file-input-label" id="firma-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <span id="firma-text">Seleccionar imagen</span>
-              </label>
-            </div>
             {% if C.get('contrato_firma_archivo') %}
             <div class="current-signature">
               <span>Firma actual:</span>
