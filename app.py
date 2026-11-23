@@ -6076,7 +6076,8 @@ def admin_contratos():
         "SELECT ct.*, u.nombre AS cliente_nombre, u.email AS cliente_email "
         "FROM contratos ct LEFT JOIN usuarios u ON u.id = ct.cliente_id "
         "ORDER BY ct.id DESC")
-    return render_template("admin/contratos.html", usuario=g.usuario, contratos=filas)
+    return render_template("admin/contratos.html", usuario=g.usuario, contratos=filas,
+                           eliminados=db.contratos_eliminados_lista())
 
 
 @app.route("/admin/contrato/<int:cid>")
@@ -6092,18 +6093,24 @@ def admin_contrato_ver(cid):
 @app.route("/admin/contrato/<int:cid>/eliminar", methods=["POST"])
 @requiere_admin
 def admin_contrato_eliminar(cid):
+    motivo = (request.form.get("motivo") or "").strip()
+    if not motivo:
+        flash("Indica el motivo de eliminación del contrato.", "error")
+        return redirect(url_for("admin_contratos"))
     c = db.contrato_por_id(cid)
     if c:
-        db.ejecutar("DELETE FROM contratos WHERE id = ?", (cid,))
-        flash("Contrato eliminado. El cliente podrá generar uno nuevo.", "exito")
+        db.contrato_eliminar_con_motivo(cid, motivo, g.usuario["id"])
+        flash("Contrato eliminado. Motivo registrado.", "exito")
     return redirect(url_for("admin_contratos"))
 
 
 @app.route("/admin/contratos/eliminar-todos", methods=["POST"])
 @requiere_admin
 def admin_contratos_eliminar_todos():
-    db.ejecutar("DELETE FROM contratos")
-    flash("Todos los contratos fueron eliminados. Los clientes podrán generar nuevos.", "exito")
+    motivo = (request.form.get("motivo") or "").strip() or "Eliminación masiva"
+    for c in db.consultar("SELECT id FROM contratos"):
+        db.contrato_eliminar_con_motivo(c["id"], motivo, g.usuario["id"])
+    flash("Todos los contratos fueron eliminados. Motivo registrado.", "exito")
     return redirect(url_for("admin_contratos"))
 
 

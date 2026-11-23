@@ -262,6 +262,17 @@ def iniciar():
             FOREIGN KEY (cliente_id) REFERENCES usuarios (id) ON DELETE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS contratos_eliminados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            contrato_id INTEGER NOT NULL,
+            cliente_id INTEGER DEFAULT NULL,
+            numero TEXT DEFAULT '',
+            servicio TEXT DEFAULT '',
+            motivo TEXT NOT NULL DEFAULT '',
+            eliminado_el TEXT NOT NULL,
+            eliminado_por INTEGER DEFAULT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS comprobantes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente_id INTEGER NOT NULL,
@@ -1663,6 +1674,25 @@ def contrato_por_id(cid):
         "SELECT ct.*, u.nombre AS cliente_nombre, u.email, u.documento, u.telefono, u.tipo_servicio "
         "FROM contratos ct JOIN usuarios u ON u.id = ct.cliente_id WHERE ct.id = ?", (cid,))
     return filas[0] if filas else None
+
+
+def contrato_eliminar_con_motivo(cid, motivo, admin_id=None):
+    c = contrato_por_id(cid)
+    if not c:
+        return
+    ahora = _ahora().strftime("%Y-%m-%d %H:%M")
+    ejecutar(
+        "INSERT INTO contratos_eliminados (contrato_id, cliente_id, numero, servicio, motivo, eliminado_el, eliminado_por) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (cid, c.get("cliente_id"), c.get("numero", ""), c.get("servicio", ""),
+         motivo, ahora, admin_id))
+    ejecutar("DELETE FROM contratos WHERE id = ?", (cid,))
+
+
+def contratos_eliminados_lista():
+    return consultar(
+        "SELECT ce.*, u.nombre AS admin_nombre FROM contratos_eliminados ce "
+        "LEFT JOIN usuarios u ON u.id = ce.eliminado_por ORDER BY ce.id DESC")
 
 
 def contratos_de_cliente(cliente_id):

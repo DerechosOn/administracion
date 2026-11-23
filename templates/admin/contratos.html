@@ -4,7 +4,8 @@
 <h1>Contratos de clientes</h1>
 <p class="sub">Contratos generados a partir de los servicios aceptados. Puedes verlos en formato de papelería y guardarlos como PDF.</p>
 
-<form method="post" action="{{ url_for('admin_contratos_eliminar_todos') }}" style="margin-bottom:16px" onsubmit="return confirm('¿Eliminar TODOS los contratos? Los clientes podrán generar nuevos.');">
+<form method="post" action="{{ url_for('admin_contratos_eliminar_todos') }}" style="margin-bottom:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap" onsubmit="return confirm('¿Eliminar TODOS los contratos? Los clientes podrán generar nuevos.');">
+  <input type="text" name="motivo" placeholder="Motivo de eliminación masiva" required style="width:260px">
   <button class="btn btn-danger btn-sm" type="submit">Eliminar todos los contratos</button>
 </form>
 
@@ -23,7 +24,8 @@
         <td>{{ c.firmado_el or 'Pendiente' }}</td>
         <td>
           <a class="btn btn-sm btn-outline" href="{{ url_for('admin_contrato_ver', cid=c.id) }}" target="_blank">Ver / Imprimir PDF</a>
-          <form method="post" action="{{ url_for('admin_contrato_eliminar', cid=c.id) }}" style="display:inline;margin:0" onsubmit="return confirm('¿Eliminar este contrato? El cliente podrá generar uno nuevo.');">
+          <form method="post" action="{{ url_for('admin_contrato_eliminar', cid=c.id) }}" style="display:inline;margin:0" onsubmit="return confirm('¿Eliminar este contrato?');">
+            <input type="text" name="motivo" placeholder="Motivo de eliminación" required style="width:160px">
             <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
           </form>
         </td>
@@ -34,4 +36,26 @@
     </tbody>
   </table>
 </div>
+
+{% if eliminados %}
+<div class="panel-form" style="margin-top:24px">
+  <h3>Contratos eliminados (historial)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Contrato</th><th>Cliente</th><th>Servicio</th><th>Motivo</th><th>Eliminado</th></tr></thead>
+      <tbody>
+      {% for e in eliminados %}
+        <tr>
+          <td>{{ e.numero or e.contrato_id }}</td>
+          <td>{{ e.cliente_id }}</td>
+          <td>{{ e.servicio }}</td>
+          <td>{{ e.motivo }}</td>
+          <td>{{ e.eliminado_el }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
