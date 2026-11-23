@@ -19,6 +19,9 @@
         <td>{{ c.firmado_el or 'Pendiente' }}</td>
         <td>
           <a class="btn btn-sm btn-outline" href="{{ url_for('admin_contrato_ver', cid=c.id) }}" target="_blank">Ver / Imprimir PDF</a>
+          <form method="post" action="{{ url_for('admin_contrato_eliminar', cid=c.id) }}" style="display:inline;margin:0" onsubmit="return confirm('¿Eliminar este contrato? El cliente podrá generar uno nuevo.');">
+            <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+          </form>
         </td>
       </tr>
     {% else %}

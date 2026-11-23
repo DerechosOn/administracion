@@ -8,6 +8,19 @@
 </div>
 <div class="ct-pag">
   <div class="ct-hoja">
+    <div class="ct-membrete">
+      <div class="ct-membrete-logo">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Derechos On" style="max-height:60px">
+      </div>
+      <div class="ct-membrete-datos">
+        <strong>DERECHOS ON</strong> — Firma de Abogados<br>
+        <span>Calle 72 # 10-35, Oficina 402, Bogotá D.C., Colombia</span><br>
+        <span>Tel: +57 1 744 1234 — Email: contacto@derechos.on</span><br>
+        <span>www.derechos.on</span>
+      </div>
+      <hr class="ct-membrete-sep">
+    </div>
+
     {{ c.texto|safe }}
 
     {% set f_nombre = C.get('contrato_firmante_nombre', '') %}

@@ -6097,6 +6097,16 @@ def admin_contrato_ver(cid):
                            hide_header=True)
 
 
+@app.route("/admin/contrato/<int:cid>/eliminar", methods=["POST"])
+@requiere_admin
+def admin_contrato_eliminar(cid):
+    c = db.contrato_por_id(cid)
+    if c:
+        db.ejecutar("DELETE FROM contratos WHERE id = ?", (cid,))
+        flash("Contrato eliminado. El cliente podrá generar uno nuevo.", "exito")
+    return redirect(url_for("admin_contratos"))
+
+
 @app.route("/admin/cartera/<int:cid>/eliminar", methods=["POST"])
 @requiere_admin
 def admin_cartera_eliminar(cid):
