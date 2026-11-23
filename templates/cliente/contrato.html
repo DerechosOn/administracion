@@ -31,6 +31,9 @@
         <img class="firma-img" src="{{ c.firma_imagen }}" alt="Firma digital de {{ c.firma_nombre }}">
         <p class="ct-firma-nombre"><b>{{ c.firma_nombre }}</b></p>
         <p class="ct-firma-fecha">Firmado digitalmente el {{ c.firmado_el|fecha_es }} — {{ c.ciudad }}, Colombia.</p>
+        {% if c.huella %}
+        <p class="ct-firma-fecha" style="font-size:.72rem;color:var(--muted);word-break:break-all">Huella de verificación: {{ c.huella }}</p>
+        {% endif %}
         <p class="ct-firma-rol">EL CLIENTE</p>
         {% else %}
         <p class="ct-linea"></p>

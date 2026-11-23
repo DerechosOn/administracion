@@ -296,6 +296,7 @@ def iniciar():
             firma_imagen TEXT NOT NULL DEFAULT '',
             firma_nombre TEXT NOT NULL DEFAULT '',
             firmado_el TEXT NOT NULL DEFAULT '',
+            huella TEXT NOT NULL DEFAULT '',
             creado_el TEXT NOT NULL,
             FOREIGN KEY (cliente_id) REFERENCES usuarios (id) ON DELETE CASCADE
         );
@@ -380,6 +381,11 @@ def migrar(conn):
     col_actu = [r[1] for r in cur.execute("PRAGMA table_info(actuaciones)").fetchall()]
     if "fecha_maxima" not in col_actu:
         cur.execute("ALTER TABLE actuaciones ADD COLUMN fecha_maxima TEXT DEFAULT ''")
+        conn.commit()
+
+    col_con = [r[1] for r in cur.execute("PRAGMA table_info(contratos)").fetchall()]
+    if "huella" not in col_con:
+        cur.execute("ALTER TABLE contratos ADD COLUMN huella TEXT NOT NULL DEFAULT ''")
         conn.commit()
 
     tablas = [r[0] for r in cur.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()]

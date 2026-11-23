@@ -17,6 +17,7 @@ import tempfile
 import mimetypes
 import threading
 import html as html_mod
+import hashlib
 import uuid
 import calendar as calendario_py
 from datetime import datetime, timezone, date, timedelta
@@ -1498,11 +1499,17 @@ def cliente_contrato_firmar(cid):
     if not imagen.startswith("data:image/png;base64,"):
         flash("Dibuja tu firma en el recuadro antes de enviar.", "error")
         return redirect(url_for("cliente_contrato_ver", cid=cid))
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M")
+    firma_despacho = (db.contenido_todos().get("contrato_firma_archivo") or "").strip()
+    huella = hashlib.sha256(
+        (c.get("texto", "") + "|" + nombre + "|" + imagen + "|" +
+         firma_despacho + "|" + ahora).encode("utf-8")).hexdigest()
     db.contrato_actualizar(cid, {
         "estado": "Firmado",
         "firma_nombre": nombre,
         "firma_imagen": imagen,
-        "firmado_el": datetime.now().strftime("%Y-%m-%d %H:%M")})
+        "firmado_el": ahora,
+        "huella": huella})
     flash("Contrato firmado digitalmente. Ya puedes imprimirlo.", "exito")
     return redirect(url_for("cliente_contrato_ver", cid=cid))
 
