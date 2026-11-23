@@ -41,7 +41,11 @@
       </div>
       <div class="ct-f-col">
         {% if c.firmado_el %}
+        {% if c.firma_imagen %}
         <img class="firma-img" src="{{ c.firma_imagen }}" alt="Firma digital de {{ c.firma_nombre }}">
+        {% else %}
+        <p class="ct-linea">{{ c.firma_nombre }}</p>
+        {% endif %}
         <p class="ct-firma-nombre"><b>{{ c.firma_nombre }}</b></p>
         <p class="ct-firma-fecha">Firmado digitalmente el {{ c.firmado_el|fecha_es }} — {{ c.ciudad }}, Colombia.</p>
         {% if c.huella %}
@@ -61,91 +65,18 @@
     {% endif %}
     {% if not c.firmado_el %}
     <div class="ct-firmar no-print">
-      <h3>Firma aquí tu contrato</h3>
-      <p class="sub">Al firmar digitalmente manifiestas haber leído y aceptado el contrato, con plena validez jurídica conforme a la Ley 527 de 1999 (mensajes de datos).</p>
-      <canvas id="pad-firma" width="520" height="150"></canvas>
-      <div class="ct-firmar-ops">
-        <button type="button" class="btn btn-outline" id="btn-limpiar">Limpiar firma</button>
-      </div>
-      <input type="hidden" id="firma-nombre" value="{{ usuario.nombre }}">
-      <button type="button" class="btn btn-navy" id="btn-firmar">Firmar digitalmente</button>
+      <h3>Firma electrónica del contrato</h3>
+      <p class="sub">Al aceptar, se generará una huella digital de verificación conforme a la Ley 527 de 1999 (mensajes de datos).</p>
+      <form method="post" action="{{ url_for('cliente_contrato_firmar', cid=c.id) }}">
+        <input type="hidden" name="acepto" value="1">
+        <label class="chk" style="display:block;margin:12px 0">
+          <input type="checkbox" name="confirmo" value="1" required>
+          He leído y acepto los términos del contrato.
+        </label>
+        <button type="submit" class="btn btn-navy">Firmar electrónicamente</button>
+      </form>
     </div>
     {% endif %}
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-{% if not c.firmado_el %}
-<script>
-(function () {
-  var pad = document.getElementById('pad-firma');
-  var ctx = pad.getContext('2d');
-  var dibujando = false;
-  var hayTrazos = false;
-  ctx.lineWidth = 2.4;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.strokeStyle = '#1d2733';
-
-  function pos(e) {
-    var r = pad.getBoundingClientRect();
-    var escalaX = pad.width / r.width;
-    var escalaY = pad.height / r.height;
-    var p = e.touches ? e.touches[0] : e;
-    return { x: (p.clientX - r.left) * escalaX, y: (p.clientY - r.top) * escalaY };
-  }
-
-  function iniciar(e) {
-    e.preventDefault();
-    dibujando = true;
-    hayTrazos = true;
-    ctx.beginPath();
-    var p = pos(e);
-    ctx.moveTo(p.x, p.y);
-  }
-  function mover(e) {
-    if (!dibujando) return;
-    e.preventDefault();
-    var p = pos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-  }
-  function detener(e) {
-    if (!dibujando) return;
-    dibujando = false;
-    ctx.beginPath();
-  }
-
-  pad.addEventListener('mousedown', iniciar);
-  pad.addEventListener('mousemove', mover);
-  pad.addEventListener('mouseup', detener);
-  pad.addEventListener('mouseleave', detener);
-  pad.addEventListener('touchstart', iniciar, { passive: false });
-  pad.addEventListener('touchmove', mover, { passive: false });
-  pad.addEventListener('touchend', detener);
-
-  document.getElementById('btn-limpiar').addEventListener('click', function () {
-    ctx.clearRect(0, 0, pad.width, pad.height);
-    hayTrazos = false;
-  });
-
-  document.getElementById('btn-firmar').addEventListener('click', function () {
-    var nombre = document.getElementById('firma-nombre').value.trim();
-    if (nombre.length < 3) { alert('Escribe tu nombre completo para firmar.'); return; }
-    if (!hayTrazos) { alert('Dibuja tu firma en el recuadro.'); return; }
-    var imagen = pad.toDataURL('image/png');
-    var form = document.createElement('form');
-    form.method = 'POST';
-    form.action = {{ url_for('cliente_contrato_firmar', cid=c.id)|tojson }};
-    form.style.display = 'none';
-    var i1 = document.createElement('input'); i1.name = 'firma_nombre'; i1.value = nombre;
-    var i2 = document.createElement('input'); i2.name = 'firma_imagen'; i2.value = imagen;
-    form.appendChild(i1); form.appendChild(i2);
-    document.body.appendChild(form);
-    form.submit();
-  });
-})();
-</script>
-{% endif %}
 {% endblock %}

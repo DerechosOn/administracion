@@ -1495,14 +1495,22 @@ def cliente_contrato_firmar(cid):
     if c["firmado_el"]:
         flash("Este contrato ya fue firmado digitalmente.", "error")
         return redirect(url_for("cliente_contrato_ver", cid=cid))
-    nombre = request.form.get("firma_nombre", "").strip()
-    imagen = request.form.get("firma_imagen", "").strip()
-    if len(nombre) < 3:
-        flash("Escribe tu nombre completo para firmar el contrato.", "error")
-        return redirect(url_for("cliente_contrato_ver", cid=cid))
-    if not imagen.startswith("data:image/png;base64,"):
-        flash("Dibuja tu firma en el recuadro antes de enviar.", "error")
-        return redirect(url_for("cliente_contrato_ver", cid=cid))
+    acepto = request.form.get("acepto") == "1"
+    if acepto:
+        nombre = (g.usuario.get("nombre") or "").strip()
+        imagen = ""
+        if len(nombre) < 3:
+            flash("Tu perfil no tiene un nombre válido para firmar.", "error")
+            return redirect(url_for("cliente_contrato_ver", cid=cid))
+    else:
+        nombre = request.form.get("firma_nombre", "").strip()
+        imagen = request.form.get("firma_imagen", "").strip()
+        if len(nombre) < 3:
+            flash("Escribe tu nombre completo para firmar el contrato.", "error")
+            return redirect(url_for("cliente_contrato_ver", cid=cid))
+        if not imagen.startswith("data:image/png;base64,"):
+            flash("Dibuja tu firma en el recuadro antes de enviar.", "error")
+            return redirect(url_for("cliente_contrato_ver", cid=cid))
     ahora = _ahora().strftime("%Y-%m-%d %H:%M")
     firma_despacho = (db.contenido_todos().get("contrato_firma_archivo") or "").strip()
     huella = hashlib.sha256(
