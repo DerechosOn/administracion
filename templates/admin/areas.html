@@ -1,5 +1,6 @@
 {% extends "admin/base_admin.html" %}
-{% block titulo %}Áreas de atención — Administración Derechos On{% endblock %}
+{% block titulo %}Áreas de atención — Administración Derechos On
+{% endblock %}
 {% block contenido %}
 <h1>Áreas de atención jurídica</h1>
 <p class="sub">Agrega o edita las especialidades que se muestran en la página principal (campos libres).</p>
@@ -17,7 +18,7 @@
         <input type="hidden" name="icono" id="icono_seleccionado" value="scale">
         <div class="galeria-iconos" data-target="icono_seleccionado" data-actual="scale" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px;max-width:420px">
           {% for clave, path in iconos.items() %}
-          <button type="button" class="btn-icono" data-icono="{{ clave }}" title="{{ clave }}"
+          <button type="button" class="btn-icono" data-icono="{{ clave }}" title="{{ clave }}" onclick="seleccionarIcono(this, '{{ clave }}')"
                   style="border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;cursor:pointer;display:grid;place-items:center">
             {{ clave|icono_svg|safe }}
           </button>
@@ -82,7 +83,7 @@
         <input type="hidden" name="icono" id="icono_edit_{{ a.id }}" value="{{ a.icono }}">
         <div class="galeria-iconos" data-target="icono_edit_{{ a.id }}" data-actual="{{ a.icono }}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px;max-width:420px">
           {% for clave, path in iconos.items() %}
-          <button type="button" class="btn-icono" data-icono="{{ clave }}" title="{{ clave }}"
+          <button type="button" class="btn-icono" data-icono="{{ clave }}" title="{{ clave }}" onclick="seleccionarIcono(this, '{{ clave }}')"
                   style="border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;cursor:pointer;display:grid;place-items:center">
             {{ clave|icono_svg|safe }}
           </button>
@@ -105,30 +106,38 @@
 </div>
 {% endfor %}
 
-<script>
-(function () {
-  function actualizarGaleria(galeria, clave) {
-    var targetId = galeria.getAttribute('data-target');
-    var input = document.getElementById(targetId);
-    if (input) input.value = clave;
-    galeria.setAttribute('data-actual', clave);
-    galeria.querySelectorAll('.btn-icono').forEach(function (btn) {
-      btn.style.borderColor = (btn.getAttribute('data-icono') === clave) ? 'var(--blue-500)' : 'var(--line)';
-      btn.style.background = (btn.getAttribute('data-icono') === clave) ? '#e8f4ff' : '#fff';
-    });
-    var label = galeria.parentElement.querySelector('.icono-actual');
-    if (label) label.textContent = clave;
-  }
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+function seleccionarIcono(btn, clave) {
+  var galeria = btn.closest('.galeria-iconos');
+  var targetId = galeria ? galeria.getAttribute('data-target') : 'icono_seleccionado';
+  var input = document.getElementById(targetId);
+  if (input) input.value = clave;
+  var galeria = btn.closest('.galeria-iconos');
+  if (galeria) {
+    galeria.querySelectorAll('.btn-icono').forEach(function (b) {
+      b.style.borderColor = (b.getAttribute('data-icono') === clave) ? 'var(--blue-500)' : 'var(--line)';
+      b.style.background = (b.getAttribute('data-icono') === clave) ? '#e8f4ff' : '#fff';
+    });
+  }
+  var label = btn.closest('.campo') ? btn.closest('.campo').querySelector('.icono-actual') : null;
+  if (label) label.textContent = clave;
+}
+document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.galeria-iconos').forEach(function (galeria) {
     var actual = galeria.getAttribute('data-actual') || 'scale';
-    actualizarGaleria(galeria, actual);
+    var input = document.getElementById(galeria.getAttribute('data-target'));
+    if (input && !input.value) input.value = actual;
     galeria.querySelectorAll('.btn-icono').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        actualizarGaleria(galeria, btn.getAttribute('data-icono'));
-      });
+      if (btn.getAttribute('data-icono') === (input ? input.value : actual)) {
+        btn.style.borderColor = 'var(--blue-500)';
+        btn.style.background = '#e8f4ff';
+      }
     });
   });
-
+});
 </script>
 {% endblock %}
