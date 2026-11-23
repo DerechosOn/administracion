@@ -4,6 +4,10 @@
 <h1>Contratos de clientes</h1>
 <p class="sub">Contratos generados a partir de los servicios aceptados. Puedes verlos en formato de papelería y guardarlos como PDF.</p>
 
+<form method="post" action="{{ url_for('admin_contratos_eliminar_todos') }}" style="margin-bottom:16px" onsubmit="return confirm('¿Eliminar TODOS los contratos? Los clientes podrán generar nuevos.');">
+  <button class="btn btn-danger btn-sm" type="submit">Eliminar todos los contratos</button>
+</form>
+
 <div class="table-wrap">
   <table>
     <thead>

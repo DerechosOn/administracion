@@ -6099,6 +6099,14 @@ def admin_contrato_eliminar(cid):
     return redirect(url_for("admin_contratos"))
 
 
+@app.route("/admin/contratos/eliminar-todos", methods=["POST"])
+@requiere_admin
+def admin_contratos_eliminar_todos():
+    db.ejecutar("DELETE FROM contratos")
+    flash("Todos los contratos fueron eliminados. Los clientes podrán generar nuevos.", "exito")
+    return redirect(url_for("admin_contratos"))
+
+
 @app.route("/admin/cartera/<int:cid>/eliminar", methods=["POST"])
 @requiere_admin
 def admin_cartera_eliminar(cid):
