@@ -4,6 +4,7 @@
 import os
 import json
 import sqlite3
+import hashlib
 from datetime import datetime
 
 from werkzeug.security import generate_password_hash
@@ -387,6 +388,27 @@ def migrar(conn):
     if "huella" not in col_con:
         cur.execute("ALTER TABLE contratos ADD COLUMN huella TEXT NOT NULL DEFAULT ''")
         conn.commit()
+
+    # Backfill: contratos ya firmados sin huella
+    try:
+        firma_despacho = ""
+        row = cur.execute("SELECT valor FROM contenido WHERE clave = 'contrato_firma_archivo'").fetchone()
+        if row:
+            firma_despacho = (row[0] or "").strip()
+        filas = cur.execute(
+            "SELECT id, texto, firma_nombre, firma_imagen, firmado_el FROM contratos "
+            "WHERE (estado = 'Firmado' OR firmado_el <> '') AND (huella IS NULL OR huella = '')"
+        ).fetchall()
+        for f in filas:
+            cid, texto, nombre, imagen, firmado_el = f
+            huella = hashlib.sha256(
+                ((texto or "") + "|" + (nombre or "") + "|" + (imagen or "") + "|" +
+                 firma_despacho + "|" + (firmado_el or "")).encode("utf-8")).hexdigest()
+            cur.execute("UPDATE contratos SET huella = ? WHERE id = ?", (huella, cid))
+        if filas:
+            conn.commit()
+    except Exception:
+        pass
 
     tablas = [r[0] for r in cur.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()]
     if "comprobantes" in tablas:
