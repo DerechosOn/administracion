@@ -41,8 +41,20 @@
 <h2 style="margin:18px 0 10px">Detalle de procesos</h2>
 {% for p in procesos %}
 <div class="panel-form" style="margin-bottom:18px" id="proceso-{{ p.id }}">
-  <h3>{{ p.titulo }}</h3>
-  <p class="sub">{{ p.despacho or 'Por asignar' }} · {{ p.tipo }} · Abogado: {{ p.abogado_nombre or 'Por asignar' }}</p>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+    <h3 style="margin:0">{{ p.titulo }}</h3>
+    <span class="badge {{ p.estado|estado_clase }}">{{ p.estado }}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0">
+    <div class="pp-meta-item"><span class="pp-meta-lab">Radicado</span><b>{{ p.titulo }}</b></div>
+    <div class="pp-meta-item"><span class="pp-meta-lab">Despacho</span><b>{{ p.despacho or 'Por asignar' }}</b></div>
+    <div class="pp-meta-item"><span class="pp-meta-lab">Tipo</span><b>{{ p.tipo }}</b></div>
+    <div class="pp-meta-item"><span class="pp-meta-lab">Abogado</span><b>{{ p.abogado_nombre or 'Por asignar' }}</b></div>
+    <div class="pp-meta-item"><span class="pp-meta-lab">Apertura</span><b>{{ p.fecha_apertura }}</b></div>
+    <div class="pp-meta-item"><span class="pp-meta-lab">Última actualización</span><b>{{ p.fecha_actualizacion[:10] }}</b></div>
+    <div class="pp-meta-item"><span class="pp-meta-lab">Avance</span><b>{{ p.avance }}%</b></div>
+  </div>
+  {% if p.descripcion %}<p class="desc" style="margin:8px 0">{{ p.descripcion }}</p>{% endif %}
   {% if p.notas %}<div class="pp-nota" style="margin:8px 0"><b>Comentario del equipo:</b> {{ p.notas }}</div>{% endif %}
   {% set acts = actuaciones|selectattr('proceso_id', 'equalto', p.id)|list %}
   {% if acts %}
@@ -54,6 +66,8 @@
         <span class="tl-fecha">{{ a.fecha }}</span>
         <div class="tl-body">
           <span class="tl-desc">{{ a.descripcion }}</span>
+          {% set adj = documentos|selectattr('actuacion_id', 'equalto', a.id)|list %}
+          {% if adj %}<small class="ec-muted">Adjuntos: {{ adj|length }}</small>{% endif %}
         </div>
       </li>
       {% endfor %}
@@ -64,9 +78,29 @@
   {% endif %}
 </div>
 {% endfor %}
+
 {% else %}
 <div class="vacio" style="padding:26px 20px">
   <p style="margin:0">Aún no tienes trámites o procesos registrados.</p>
+</div>
+{% endif %}
+
+{% if abogados %}
+<div class="panel-form" style="margin-top:24px">
+  <h2 style="margin:0 0 6px">Nuestro equipo de abogados</h2>
+  <p class="sub" style="margin:0 0 14px">Profesionales de talla mundial a tu servicio.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+    {% for a in abogados if a.activo %}
+    <div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 4px 14px rgba(10,45,134,.06);display:flex;gap:12px;align-items:center">
+      <span class="icono" style="width:44px;height:44px;font-size:1.1rem;background:linear-gradient(135deg,var(--blue-800),var(--blue-600));color:#fff;border-radius:10px;display:grid;place-items:center">{{ 'scale'|icono_svg|safe }}</span>
+      <div>
+        <b style="display:block">{{ a.nombre }}</b>
+        <small class="ec-muted">{{ a.especialidad or 'Abogado' }}</small>
+        {% if a.tarjeta_profesional %}<br><small class="ec-muted">{{ a.tarjeta_profesional }}</small>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 {% endblock %}
