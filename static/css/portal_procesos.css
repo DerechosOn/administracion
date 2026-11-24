@@ -338,3 +338,33 @@ details[open] .pp-toggle { margin-bottom: 12px; }
   .pp-kpis { grid-template-columns: 1fr; }
   .pp-card-top { flex-direction: column; }
 }
+
+/* ================= CARTERA MODERNA ================= */
+.cartera-cliente { margin-bottom: 34px; }
+.cartera-cliente .ec-resumen {
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+  border: 1px solid var(--line); border-radius: 20px;
+  padding: 24px 26px; box-shadow: 0 16px 40px rgba(10,45,134,.10);
+}
+.cartera-cliente .ec-resumen-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.cartera-cliente .ec-num {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px 18px; border-radius: 14px; background: #fff;
+  border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(10,45,134,.06);
+  transition: transform .18s, box-shadow .18s;
+}
+.cartera-cliente .ec-num:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(10,45,134,.10); }
+.cartera-cliente .ec-num span { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.cartera-cliente .ec-num b { font-size: 1.85rem; font-weight: 900; color: var(--blue-900); line-height: 1; }
+.cartera-cliente .ec-num.verde b { color: var(--verde); }
+.cartera-cliente .ec-num.rojo b { color: var(--rojo); }
+.cartera-cliente .ec-resumen-bar { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+.cartera-cliente .ec-resumen-bar b { color: var(--blue-800); font-size: .95rem; white-space: nowrap; }
+.cartera-cliente .ec-bar { flex: 1; height: 12px; border-radius: 999px; background: #eef2fa; overflow: hidden; display: inline-block; }
+.cartera-cliente .ec-bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--blue-600), var(--blue-400)); }
+.cartera-cliente .ec-bar.sm { height: 8px; max-width: 110px; vertical-align: middle; }
+.cartera-cliente .ec-table { border-radius: 12px; overflow: hidden; }
+.cartera-cliente .ec-table thead th { background: var(--blue-900); color: #fff; font-weight: 700; }
+.cartera-cliente .ec-table tbody tr:nth-child(even) { background: #f7faff; }
+.cartera-cliente .ec-table tbody tr:hover { background: #eef4ff; }
+.cartera-cliente .ec-h { font-size: 1.1rem; margin: 26px 0 12px; color: var(--blue-900); font-weight: 700; }
