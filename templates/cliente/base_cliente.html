@@ -45,7 +45,7 @@
           <a class="ix-link" href="{{ url_for('cliente_inicio') }}#estado-cuenta" data-ix-text="cartera pagos servicios">
             <svg class="ix-ico"><use href="#i-card"></use></svg><span>Cartera</span>
           </a>
-          <a class="ix-link {{ 'activo' if request.endpoint == 'cliente_inicio' }}" href="{{ url_for('cliente_inicio') }}" data-ix-text="tramites procesos casos">
+          <a class="ix-link {{ 'activo' if request.endpoint == 'cliente_procesos' }}" href="{{ url_for('cliente_procesos') }}" data-ix-text="tramites procesos casos">
             <svg class="ix-ico"><use href="#i-scale"></use></svg><span>Trámites o procesos</span>
           </a>
           <a class="ix-link {{ 'activo' if request.endpoint and request.endpoint.startswith('cliente_contrato') }}" href="{{ url_for('cliente_contrato') }}" data-ix-text="contrato documento">

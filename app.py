@@ -1634,6 +1634,27 @@ def cliente_servicios():
                            tarifario=catalogo, areas=areas)
 
 
+@app.route("/cliente/procesos")
+@requiere_cliente
+def cliente_procesos():
+    solo_procesos = es_asociacion(g.usuario)
+    procesos = _enriquecer_procesos(db.procesos_de_cliente(g.usuario["id"]))
+    actuaciones = db.consultar(
+        "SELECT a.* FROM actuaciones a JOIN procesos p ON p.id = a.proceso_id "
+        "WHERE p.cliente_id = ? ORDER BY a.fecha ASC, a.id ASC",
+        (g.usuario["id"],))
+    documentos = db.consultar(
+        "SELECT d.* FROM documentos d "
+        "JOIN actuaciones a ON a.id = d.actuacion_id "
+        "JOIN procesos p ON p.id = a.proceso_id "
+        "WHERE p.cliente_id = ? ORDER BY d.cargado_el ASC, d.id ASC",
+        (g.usuario["id"],))
+    return render_template("cliente/procesos.html", usuario=g.usuario,
+                           solo_procesos=solo_procesos,
+                           procesos=procesos, actuaciones=actuaciones,
+                           documentos=documentos, etapas=ETAPAS_PROCESO)
+
+
 @app.route("/cliente")
 @requiere_cliente
 def cliente_inicio():

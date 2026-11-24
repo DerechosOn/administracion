@@ -1,0 +1,72 @@
+{% extends "cliente/base_cliente.html" %}
+{% block titulo %}Trámites o procesos — Derechos On{% endblock %}
+{% block contenido %}
+<h1>Consulta de trámites y procesos</h1>
+<p class="sub">Vista estilo Rama Judicial: radicado, despacho, estado y actuaciones realizadas.</p>
+
+{% if procesos %}
+<div class="table-wrap" style="margin-bottom:24px">
+  <table class="ec-table">
+    <thead>
+      <tr>
+        <th>Radicado / Caso</th>
+        <th>Despacho</th>
+        <th>Tipo</th>
+        <th>Estado</th>
+        <th>Avance</th>
+        <th>Última actuación</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for p in procesos %}
+    {% set acts = actuaciones|selectattr('proceso_id', 'equalto', p.id)|list %}
+    <tr>
+      <td><b>{{ p.titulo }}</b><br><small class="ec-muted">{{ p.fecha_apertura }}</small></td>
+      <td>{{ p.despacho or 'Por asignar' }}</td>
+      <td>{{ p.tipo }}</td>
+      <td>
+        {% if p.estado == 'Resuelto a favor' %}<span class="badge favor">Resuelto a favor</span>
+        {% elif p.estado == 'Resuelto en contra' %}<span class="badge vencida">Resuelto en contra</span>
+        {% elif p.estado == 'Archivado' %}<span class="badge archivado">Archivado</span>
+        {% else %}<span class="badge tramite">{{ p.estado }}</span>{% endif %}
+      </td>
+      <td><span class="ec-bar sm"><i style="width:{{ p.avance }}%"></i></span> <small class="ec-muted">{{ p.avance }}%</small></td>
+      <td>{% if acts %}{{ acts[-1].fecha }}{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 style="margin:18px 0 10px">Detalle de procesos</h2>
+{% for p in procesos %}
+<div class="panel-form" style="margin-bottom:18px" id="proceso-{{ p.id }}">
+  <h3>{{ p.titulo }}</h3>
+  <p class="sub">{{ p.despacho or 'Por asignar' }} · {{ p.tipo }} · Abogado: {{ p.abogado_nombre or 'Por asignar' }}</p>
+  {% if p.notas %}<div class="pp-nota" style="margin:8px 0"><b>Comentario del equipo:</b> {{ p.notas }}</div>{% endif %}
+  {% set acts = actuaciones|selectattr('proceso_id', 'equalto', p.id)|list %}
+  {% if acts %}
+  <details open>
+    <summary class="pp-toggle">Actuaciones realizadas ({{ acts|length }})</summary>
+    <ol class="timeline">
+      {% for a in acts %}
+      <li class="tl-item">
+        <span class="tl-fecha">{{ a.fecha }}</span>
+        <div class="tl-body">
+          <span class="tl-desc">{{ a.descripcion }}</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </details>
+  {% else %}
+  <p class="sub">Aún no hay actuaciones registradas.</p>
+  {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div class="vacio" style="padding:26px 20px">
+  <p style="margin:0">Aún no tienes trámites o procesos registrados.</p>
+</div>
+{% endif %}
+{% endblock %}
