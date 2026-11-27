@@ -18,6 +18,7 @@
   <div class="stat-card"><b>{{ num_procesos }}</b><span>Procesos a tu cargo</span></div>
   <div class="stat-card"><b>{{ num_actuaciones }}</b><span>Actuaciones registradas</span></div>
   <div class="stat-card"><b>{{ proximas|length }}</b><span>Próximas fechas / límites</span></div>
+  <div class="stat-card"><b>${{ honorarios_por_cobrar|int }}</b><span>Honorarios por cobrar</span></div>
 </div>
 
 <div class="panel-form">
@@ -62,6 +63,31 @@
   </table>
   {% else %}
   <p style="color:var(--muted)">No hay fechas próximas registradas en tus procesos.</p>
+  {% endif %}
+</div>
+
+<div class="panel-form">
+  <h3>Honorarios por cobrar</h3>
+  {% if cartera_abogado %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Cliente</th><th>Servicio</th><th>Valor</th><th>Pagado</th><th>Saldo</th><th>Estado</th></tr></thead>
+      <tbody>
+      {% for c in cartera_abogado %}
+        <tr>
+          <td>{{ c.cliente_nombre }}</td>
+          <td>{{ c.servicio }}</td>
+          <td>${{ c.valor_total|int }}</td>
+          <td>${{ c.pagado|int }}</td>
+          <td><b>${{ c.saldo|int }}</b></td>
+          <td>{{ c.estado }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--muted)">No hay honorarios pendientes de cobro.</p>
   {% endif %}
 </div>
 

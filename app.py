@@ -1652,7 +1652,8 @@ def cliente_procesos():
     return render_template("cliente/procesos.html", usuario=g.usuario,
                            solo_procesos=solo_procesos,
                            procesos=procesos, actuaciones=actuaciones,
-                           documentos=documentos, etapas=ETAPAS_PROCESO)
+                           documentos=documentos, etapas=ETAPAS_PROCESO,
+                           abogados=db.abogados_lista())
 
 
 @app.route("/cliente")
@@ -1845,12 +1846,23 @@ def abogado_inicio():
                                  "descripcion": a["descripcion"], "pid": a["proceso_id"]})
     proximas.sort(key=lambda x: x["dia"])
     tareas_proyecto = proyectos_core.tareas_abiertas_de("abogado", g.abogado["id"], limite=6)
+    # Honorarios por cobrar de los clientes del abogado
+    clientes_ids = {p.get("cliente_id") for p in datos["procesos"] if p.get("cliente_id")}
+    cartera_abogado = []
+    for cid in clientes_ids:
+        u = db.usuario_por_id(cid)
+        for c in _cartera_cliente_con_estado(cid):
+            c["cliente_nombre"] = u["nombre"] if u else ("Cliente %d" % cid)
+            cartera_abogado.append(c)
+    honorarios_por_cobrar = sum(float(c.get("saldo") or 0) for c in cartera_abogado)
     return render_template("abogado/dashboard.html", usuario=g.usuario, abogado=g.abogado,
                            procesos=datos["procesos"],
                            num_procesos=len(datos["procesos"]),
                            num_actuaciones=len(datos["actuaciones"]),
                            proximas=proximas[:14], del_mes=vencimientos(hoy, datos["actuaciones"]),
                            tareas_proyecto=tareas_proyecto,
+                           cartera_abogado=cartera_abogado,
+                           honorarios_por_cobrar=honorarios_por_cobrar,
                            es_responsable_asociaciones=_es_abogado_asociaciones(),
                            abogado_asociaciones=_abogado_asociaciones(),
                            prioridad_txt=proyectos_core.PRIORIDAD_TXT,
